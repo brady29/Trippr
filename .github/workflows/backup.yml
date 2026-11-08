@@ -1,0 +1,44 @@
+name: Weekly backup
+
+# Exports the whole graph to JSON and copies it to a Cloud Storage bucket.
+# AuraDB also pauses after 72 hours idle; this weekly query is a reminder to
+# resume it. For a FalkorDB VM that is not reachable from GitHub, run
+# `pnpm db:export` from cron on the VM instead (and keep the AOF snapshots).
+#
+# Repository variables: GCP_PROJECT_ID, GCP_WORKLOAD_IDENTITY_PROVIDER,
+#   GCP_SERVICE_ACCOUNT, BACKUP_BUCKET, DB_DIALECT
+# Repository secrets: FALKORDB_URL, or NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  export:
+    if: vars.BACKUP_BUCKET != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DB_DIALECT: ${{ vars.DB_DIALECT || 'falkordb' }}
+      FALKORDB_URL: ${{ secrets.FALKORDB_URL }}
+      NEO4J_URI: ${{ secrets.NEO4J_URI }}
+      NEO4J_USER: ${{ secrets.NEO4J_USER }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:export backup.json
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud storage cp backup.json "gs://${{ vars.BACKUP_BUCKET }}/trippr-$(date -u +%Y-%m-%d).json"
