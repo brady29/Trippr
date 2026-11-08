@@ -1,0 +1,127 @@
+"use client";
+
+import type { CheckLevel } from "@trippr/rules";
+import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
+import { AlertIcon, CheckIcon, InfoIcon } from "./icons";
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "sm" | "md";
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "secondary", size = "md", className = "", type = "button", ...props },
+  ref,
+) {
+  const variants = {
+    primary: "bg-board text-amber hover:bg-board-2 border border-board",
+    secondary: "bg-card text-ink border border-line hover:border-ink-faint",
+    ghost: "text-ink-soft hover:text-ink hover:bg-paper-2 border border-transparent",
+    danger: "bg-card text-err border border-line hover:border-err",
+  };
+  const sizes = { sm: "h-8 px-2.5 text-xs gap-1.5", md: "h-10 px-3.5 text-sm gap-2" };
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={`inline-flex shrink-0 items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className}`}
+      {...props}
+    />
+  );
+});
+
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
+  { className = "", ...props },
+  ref,
+) {
+  return (
+    <input
+      ref={ref}
+      className={`h-10 w-full min-w-0 rounded-lg border border-line bg-card px-3 text-sm text-ink placeholder:text-ink-faint focus:border-ink-soft focus:outline-none ${className}`}
+      {...props}
+    />
+  );
+});
+
+export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={`h-10 min-w-0 rounded-lg border border-line bg-card px-2.5 text-sm text-ink focus:border-ink-soft focus:outline-none ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-soft">
+      {children}
+    </label>
+  );
+}
+
+export function Tag({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "amber" | "dark" | "board" }) {
+  const tones = {
+    plain: "bg-paper-2 text-ink-soft",
+    amber: "bg-amber/25 text-[#7a5300]",
+    dark: "bg-board text-amber",
+    /** For use on the dark departure board. */
+    board: "border border-amber/40 text-amber",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
+const LEVEL_STYLE: Record<CheckLevel, { cls: string; label: string }> = {
+  ok: { cls: "text-ok bg-ok/10", label: "All checks pass" },
+  info: { cls: "text-info bg-info/10", label: "Info" },
+  warn: { cls: "text-warn bg-warn/10", label: "Needs a look" },
+  error: { cls: "text-err bg-err/10", label: "Problem" },
+};
+
+export function LevelIcon({ level, className = "" }: { level: CheckLevel; className?: string }) {
+  const Icon = level === "ok" ? CheckIcon : level === "info" ? InfoIcon : AlertIcon;
+  return <Icon className={`${LEVEL_STYLE[level].cls.split(" ")[0]} ${className}`} />;
+}
+
+export function ChecksBadge({ level }: { level: CheckLevel }) {
+  const style = LEVEL_STYLE[level];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${style.cls}`}>
+      <LevelIcon level={level} className="h-3.5 w-3.5" />
+      {style.label}
+    </span>
+  );
+}
+
+export function Spinner({ label = "Loading" }: { label?: string }) {
+  return (
+    <div role="status" className="flex items-center gap-2 text-sm text-ink-soft">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink-soft" />
+      {label}
+    </div>
+  );
+}
+
+export function ErrorNote({ error }: { error: unknown }) {
+  return (
+    <div role="alert" className="rounded-lg border border-err/30 bg-err/5 px-4 py-3 text-sm text-err">
+      {error instanceof Error ? error.message : "Something went wrong"}
+    </div>
+  );
+}
+
+export function Panel({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
