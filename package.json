@@ -1,0 +1,37 @@
+{
+  "name": "trippr",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Trip Graph: a shared trip planner backed by a graph database.",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @trippr/api --filter @trippr/web dev",
+    "build": "pnpm -r build",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
+    "test": "pnpm -r --filter @trippr/rules --filter @trippr/contracts test",
+    "test:integration": "pnpm --filter @trippr/api test:integration",
+    "test:e2e": "pnpm --filter @trippr/web test:e2e",
+    "db:up": "docker compose up -d falkordb",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
+    "db:export": "tsx scripts/export.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.19.0",
+    "@trippr/api": "workspace:*",
+    "@types/node": "22.13.1",
+    "eslint": "9.19.0",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "globals": "15.14.0",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.22.0",
+    "vitest": "3.0.5"
+  }
+}

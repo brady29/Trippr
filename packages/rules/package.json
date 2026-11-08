@@ -1,0 +1,14 @@
+{
+  "name": "@trippr/rules",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure trip rules: computed dates, visa-free entries, fixed-date events.",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}
