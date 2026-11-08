@@ -1,0 +1,33 @@
+# Local development databases. FalkorDB is the default; Neo4j is available
+# behind the "neo4j" profile to exercise the second repository dialect.
+services:
+  falkordb:
+    image: falkordb/falkordb:v4.22.1
+    ports:
+      - "6379:6379"
+      - "3001:3000" # FalkorDB browser UI
+    volumes:
+      - falkordb-data:/data
+    environment:
+      # AOF persistence so a restart never loses edits.
+      REDIS_ARGS: "--appendonly yes"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  neo4j:
+    profiles: ["neo4j"]
+    image: neo4j:5.26-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/trippr-dev-password
+    volumes:
+      - neo4j-data:/data
+
+volumes:
+  falkordb-data:
+  neo4j-data:
