@@ -1,0 +1,18 @@
+{
+  "_comment": "The older plan from the Nov 8 cost estimate.",
+  "id": "route-with-shanghai",
+  "name": "With Shanghai",
+  "tags": ["older", "cost estimate"],
+  "isCurrent": false,
+  "stops": [
+    { "city": "TYO", "nights": 4, "arriveMode": "flight", "arriveNote": "Toronto to Tokyo Haneda", "plans": ["act-npb", "act-sumo"] },
+    { "city": "BJS", "nights": 8, "arriveMode": "flight", "arriveNote": "Tokyo to Beijing", "plans": ["act-mutianyu", "act-forbidden-city"] },
+    { "city": "SIA", "nights": 4, "arriveMode": "hsr", "plans": ["act-terracotta"] },
+    { "city": "SHA", "nights": 8, "arriveMode": "hsr", "plans": ["act-maglev", "act-bund"] },
+    { "city": "HAN", "nights": 4, "arriveMode": "flight", "plans": ["act-halong"] },
+    { "city": "SGN", "nights": 2, "arriveMode": "flight", "plans": [] },
+    { "city": "LBJ", "nights": 1, "arriveMode": "flight", "plans": [] },
+    { "city": "KOM", "nights": 2, "arriveMode": "boat", "arriveNote": "Komodo boat", "plans": ["act-komodo"] },
+    { "city": "DPS", "nights": 3, "arriveMode": "flight", "plans": ["act-batur"] }
+  ]
+}

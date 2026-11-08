@@ -1,0 +1,54 @@
+[
+  { "id": "act-npb", "city": "TYO", "title": "NPB: Yokohama DeNA BayStars vs Yomiuri Giants", "tags": ["sport"], "when": { "on": "2027-05-13" }, "costCad": 45 },
+  { "id": "act-sumo", "city": "TYO", "title": "Sumo May tournament at Ryogoku Kokugikan", "tags": ["sport", "culture"], "when": { "from": "2027-05-09", "to": "2027-05-23" }, "costCad": 60 },
+  { "id": "act-teamlab", "city": "TYO", "title": "teamLab Planets", "tags": ["tech", "culture"], "costCad": 40 },
+  { "id": "act-akihabara", "city": "TYO", "title": "Akihabara electronics and arcades", "tags": ["tech"] },
+  { "id": "act-tsukiji", "city": "TYO", "title": "Tsukiji outer market breakfast", "tags": ["food"], "costCad": 25 },
+
+  { "id": "act-xiaomi-ev", "city": "BJS", "title": "Xiaomi EV factory tour", "tags": ["tech"] },
+  { "id": "act-robot-mall", "city": "BJS", "title": "Robot Mall in Yizhuang", "tags": ["tech"] },
+  { "id": "act-mutianyu", "city": "BJS", "title": "Great Wall at Mutianyu", "tags": ["nature", "culture"], "costCad": 45 },
+  { "id": "act-forbidden-city", "city": "BJS", "title": "Forbidden City", "tags": ["culture"], "costCad": 15 },
+  { "id": "act-peking-duck", "city": "BJS", "title": "Peking duck dinner", "tags": ["food"], "costCad": 50 },
+
+  { "id": "act-terracotta", "city": "SIA", "title": "Terracotta Army", "tags": ["culture"], "costCad": 30 },
+  { "id": "act-muslim-quarter", "city": "SIA", "title": "Muslim Quarter night food street", "tags": ["food"], "costCad": 15 },
+  { "id": "act-city-wall", "city": "SIA", "title": "Cycle the Xi'an city wall", "tags": ["culture", "sport"], "costCad": 15 },
+
+  { "id": "act-liziba", "city": "CKG", "title": "Liziba station, the monorail through a building", "tags": ["tech"], "costCad": 1 },
+  { "id": "act-wulong", "city": "CKG", "title": "Wulong Karst and the Three Natural Bridges", "tags": ["nature"], "costCad": 60 },
+  { "id": "act-hongyadong", "city": "CKG", "title": "Hongyadong lit up at night", "tags": ["culture"] },
+  { "id": "act-hotpot", "city": "CKG", "title": "Chongqing hotpot", "tags": ["food"], "costCad": 25 },
+  { "id": "act-cable-car", "city": "CKG", "title": "Yangtze River cable car", "tags": ["culture"], "costCad": 5 },
+
+  { "id": "act-ehang", "city": "CAN", "title": "EHang air taxi flight experience", "tags": ["tech"] },
+  { "id": "act-canton-tower", "city": "CAN", "title": "Canton Tower", "tags": ["culture"], "costCad": 40 },
+  { "id": "act-dim-sum", "city": "CAN", "title": "Dim sum morning tea", "tags": ["food"], "costCad": 20 },
+
+  { "id": "act-dji", "city": "SZX", "title": "DJI flagship store", "tags": ["tech"] },
+  { "id": "act-sz-museum", "city": "SZX", "title": "Shenzhen Science & Technology Museum", "tags": ["tech"] },
+  { "id": "act-huaqiangbei", "city": "SZX", "title": "Huaqiangbei electronics market", "tags": ["tech"] },
+
+  { "id": "act-happy-valley", "city": "HKG", "title": "Happy Valley races", "tags": ["sport"], "when": { "weekdays": [3] }, "costCad": 2 },
+  { "id": "act-peak", "city": "HKG", "title": "Victoria Peak tram", "tags": ["culture"], "costCad": 15 },
+  { "id": "act-dragons-back", "city": "HKG", "title": "Dragon's Back hike", "tags": ["nature", "sport"] },
+
+  { "id": "act-halong", "city": "HAN", "title": "Ha Long Bay overnight cruise", "tags": ["nature"], "costCad": 200 },
+  { "id": "act-hanoi-food", "city": "HAN", "title": "Old Quarter street food tour", "tags": ["food"], "costCad": 40 },
+  { "id": "act-train-street", "city": "HAN", "title": "Train Street", "tags": ["culture"] },
+
+  { "id": "act-cu-chi", "city": "SGN", "title": "Cu Chi tunnels", "tags": ["culture"], "costCad": 20 },
+  { "id": "act-war-remnants", "city": "SGN", "title": "War Remnants Museum", "tags": ["culture"], "costCad": 3 },
+
+  { "id": "act-komodo", "city": "KOM", "title": "Komodo dragon trek on Komodo or Rinca", "tags": ["nature"], "costCad": 150 },
+  { "id": "act-padar", "city": "KOM", "title": "Padar Island sunrise hike", "tags": ["nature", "sport"] },
+  { "id": "act-pink-beach", "city": "KOM", "title": "Pink Beach snorkelling", "tags": ["nature"] },
+
+  { "id": "act-batur", "city": "DPS", "title": "Mount Batur sunrise trek", "tags": ["nature", "sport"], "costCad": 60 },
+  { "id": "act-uluwatu", "city": "DPS", "title": "Uluwatu Kecak fire dance", "tags": ["culture"], "costCad": 25 },
+  { "id": "act-tegallalang", "city": "DPS", "title": "Tegallalang rice terraces", "tags": ["nature"], "costCad": 5 },
+
+  { "id": "act-maglev", "city": "SHA", "title": "Shanghai maglev ride", "tags": ["tech"], "costCad": 10 },
+  { "id": "act-bund", "city": "SHA", "title": "The Bund at night", "tags": ["culture"] },
+  { "id": "act-shanghai-tower", "city": "SHA", "title": "Shanghai Tower observation deck", "tags": ["tech"], "costCad": 35 }
+]

@@ -1,0 +1,16 @@
+[
+  { "iso": "JP", "name": "Japan", "color": "#d94f4f" },
+  { "iso": "CN", "name": "China", "color": "#e0a030", "visaRule": { "visaFreeDays": 30, "entriesUntil": "2026-12-31" } },
+  { "iso": "HK", "name": "Hong Kong", "color": "#8e5cc7" },
+  { "iso": "MO", "name": "Macau", "color": "#5c7cc7" },
+  { "iso": "TW", "name": "Taiwan", "color": "#3fa7a0" },
+  { "iso": "KR", "name": "South Korea", "color": "#4f86d9" },
+  { "iso": "VN", "name": "Vietnam", "color": "#3f9b5a" },
+  { "iso": "TH", "name": "Thailand", "color": "#c75c8e" },
+  { "iso": "KH", "name": "Cambodia", "color": "#a0763f" },
+  { "iso": "LA", "name": "Laos", "color": "#7a9b3f" },
+  { "iso": "MY", "name": "Malaysia", "color": "#3f6b9b" },
+  { "iso": "SG", "name": "Singapore", "color": "#c7465c" },
+  { "iso": "PH", "name": "Philippines", "color": "#3f8a9b" },
+  { "iso": "ID", "name": "Indonesia", "color": "#2f8f8a" }
+]

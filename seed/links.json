@@ -1,0 +1,28 @@
+{
+  "_comment": "One LINK edge per direction. `bothWays` creates the reverse edge with the same values. Links with source 'planner research' were found while planning (spec, Nov 8 2026); 'estimate' links are rough figures added so pathfinding has a connected network, and should be verified before booking.",
+  "links": [
+    { "from": "SIA", "to": "CKG", "mode": "hsr", "minutes": 280, "costCad": 60, "note": "4 h 40 min fastest, usually 5 to 6.5 h; about 20 trains a day", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CKG", "to": "CAN", "mode": "hsr", "minutes": 345, "costCad": 90, "note": "5 h 45 min fastest, usually 6.5 to 7.5 h; 34 departures a day", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CKG", "to": "CAN", "mode": "flight", "minutes": 135, "costCad": 120, "note": "2 to 2.5 h", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CAN", "to": "SZX", "mode": "hsr", "minutes": 30, "costCad": 15, "note": "About 30 min", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "SZX", "to": "HKG", "mode": "train", "minutes": 18, "costCad": 15, "note": "Cross-border train, about 15 to 20 min; leaves mainland China", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "PVG", "to": "LYD", "mode": "maglev", "minutes": 8, "costCad": 10, "note": "About 8 min, capped at 300 km/h", "source": "planner research", "asOf": "2026-11-08", "bothWays": true },
+
+    { "from": "LYD", "to": "SHA", "mode": "train", "minutes": 25, "costCad": 2, "note": "Metro into central Shanghai", "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "TYO", "to": "BJS", "mode": "flight", "minutes": 235, "costCad": 350, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "TYO", "to": "PVG", "mode": "flight", "minutes": 195, "costCad": 300, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "BJS", "to": "SIA", "mode": "hsr", "minutes": 270, "costCad": 110, "note": "About 4.5 h fastest", "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "BJS", "to": "SHA", "mode": "hsr", "minutes": 270, "costCad": 130, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "SIA", "to": "SHA", "mode": "hsr", "minutes": 360, "costCad": 120, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CKG", "to": "CTU", "mode": "hsr", "minutes": 65, "costCad": 25, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CTU", "to": "SIA", "mode": "hsr", "minutes": 190, "costCad": 55, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "CAN", "to": "HKG", "mode": "hsr", "minutes": 50, "costCad": 45, "note": "To West Kowloon", "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "HKG", "to": "HAN", "mode": "flight", "minutes": 120, "costCad": 220, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "SHA", "to": "HAN", "mode": "flight", "minutes": 210, "costCad": 280, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "HAN", "to": "SGN", "mode": "flight", "minutes": 130, "costCad": 90, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "SGN", "to": "DPS", "mode": "flight", "minutes": 210, "costCad": 260, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "SGN", "to": "LBJ", "mode": "flight", "minutes": 330, "costCad": 340, "note": "Usually via Bali or Jakarta", "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "DPS", "to": "LBJ", "mode": "flight", "minutes": 70, "costCad": 110, "source": "estimate", "asOf": "2026-11-08", "bothWays": true },
+    { "from": "LBJ", "to": "KOM", "mode": "boat", "minutes": 150, "costCad": 80, "source": "estimate", "asOf": "2026-11-08", "bothWays": true }
+  ]
+}
