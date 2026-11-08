@@ -1,0 +1,7 @@
+{
+  "id": "asia-2027",
+  "name": "Asia 2027",
+  "startDate": "2027-05-10",
+  "homeCity": "Toronto",
+  "routes": ["main-route.json", "with-shanghai-route.json"]
+}

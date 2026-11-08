@@ -1,0 +1,20 @@
+{
+  "_comment": "The current plan. Replace the stops with the JSON from the planner page to bring over any edits made before the app goes live.",
+  "id": "route-main",
+  "name": "Main",
+  "tags": ["current"],
+  "isCurrent": true,
+  "stops": [
+    { "city": "TYO", "nights": 4, "arriveMode": "flight", "arriveNote": "Toronto to Tokyo Haneda", "plans": ["act-npb", "act-sumo"] },
+    { "city": "BJS", "nights": 5, "arriveMode": "flight", "arriveNote": "Tokyo to Beijing", "plans": ["act-xiaomi-ev", "act-mutianyu"] },
+    { "city": "SIA", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 4.5 h by high-speed train", "plans": ["act-terracotta"] },
+    { "city": "CKG", "nights": 4, "arriveMode": "hsr", "arriveNote": "4 h 40 min fastest, usually 5 to 6.5 h", "plans": ["act-liziba", "act-wulong"] },
+    { "city": "CAN", "nights": 3, "arriveMode": "hsr", "arriveNote": "5 h 45 min fastest, 34 departures a day", "plans": ["act-ehang"] },
+    { "city": "SZX", "nights": 4, "arriveMode": "hsr", "arriveNote": "About 30 min", "plans": ["act-dji", "act-sz-museum"] },
+    { "city": "HKG", "nights": 3, "arriveMode": "train", "arriveNote": "Cross-border train, about 15 to 20 min", "plans": ["act-happy-valley"] },
+    { "city": "HAN", "nights": 4, "arriveMode": "flight", "arriveNote": "Hong Kong to Hanoi", "plans": ["act-halong"] },
+    { "city": "SGN", "nights": 3, "arriveMode": "flight", "arriveNote": "Hanoi to Ho Chi Minh City", "plans": [] },
+    { "city": "KOM", "nights": 3, "arriveMode": "flight", "arriveNote": "Fly to Labuan Bajo, then boat", "plans": ["act-komodo"] },
+    { "city": "DPS", "nights": 4, "arriveMode": "flight", "arriveNote": "Labuan Bajo to Bali", "plans": ["act-batur"] }
+  ]
+}

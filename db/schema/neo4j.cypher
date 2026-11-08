@@ -1,0 +1,15 @@
+// Trippr schema for Neo4j 5 / AuraDB. Idempotent: safe to re-run.
+// Applied by `pnpm db:migrate` with DB_DIALECT=neo4j.
+
+CREATE CONSTRAINT user_id IF NOT EXISTS FOR (n:User) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT trip_id IF NOT EXISTS FOR (n:Trip) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT route_id IF NOT EXISTS FOR (n:Route) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT stop_id IF NOT EXISTS FOR (n:Stop) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT city_code IF NOT EXISTS FOR (n:City) REQUIRE n.code IS UNIQUE;
+CREATE CONSTRAINT country_iso IF NOT EXISTS FOR (n:Country) REQUIRE n.iso IS UNIQUE;
+CREATE CONSTRAINT activity_id IF NOT EXISTS FOR (n:Activity) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT tag_name IF NOT EXISTS FOR (n:Tag) REQUIRE n.name IS UNIQUE;
+CREATE CONSTRAINT invite_token IF NOT EXISTS FOR (n:Invite) REQUIRE n.token IS UNIQUE;
+CREATE CONSTRAINT comment_id IF NOT EXISTS FOR (n:Comment) REQUIRE n.id IS UNIQUE;
+CREATE INDEX city_name IF NOT EXISTS FOR (n:City) ON (n.name);
+CREATE INDEX activity_title IF NOT EXISTS FOR (n:Activity) ON (n.title);
