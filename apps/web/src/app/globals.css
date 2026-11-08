@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f4efe4;
+  --color-paper-2: #e9e1d0;
+  --color-card: #fffdf8;
+  --color-ink: #1b222b;
+  --color-ink-soft: #59626e;
+  --color-ink-faint: #8c939c;
+  --color-line: #d9d0bd;
+  --color-board: #0f151d;
+  --color-board-2: #19222e;
+  --color-board-3: #243042;
+  --color-amber: #ffc23d;
+  --color-amber-soft: #f5d58a;
+  --color-stamp: #c4452a;
+  --color-rail: #2e7a59;
+  --color-sky: #3867c8;
+  --color-ok: #2e7a59;
+  --color-info: #3867c8;
+  --color-warn: #b97c0c;
+  --color-err: #c4452a;
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Split-flap tile used in the departure-board header. */
+.flap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15em;
+  padding: 0.08em 0.12em;
+  margin-right: 0.08em;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, var(--color-board-3) 0 49%, #0b1017 49% 51%, var(--color-board-2) 51% 100%);
+  color: var(--color-amber);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  line-height: 1.1;
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.5);
+}
+
+/* Ticket cards: a stub separated by a perforated edge with punched notches. */
+.ticket {
+  --notch: 10px;
+  position: relative;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgb(27 34 43 / 0.04), 0 6px 18px -12px rgb(27 34 43 / 0.35);
+}
+
+.ticket-perf {
+  position: relative;
+  border-left: 2px dashed var(--color-line);
+}
+.ticket-perf::before,
+.ticket-perf::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--notch) * -1 - 1px);
+  width: calc(var(--notch) * 2);
+  height: calc(var(--notch) * 2);
+  border-radius: 999px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+}
+.ticket-perf::before {
+  top: calc(var(--notch) * -1 - 1px);
+  clip-path: inset(50% 0 0 0);
+}
+.ticket-perf::after {
+  bottom: calc(var(--notch) * -1 - 1px);
+  clip-path: inset(0 0 50% 0);
+}
+
+@media (max-width: 639px) {
+  .ticket-perf {
+    border-left: none;
+    border-top: 2px dashed var(--color-line);
+  }
+  .ticket-perf::before,
+  .ticket-perf::after {
+    display: none;
+  }
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-sky);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
