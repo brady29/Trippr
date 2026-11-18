@@ -17,10 +17,15 @@ RUN pnpm --filter @trippr/api build \
 FROM node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    SCHEMA_DIR=/app/db/schema \
+    SEED_DIR=/app/seed
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/package.json ./package.json
 COPY --from=build /repo/apps/api/dist ./dist
+# Used when DB_AUTO_MIGRATE / DB_AUTO_SEED are on.
+COPY db/schema ./db/schema
+COPY seed ./seed
 USER node
 EXPOSE 8080
 CMD ["node", "dist/server.js"]

@@ -1,9 +1,15 @@
 import { buildApp } from "./app";
+import { connectWithRetry, prepareDatabase } from "./bootstrap";
 import { loadConfig } from "./config";
-import { createGraphClient } from "./db";
 
 const config = loadConfig();
-const db = await createGraphClient(config);
+const startupLog = {
+  info: (obj: unknown, msg?: string) => console.log(JSON.stringify({ level: 30, msg, ...(obj as object) })),
+  warn: (obj: unknown, msg?: string) => console.warn(JSON.stringify({ level: 40, msg, ...(obj as object) })),
+};
+
+const db = await connectWithRetry(config, startupLog);
+await prepareDatabase(db, config, startupLog);
 const app = await buildApp({ config, db });
 
 const shutdown = async (signal: string) => {
