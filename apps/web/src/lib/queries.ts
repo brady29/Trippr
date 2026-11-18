@@ -7,6 +7,7 @@ import type {
   CompareResult,
   CreateActivityBody,
   LibraryActivity,
+  PatchActivityBody,
   PatchStopBody,
   PathResult,
   RouteView,
@@ -330,6 +331,32 @@ export function useCreateActivity() {
       void qc.invalidateQueries({ queryKey: ["library"] });
       void qc.invalidateQueries({ queryKey: ["trip-activities"] });
     },
+  });
+}
+
+/** Changes an activity everywhere it appears, so every view of it refetches. */
+function invalidateActivityViews(qc: QueryClient) {
+  void qc.invalidateQueries({ queryKey: ["library"] });
+  void qc.invalidateQueries({ queryKey: ["trip-activities"] });
+  void qc.invalidateQueries({ queryKey: ["route"] });
+}
+
+export function useUpdateActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: PatchActivityBody }) =>
+      api<LibraryActivity>(`/activities/${id}`, { method: "PATCH", body }),
+    onSuccess: () => invalidateActivityViews(qc),
+  });
+}
+
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/activities/${id}`, { method: "DELETE" }),
+    onSuccess: () => invalidateActivityViews(qc),
+    onError: (error) => toast(error instanceof Error ? error.message : "Couldn't delete that activity", "error"),
   });
 }
 

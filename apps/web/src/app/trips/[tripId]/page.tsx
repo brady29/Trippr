@@ -1,6 +1,6 @@
 "use client";
 
-import type { Invite, RouteSummary, RouteView, TripDetail } from "@trippr/contracts";
+import type { Invite, Member, Role, RouteSummary, RouteView, TripDetail } from "@trippr/contracts";
 import { hasRole } from "@trippr/contracts";
 import { shortDate } from "@trippr/rules";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ChecksBadge, ErrorNote, Input, Panel, Select, Spinner, Tag } from "@/components/ui";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { keys, useTrip } from "@/lib/queries";
 
 function RouteCard({
@@ -211,6 +212,89 @@ function InvitePanel({ tripId }: { tripId: string }) {
   );
 }
 
+/** Who is on the trip. Owners change roles and remove people; anyone can leave. */
+function MembersPanel({ trip }: { trip: TripDetail }) {
+  const qc = useQueryClient();
+  const router = useRouter();
+  const toast = useToast();
+  const { me } = useAuth();
+  const tripId = trip.trip.id;
+  const isOwner = trip.role === "owner";
+  const owners = trip.members.filter((m) => m.role === "owner").length;
+  const onError = (e: unknown) => toast(e instanceof Error ? e.message : "That didn't save", "error");
+
+  const setRole = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: Role }) =>
+      api<Member[]>(`/trips/${tripId}/members/${userId}`, { method: "PUT", body: { role } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
+    onError,
+  });
+  const remove = useMutation({
+    mutationFn: (userId: string) => api<Member[]>(`/trips/${tripId}/members/${userId}`, { method: "DELETE" }),
+    onSuccess: (_data, userId) => {
+      if (userId === me?.id) {
+        void qc.invalidateQueries({ queryKey: keys.trips });
+        router.push("/");
+        return;
+      }
+      void qc.invalidateQueries({ queryKey: keys.trip(tripId) });
+    },
+    onError,
+  });
+
+  return (
+    <Panel title="Travellers">
+      <ul className="space-y-2" data-testid="members">
+        {trip.members.map((m) => {
+          const self = m.id === me?.id;
+          const lastOwner = m.role === "owner" && owners === 1;
+          return (
+            <li key={m.id} className="flex items-center gap-2 text-sm">
+              <span className="min-w-0 flex-1 truncate">
+                {m.name}
+                {self ? <span className="text-ink-faint"> (you)</span> : null}
+              </span>
+              {isOwner && !self ? (
+                <Select
+                  aria-label={`Role for ${m.name}`}
+                  value={m.role}
+                  disabled={setRole.isPending}
+                  onChange={(e) => setRole.mutate({ userId: m.id, role: e.target.value as Role })}
+                  className="h-8 text-xs"
+                >
+                  <option value="viewer">viewer</option>
+                  <option value="editor">editor</option>
+                  <option value="owner">owner</option>
+                </Select>
+              ) : (
+                <Tag tone={m.role === "owner" ? "dark" : "plain"}>{m.role}</Tag>
+              )}
+              {(isOwner && !self) || (self && !lastOwner && !me?.isDemo) ? (
+                <button
+                  className="text-xs text-err hover:underline disabled:opacity-50"
+                  disabled={remove.isPending}
+                  aria-label={self ? "Leave this trip" : `Remove ${m.name}`}
+                  onClick={() => {
+                    const question = self
+                      ? `Leave ${trip.trip.name}? You'll need a new invite to come back.`
+                      : `Remove ${m.name} from ${trip.trip.name}?`;
+                    if (window.confirm(question)) remove.mutate(m.id);
+                  }}
+                >
+                  {self ? "Leave" : "Remove"}
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {isOwner && owners === 1 ? (
+        <p className="mt-3 text-xs text-ink-faint">To leave, first make someone else an owner.</p>
+      ) : null}
+    </Panel>
+  );
+}
+
 function TripHome({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId);
   const qc = useQueryClient();
@@ -278,16 +362,7 @@ function TripHome({ tripId }: { tripId: string }) {
         </section>
         <aside className="space-y-4">
           {t.role === "owner" ? <InvitePanel tripId={tripId} /> : null}
-          <Panel title="Travellers">
-            <ul className="space-y-2">
-              {t.members.map((m) => (
-                <li key={m.id} className="flex items-center justify-between text-sm">
-                  <span>{m.name}</span>
-                  <Tag tone={m.role === "owner" ? "dark" : "plain"}>{m.role}</Tag>
-                </li>
-              ))}
-            </ul>
-          </Panel>
+          <MembersPanel trip={t} />
         </aside>
       </main>
     </>

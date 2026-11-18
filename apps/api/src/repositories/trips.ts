@@ -56,6 +56,10 @@ export function tripsRepository(db: GraphClient) {
       await db.query(q("trips/set-member-role"), { tripId, userId, role, now: nowIso() });
     },
 
+    async removeMember(tripId: string, userId: string) {
+      await db.query(q("trips/remove-member"), { tripId, userId });
+    },
+
     async createInvite(tripId: string, userId: string, role: Role, token: string, expiresAt: string) {
       await db.query(q("invites/create"), { tripId, userId, role, token, expiresAt, now: nowIso() });
     },

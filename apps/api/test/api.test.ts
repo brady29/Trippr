@@ -128,6 +128,27 @@ describe("invites and roles", () => {
     expect(res.body.routes[0]!.checksLevel).toBe("warn");
   });
 
+  it("lets the owner change roles and remove members, members leave, and keeps one owner", async () => {
+    const extra = await signIn(h.app, "Short Stay Friend");
+    const invite = await owner.api.post(`/trips/${TRIP}/invites`, { role: "viewer" });
+    await extra.api.post(`/invites/${invite.body.token}/accept`);
+
+    const promoted = await owner.api.put(`/trips/${TRIP}/members/${extra.id}`, { role: "editor" });
+    expect(promoted.body.find((m: { id: string }) => m.id === extra.id).role).toBe("editor");
+    // Only the owner removes others.
+    expect((await editor.api.del(`/trips/${TRIP}/members/${extra.id}`)).status).toBe(403);
+    const removed = await owner.api.del(`/trips/${TRIP}/members/${extra.id}`);
+    expect(removed.body.map((m: { id: string }) => m.id)).not.toContain(extra.id);
+    expect((await extra.api.get(`/trips/${TRIP}`)).status).toBe(404);
+
+    // Anyone can leave; the last owner cannot.
+    await extra.api.post(`/invites/${invite.body.token}/accept`);
+    expect((await extra.api.del(`/trips/${TRIP}/members/${extra.id}`)).status).toBe(200);
+    const last = await owner.api.del(`/trips/${TRIP}/members/${owner.id}`);
+    expect(last.status).toBe(400);
+    expect(last.body.error.message).toMatch(/needs an owner/);
+  });
+
   it("stops viewers from editing", async () => {
     const res = await viewer.api.patch(`/routes/${MAIN}`, { name: "Hacked", version: 0 });
     expect(res.status).toBe(403);
@@ -400,6 +421,26 @@ describe("pathfinding (stretch)", () => {
   it("counts hops", async () => {
     const res = await viewer.api.get<PathResult>("/paths?from=CKG&to=HKG&by=hops");
     expect(res.body.legs).toHaveLength(2);
+  });
+});
+
+describe("deleting activities", () => {
+  it("removes an activity from every route, with its comments (editors only)", async () => {
+    const created = await editor.api.post<LibraryActivity>("/activities", { tripId: TRIP, cityCode: "SIA", title: "Temporary idea" });
+    const id = created.body.id;
+    const sia = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body.stops.find((s) => s.city.code === "SIA")!;
+    await editor.api.put(`/stops/${sia.id}/plans/${id}`);
+    await viewer.api.post(`/activities/${id}/comments`, { text: "Maybe" });
+
+    expect((await viewer.api.del(`/activities/${id}`)).status).toBe(403);
+    expect((await editor.api.del(`/activities/${id}`)).status).toBe(204);
+
+    const after = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body.stops.find((s) => s.id === sia.id)!;
+    expect(after.planned.map((p) => p.id)).not.toContain(id);
+    const library = (await editor.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body;
+    expect(library.map((a) => a.id)).not.toContain(id);
+    const orphanComments = await h.db.query("MATCH (c:Comment {text: 'Maybe'}) RETURN count(c) AS n");
+    expect(Number((orphanComments[0] as { n: number }).n)).toBe(0);
   });
 });
 
