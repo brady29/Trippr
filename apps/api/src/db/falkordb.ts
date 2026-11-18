@@ -35,7 +35,8 @@ export async function createFalkorClient(options: FalkorOptions): Promise<AdminG
     dialect: "falkordb",
     query,
     async ping() {
-      const rows = await query<{ ok: number }>("RETURN 1 AS ok", {}, { readOnly: true });
+      // Not read-only: GRAPH.RO_QUERY fails with "empty key" until the graph exists.
+      const rows = await query<{ ok: number }>("RETURN 1 AS ok");
       return rows[0]?.ok === 1;
     },
     async close() {
