@@ -5,6 +5,10 @@ const bool = z
   .optional()
   .transform((v) => v === "true" || v === "1");
 
+/** Empty strings (an unset CI variable) count as "not set". */
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().default(8080),
@@ -26,12 +30,23 @@ const envSchema = z.object({
   /** Enables POST /auth/dev-login. Never turn this on in production. */
   AUTH_DEV_LOGIN: bool,
   /** External identity provider (Clerk): JWKS URL and issuer used to verify session tokens. */
-  AUTH_JWKS_URL: z.string().url().optional(),
-  AUTH_ISSUER: z.string().optional(),
-  AUTH_AUDIENCE: z.string().optional(),
+  AUTH_JWKS_URL: optional(z.string().url()),
+  AUTH_ISSUER: optional(z.string()),
+  AUTH_AUDIENCE: optional(z.string()),
 
   /** Trip the read-only demo account can view; enables POST /auth/demo. */
-  DEMO_TRIP_ID: z.string().optional(),
+  DEMO_TRIP_ID: optional(z.string()),
+
+  /** Apply db/schema/<dialect>.cypher on startup (idempotent). */
+  DB_AUTO_MIGRATE: bool,
+  /** Run the idempotent seed on startup: reference data refreshed, routes only created once. */
+  DB_AUTO_SEED: bool,
+  /** Folder holding falkordb.cypher / neo4j.cypher; defaults to the repo's db/schema. */
+  SCHEMA_DIR: optional(z.string()),
+  /** Folder holding the seed JSON; defaults to the repo's seed/. */
+  SEED_DIR: optional(z.string()),
+  /** Fixed token for the one-time owner invite; random when unset. */
+  SEED_OWNER_INVITE: optional(z.string()),
 
   /** Comma-separated origins allowed by CORS. */
   WEB_ORIGIN: z.string().default("http://localhost:3000"),

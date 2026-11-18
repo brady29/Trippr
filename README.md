@@ -180,12 +180,20 @@ CI runs all of these on every pull request, plus lint, typecheck and a Docker bu
 
 ## Deploying
 
-`deploy.yml` builds the API image to Artifact Registry, deploys it to Cloud Run with secrets from Secret Manager and checks `/health`, then deploys the web app to Vercel. Each job is skipped until its variables and secrets exist (listed at the top of the workflow). `backup.yml` exports the graph to Cloud Storage every Monday.
+Production runs in `us-central1`:
+
+- **Database:** FalkorDB in Docker on a free-tier e2-micro VM (Container-Optimized OS, AOF persistence on the boot disk) with a static internal IP. Port 6379 is reachable only inside the VPC.
+- **API:** Cloud Run, reaching the VM through Direct VPC egress (`--network default --subnet default --vpc-egress private-ranges-only`). On startup it retries the database connection while the VM boots, then applies `db/schema` and runs the seed when `DB_AUTO_MIGRATE` and `DB_AUTO_SEED` are on. Both are idempotent: reference data is refreshed and routes are only created once. While the trip has no owner, the startup log prints a one-time "Claim ownership of the trip" link.
+- **Web:** Vercel's GitHub integration deploys `apps/web` on every push to main.
+- **CI identity:** GitHub Actions signs in to Google Cloud with workload identity federation, so no service-account key exists anywhere.
+
+`deploy.yml` builds the API image to Artifact Registry, deploys it to Cloud Run and checks `/health`. It is skipped until its repository variables exist (listed at the top of the workflow). Its `web` job is only for token-based Vercel deploys and stays skipped without `VERCEL_TOKEN`. `backup.yml` exports the graph to Cloud Storage every Monday.
 
 Production settings:
 
-- API: `APP_JWT_SECRET` (long random), `AUTH_JWKS_URL` and `AUTH_ISSUER` from Clerk, `DEMO_TRIP_ID=asia-2027` for the demo, `WEB_ORIGIN` and `PUBLIC_WEB_URL` set to the Vercel URL. `AUTH_DEV_LOGIN` must stay off; the API refuses to start with it on in production.
-- Web: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
+- **API secrets** (Secret Manager): `trippr-app-jwt-secret` (generated) and `trippr-falkordb-url` (`redis://<VM internal IP>:6379`).
+- **API settings** (repository variables): `AUTH_JWKS_URL` and `AUTH_ISSUER` from Clerk (public values), `DEMO_TRIP_ID=asia-2027`, and `WEB_ORIGIN` and `PUBLIC_WEB_URL` set to the Vercel URL. `AUTH_DEV_LOGIN` must stay off; the API refuses to start with it on in production.
+- **Web** (Vercel environment variables): `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. `CLERK_SECRET_KEY` is optional; without it Clerk runs client-side only and the Next.js middleware stays off.
 
 ## Decisions on the open questions
 
