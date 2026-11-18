@@ -47,7 +47,8 @@ describe("health and errors", () => {
     expect(res.body.error.code).toBe("bad_request");
   });
 
-  it("pings a brand-new, empty database (regression: read-only queries fail on a missing FalkorDB graph)", async () => {
+  // FalkorDB only: Neo4j has no per-graph keys, and dropAll() there would wipe the shared test database.
+  it.skipIf(process.env.DB_DIALECT === "neo4j")("pings a brand-new, empty database (regression: read-only queries fail on a missing FalkorDB graph)", async () => {
     const config = loadConfig({
       ...process.env,
       FALKORDB_GRAPH: `trippr_empty_${Date.now()}`,

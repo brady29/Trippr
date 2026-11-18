@@ -72,7 +72,11 @@ test("plan an activity from the city library", async ({ page }) => {
   const ckg = page.locator('[data-testid="stop-card"][data-city="CKG"]');
   await ckg.getByRole("button", { name: /^Activities \(\d+ in Chongqing\)$/ }).click();
   const drawer = page.getByRole("dialog", { name: "Activities in Chongqing" });
-  await drawer.getByRole("checkbox", { name: "Plan Chongqing hotpot for this stop" }).check();
+  // The checkbox is controlled by the optimistic update, which lands a tick after
+  // the click, so click and then wait for it rather than using check().
+  const hotpot = drawer.getByRole("checkbox", { name: "Plan Chongqing hotpot for this stop" });
+  await hotpot.click();
+  await expect(hotpot).toBeChecked();
   await page.keyboard.press("Escape");
   await expect(ckg).toContainText("Chongqing hotpot");
   await page.reload();

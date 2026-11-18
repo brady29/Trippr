@@ -27,7 +27,9 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  // No retries: the suite runs in serial against one database, so a retry would
+  // replay steps on data the first attempt already changed.
+  retries: 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   timeout: 45_000,
   expect: { timeout: 10_000 },
