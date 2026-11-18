@@ -1,5 +1,7 @@
 import type { CompareResult, LibraryActivity, PathResult, RouteView, StopLibrary, TripDetail } from "@trippr/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { loadConfig } from "../src/config";
+import { createGraphClient } from "../src/db";
 import { client, signIn, startHarness, type Harness } from "./harness";
 
 let h: Harness;
@@ -43,6 +45,21 @@ describe("health and errors", () => {
     const res = await owner.api.post("/trips", { name: "", startDate: "2027-02-30" });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("bad_request");
+  });
+
+  it("pings a brand-new, empty database (regression: read-only queries fail on a missing FalkorDB graph)", async () => {
+    const config = loadConfig({
+      ...process.env,
+      FALKORDB_GRAPH: `trippr_empty_${Date.now()}`,
+      APP_JWT_SECRET: "test-secret-test-secret-test-secret-123",
+    });
+    const fresh = await createGraphClient(config);
+    try {
+      expect(await fresh.ping()).toBe(true);
+    } finally {
+      await fresh.dropAll().catch(() => {});
+      await fresh.close();
+    }
   });
 
   it("rejects forged tokens", async () => {
