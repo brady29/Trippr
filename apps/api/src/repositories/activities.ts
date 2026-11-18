@@ -100,6 +100,10 @@ export function activitiesRepository(db: GraphClient) {
       if (input.tags) await db.query(q("activities/set-tags"), { activityId, tags: input.tags });
     },
 
+    async delete(activityId: string) {
+      await db.query(q("activities/delete"), { activityId });
+    },
+
     async vote(userId: string, activityId: string, value: -1 | 0 | 1) {
       if (value === 0) await db.query(q("activities/unvote"), { userId, activityId });
       else await db.query(q("activities/vote"), { userId, activityId, value, now: nowIso() });

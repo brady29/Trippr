@@ -63,6 +63,15 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
     return repos.activities.get(tripId, user.id, id);
   });
 
+  /** Delete an activity everywhere: unplans it from every route and drops its votes and comments. */
+  app.delete("/activities/:id", async (req, reply) => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    await guards.activity(user, id, "editor");
+    await repos.activities.delete(id);
+    reply.status(204);
+  });
+
   /** { value: 1 or -1 }; 0 clears your vote. Viewers can vote. */
   app.put("/activities/:id/vote", async (req) => {
     const user = ctx.user(req);

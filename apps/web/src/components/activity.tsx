@@ -3,7 +3,14 @@
 import type { Activity, CreateActivityBody } from "@trippr/contracts";
 import { isFixedDate, whenLabel, type When } from "@trippr/rules";
 import { useState, type ReactNode } from "react";
-import { useAddComment, useComments, useCreateActivity, useVote } from "@/lib/queries";
+import {
+  useAddComment,
+  useComments,
+  useCreateActivity,
+  useDeleteActivity,
+  useUpdateActivity,
+  useVote,
+} from "@/lib/queries";
 import { ChatIcon, StarIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
 
@@ -54,15 +61,34 @@ export function ActivityItem({
   canVote,
   leading,
   footer,
+  canEdit = false,
 }: {
   activity: Activity;
   canVote: boolean;
   leading?: ReactNode;
   footer?: ReactNode;
+  /** Editors can change or delete the activity everywhere it appears. */
+  canEdit?: boolean;
 }) {
   const vote = useVote();
+  const remove = useDeleteActivity();
   const [showComments, setShowComments] = useState(false);
+  const [editing, setEditing] = useState(false);
   const cast = (value: -1 | 1) => vote.mutate({ activityId: activity.id, value: activity.myVote === value ? 0 : value });
+  if (editing) {
+    return (
+      <li data-testid="activity-item">
+        <ActivityForm
+          mode="edit"
+          initial={activity}
+          tripId=""
+          cityCode={activity.cityCode}
+          cityName={activity.cityName}
+          onDone={() => setEditing(false)}
+        />
+      </li>
+    );
+  }
   return (
     <li className="rounded-xl border border-line bg-card p-3" data-testid="activity-item">
       <div className="flex items-start gap-3">
@@ -115,14 +141,35 @@ export function ActivityItem({
           </button>
         </div>
       </div>
-      <button
-        onClick={() => setShowComments((s) => !s)}
-        className="mt-2 inline-flex items-center gap-1 text-xs text-ink-soft hover:text-ink"
-        aria-expanded={showComments}
-      >
-        <ChatIcon className="h-3.5 w-3.5" />
-        {activity.commentCount} comment{activity.commentCount === 1 ? "" : "s"}
-      </button>
+      <div className="mt-2 flex items-center gap-3 text-xs">
+        <button
+          onClick={() => setShowComments((s) => !s)}
+          className="inline-flex items-center gap-1 text-ink-soft hover:text-ink"
+          aria-expanded={showComments}
+        >
+          <ChatIcon className="h-3.5 w-3.5" />
+          {activity.commentCount} comment{activity.commentCount === 1 ? "" : "s"}
+        </button>
+        {canEdit ? (
+          <>
+            <button onClick={() => setEditing(true)} className="ml-auto text-sky hover:underline" aria-label={`Edit ${activity.title}`}>
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm(`Delete "${activity.title}" from the library? It's removed from every route that planned it.`)) {
+                  remove.mutate(activity.id);
+                }
+              }}
+              disabled={remove.isPending}
+              className="text-err hover:underline disabled:opacity-50"
+              aria-label={`Delete ${activity.title}`}
+            >
+              Delete
+            </button>
+          </>
+        ) : null}
+      </div>
       {showComments ? <Comments activityId={activity.id} canComment={canVote} /> : null}
     </li>
   );
@@ -131,18 +178,44 @@ export function ActivityItem({
 type WhenKind = "none" | "on" | "range" | "weekdays";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+const whenKind = (when: When | null | undefined): WhenKind =>
+  !when ? "none" : "on" in when ? "on" : "from" in when ? "range" : "weekdays";
+
 /** Create an activity in a city; it then appears in every route that stops there. */
 export function NewActivityForm({ tripId, cityCode, cityName, onCreated }: { tripId: string; cityCode: string; cityName: string; onCreated?: () => void }) {
+  return <ActivityForm mode="create" tripId={tripId} cityCode={cityCode} cityName={cityName} onDone={onCreated} />;
+}
+
+/** Add an activity to a city's library, or edit one everywhere it appears. */
+export function ActivityForm({
+  mode,
+  initial,
+  tripId,
+  cityCode,
+  cityName,
+  onDone,
+}: {
+  mode: "create" | "edit";
+  initial?: Activity;
+  tripId: string;
+  cityCode: string;
+  cityName: string;
+  onDone?: () => void;
+}) {
   const create = useCreateActivity();
-  const [title, setTitle] = useState("");
-  const [tags, setTags] = useState("");
-  const [url, setUrl] = useState("");
-  const [cost, setCost] = useState("");
-  const [kind, setKind] = useState<WhenKind>("none");
-  const [on, setOn] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [days, setDays] = useState<number[]>([]);
+  const update = useUpdateActivity();
+  const pending = create.isPending || update.isPending;
+  const error = create.error ?? update.error;
+  const w = initial?.when ?? null;
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
+  const [url, setUrl] = useState(initial?.url ?? "");
+  const [cost, setCost] = useState(initial?.costCad != null ? String(initial.costCad) : "");
+  const [kind, setKind] = useState<WhenKind>(whenKind(w));
+  const [on, setOn] = useState(w && "on" in w ? w.on : "");
+  const [from, setFrom] = useState(w && "from" in w ? w.from : "");
+  const [to, setTo] = useState(w && "to" in w ? w.to : "");
+  const [days, setDays] = useState<number[]>(w && "weekdays" in w ? w.weekdays : []);
 
   const when = (): When | null => {
     if (kind === "on" && on) return { on };
@@ -151,23 +224,27 @@ export function NewActivityForm({ tripId, cityCode, cityName, onCreated }: { tri
     return null;
   };
 
+  const fields = () => ({
+    title: title.trim(),
+    tags: tags
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean),
+    when: when(),
+    url: url.trim() || null,
+    costCad: cost ? Number(cost) : null,
+  });
+
   return (
     <form
-      className="space-y-2.5 rounded-xl border border-dashed border-ink-faint/60 p-3"
+      className={`space-y-2.5 rounded-xl border p-3 ${mode === "edit" ? "border-ink-faint bg-card" : "border-dashed border-ink-faint/60"}`}
       onSubmit={(e) => {
         e.preventDefault();
-        const body: CreateActivityBody = {
-          tripId,
-          cityCode,
-          title: title.trim(),
-          tags: tags
-            .split(",")
-            .map((t) => t.trim().toLowerCase())
-            .filter(Boolean),
-          when: when(),
-          url: url.trim() || null,
-          costCad: cost ? Number(cost) : null,
-        };
+        if (mode === "edit" && initial) {
+          update.mutate({ id: initial.id, body: fields() }, { onSuccess: () => onDone?.() });
+          return;
+        }
+        const body: CreateActivityBody = { tripId, cityCode, ...fields() };
         create.mutate(body, {
           onSuccess: () => {
             setTitle("");
@@ -175,12 +252,14 @@ export function NewActivityForm({ tripId, cityCode, cityName, onCreated }: { tri
             setUrl("");
             setCost("");
             setKind("none");
-            onCreated?.();
+            onDone?.();
           },
         });
       }}
     >
-      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">Add an activity in {cityName}</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
+        {mode === "edit" ? `Edit activity in ${cityName}` : `Add an activity in ${cityName}`}
+      </div>
       <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What is it?" aria-label="Activity title" required />
       <div className="grid grid-cols-2 gap-2">
         <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags: food, tech" aria-label="Tags" />
@@ -218,10 +297,17 @@ export function NewActivityForm({ tripId, cityCode, cityName, onCreated }: { tri
           ))}
         </div>
       ) : null}
-      <Button type="submit" variant="primary" size="sm" disabled={create.isPending || !title.trim()}>
-        Add to {cityName}
-      </Button>
-      {create.error ? <ErrorNote error={create.error} /> : null}
+      <div className="flex gap-2">
+        <Button type="submit" variant="primary" size="sm" disabled={pending || !title.trim()}>
+          {mode === "edit" ? "Save changes" : `Add to ${cityName}`}
+        </Button>
+        {mode === "edit" ? (
+          <Button size="sm" variant="ghost" onClick={() => onDone?.()}>
+            Cancel
+          </Button>
+        ) : null}
+      </div>
+      {error ? <ErrorNote error={error} /> : null}
     </form>
   );
 }

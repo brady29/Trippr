@@ -75,6 +75,7 @@ function Library({ tripId }: { tripId: string }) {
                 key={a.id}
                 activity={a}
                 canVote={true}
+                canEdit={canEdit}
                 leading={
                   <span className="mt-0.5 w-11 shrink-0 rounded bg-board px-1 py-0.5 text-center font-mono text-[11px] font-semibold text-amber">
                     {a.cityCode}

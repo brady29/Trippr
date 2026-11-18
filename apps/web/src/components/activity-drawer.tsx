@@ -74,6 +74,7 @@ export function ActivityDrawer({
                 key={a.id}
                 activity={a}
                 canVote={canVote}
+                canEdit={canEdit}
                 leading={
                   <input
                     type="checkbox"

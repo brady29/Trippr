@@ -77,6 +77,25 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
     return repos.trips.members(id);
   });
 
+  /**
+   * The owner removes a member, or any member leaves (their own id).
+   * A trip always keeps at least one owner.
+   */
+  app.delete("/trips/:id/members/:userId", async (req) => {
+    const user = ctx.user(req);
+    const { id, userId } = ctx.parse(idParams.extend({ userId: z.string().min(1) }), req.params);
+    const leaving = userId === user.id;
+    await guards.trip(user, id, leaving ? "viewer" : "owner");
+    const members = await repos.trips.members(id);
+    const target = members.find((m) => m.id === userId);
+    if (!target) throw notFound("Member");
+    if (target.role === "owner" && members.filter((m) => m.role === "owner").length === 1) {
+      throw badRequest("A trip needs an owner. Make someone else an owner first.");
+    }
+    await repos.trips.removeMember(id, userId);
+    return leaving ? [] : repos.trips.members(id);
+  });
+
   // --- invites ---------------------------------------------------------------
 
   app.post("/trips/:id/invites", async (req, reply): Promise<Invite> => {
