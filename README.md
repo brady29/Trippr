@@ -8,7 +8,7 @@ Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 tra
 
 > **The modelling decision in one line:** activities belong to places, not plans. A route is an ordered list of stops; each stop points at a shared city; activities hang off the city. Add "Liziba station" to Chongqing once and every route through Chongqing can plan it.
 
-**Live demo:** not deployed yet. Once it is, the sign-in page offers a read-only demo account on the real trip.
+**Live demo:** https://trippr-chi.vercel.app. Choose "Look around the demo" for a read-only tour of the real trip.
 
 ## What it does
 
