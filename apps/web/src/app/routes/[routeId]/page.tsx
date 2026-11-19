@@ -24,6 +24,7 @@ import { ChecksPanel } from "@/components/checks-panel";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { StopCard } from "@/components/stop-card";
 import { StopLegs } from "@/components/stop-legs";
+import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
 import { Timeline } from "@/components/timeline";
 import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
@@ -43,6 +44,7 @@ function Editor({ view }: { view: RouteView }) {
   const library = useRouteLibrary(routeId);
   const toast = useToast();
   const [drawerStop, setDrawerStop] = useState<string | null>(null);
+  const [hotelStop, setHotelStop] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
@@ -58,6 +60,7 @@ function Editor({ view }: { view: RouteView }) {
 
   const china = view.checks.visa.find((v) => v.countryIso === "CN");
   const drawer = view.stops.find((s) => s.id === drawerStop);
+  const hotelDrawer = view.stops.find((s) => s.id === hotelStop);
 
   return (
     <>
@@ -142,6 +145,7 @@ function Editor({ view }: { view: RouteView }) {
                     }}
                   >
                     <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} />
+                    <StaySummary stop={stop} onOpen={() => setHotelStop(stop.id)} />
                   </StopCard>
                 ))}
               </ol>
@@ -168,6 +172,16 @@ function Editor({ view }: { view: RouteView }) {
           </div>
         </div>
       </main>
+      {hotelDrawer ? (
+        <HotelDrawer
+          routeId={routeId}
+          tripId={view.trip.id}
+          stop={hotelDrawer}
+          canEdit={canEdit}
+          canVote={true}
+          onClose={() => setHotelStop(null)}
+        />
+      ) : null}
       {drawer ? (
         <ActivityDrawer
           routeId={routeId}
