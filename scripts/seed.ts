@@ -5,7 +5,7 @@
  * data is refreshed, the trip and its routes are only created once.
  */
 import { createGraphClient, dbConfigFromEnv } from "@trippr/api/db";
-import { seedDatabase } from "@trippr/api/seed";
+import { migrateGraphExplorer, seedDatabase } from "@trippr/api/seed";
 import { resolve } from "node:path";
 
 const db = await createGraphClient(dbConfigFromEnv());
@@ -15,6 +15,11 @@ try {
     forceRoutes: process.argv.includes("--force-routes"),
     ownerInviteToken: process.env.SEED_OWNER_INVITE,
   });
+  const explorer = await migrateGraphExplorer(db, { seedDir: resolve(import.meta.dirname, "../seed") });
+  console.log(
+    `Graph explorer: ${explorer.hubs} hubs, ${explorer.hubLinks} hub links` +
+      (explorer.ran ? `, ${explorer.areas} areas, ${explorer.legsCreated} legs added.` : " (one-time steps already done)."),
+  );
   const { counts } = result;
   console.log(
     `Seeded ${counts.countries} countries, ${counts.cities} cities, ${counts.activities} activities, ${counts.links} links.`,

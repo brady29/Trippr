@@ -39,6 +39,20 @@ export function createGuards(repos: Repositories) {
     async activity(user: AuthUser, activityId: string, minimum: Role) {
       return check(await repos.access.activityRole(activityId, user.id), minimum, "Activity");
     },
+    async leg(user: AuthUser, legId: string, minimum: Role) {
+      return check(await repos.explorer.legRole(legId, user.id), minimum, "Leg") as {
+        tripId: string;
+        routeId: string;
+        stopId: string;
+        role: Role;
+      };
+    },
+    async area(user: AuthUser, areaId: string, minimum: Role) {
+      return check(await repos.explorer.areaRole(areaId, user.id), minimum, "Area");
+    },
+    async hotel(user: AuthUser, hotelId: string, minimum: Role) {
+      return check(await repos.explorer.hotelRole(hotelId, user.id), minimum, "Hotel");
+    },
   };
 }
 

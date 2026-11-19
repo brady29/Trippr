@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config } from "./config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "./db";
+import { migrateGraphExplorer } from "./db/explorer-migration";
 import { seedDatabase } from "./db/seed";
 
 type Logger = { info(obj: unknown, msg?: string): void; warn(obj: unknown, msg?: string): void };
@@ -53,5 +54,10 @@ export async function prepareDatabase(db: AdminGraphClient, config: Config, log:
       const url = `${config.PUBLIC_WEB_URL.replace(/\/$/, "")}/invite/${result.ownerInvite.token}`;
       log.info({ url, expiresAt: result.ownerInvite.expiresAt }, `Claim ownership of the trip: ${url}`);
     }
+  }
+  if (config.DB_AUTO_MIGRATE) {
+    // After the seed, so a brand-new database gets legs for its seeded routes.
+    const result = await migrateGraphExplorer(db, { seedDir: config.SEED_DIR ?? repoPath("seed") });
+    log.info(result, "graph explorer migration");
   }
 }

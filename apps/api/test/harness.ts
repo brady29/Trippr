@@ -5,14 +5,17 @@ import type { FastifyInstance, InjectOptions } from "fastify";
 import { buildApp } from "../src/app";
 import { loadConfig } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
+import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
 import { seedDatabase, type SeedResult } from "../src/db/seed";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
+export const SEED_DIR = resolve(ROOT, "seed");
 
 export interface Harness {
   app: FastifyInstance;
   db: AdminGraphClient;
   seed: SeedResult;
+  explorer: ExplorerMigrationResult;
   ownerInvite: string;
   close(): Promise<void>;
 }
@@ -38,11 +41,13 @@ export async function startHarness(): Promise<Harness> {
   await applySchema(db, readFileSync(resolve(ROOT, `db/schema/${db.dialect}.cypher`), "utf8"));
   const ownerInvite = `owner-${randomBytes(8).toString("hex")}`;
   const seed = await seedDatabase(db, { seedDir: resolve(ROOT, "seed"), ownerInviteToken: ownerInvite });
+  const explorer = await migrateGraphExplorer(db, { seedDir: SEED_DIR });
   const app = await buildApp({ config, db, logger: false });
   return {
     app,
     db,
     seed,
+    explorer,
     ownerInvite,
     async close() {
       await app.close();

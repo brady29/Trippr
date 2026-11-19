@@ -13,3 +13,11 @@ CREATE CONSTRAINT invite_token IF NOT EXISTS FOR (n:Invite) REQUIRE n.token IS U
 CREATE CONSTRAINT comment_id IF NOT EXISTS FOR (n:Comment) REQUIRE n.id IS UNIQUE;
 CREATE INDEX city_name IF NOT EXISTS FOR (n:City) ON (n.name);
 CREATE INDEX activity_title IF NOT EXISTS FOR (n:Activity) ON (n.title);
+
+// Trip Graph Explorer: stations and airports share the Hub label (kind = station | airport).
+CREATE CONSTRAINT hub_id IF NOT EXISTS FOR (n:Hub) REQUIRE n.hubId IS UNIQUE;
+CREATE CONSTRAINT area_id IF NOT EXISTS FOR (n:Area) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT hotel_id IF NOT EXISTS FOR (n:Hotel) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT leg_id IF NOT EXISTS FOR (n:Leg) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT migration_id IF NOT EXISTS FOR (n:Migration) REQUIRE n.id IS UNIQUE;
+CREATE INDEX area_name IF NOT EXISTS FOR (n:Area) ON (n.name);

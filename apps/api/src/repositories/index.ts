@@ -1,6 +1,8 @@
 import type { GraphClient } from "../db/graph";
 import { activitiesRepository } from "./activities";
 import { citiesRepository } from "./cities";
+import { explorerRepository } from "./explorer";
+import { graphRepository } from "./graph";
 import { routesRepository } from "./routes";
 import { tripsRepository } from "./trips";
 import { accessRepository, usersRepository } from "./users";
@@ -14,8 +16,10 @@ export function createRepositories(db: GraphClient) {
     routes: routesRepository(db),
     activities: activitiesRepository(db),
     cities: citiesRepository(db),
+    explorer: explorerRepository(db),
+    graph: graphRepository(db),
   };
 }
 
 export type Repositories = ReturnType<typeof createRepositories>;
-export type { StoredRoute, StoredStop } from "./routes";
+export type { StoredLeg, StoredRoute, StoredStay, StoredStop } from "./routes";
