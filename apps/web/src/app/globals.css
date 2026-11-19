@@ -23,6 +23,40 @@
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Trip Graph Explorer: activity tags (Okabe–Ito), same on paper and globe. */
+  --color-tag-sport: #d55e00;
+  --color-tag-tech: #0072b2;
+  --color-tag-nature: #009e73;
+  --color-tag-culture: #cc79a7;
+  --color-tag-food: #e69f00;
+  --color-tag-other: #8c939c;
+}
+
+/* Trip Graph Explorer node colours (paper / globe), mirrored in src/lib/graph-palette.ts. */
+:root {
+  --node-city: #1b222b;
+  --node-city-globe: #f4efe4;
+  --node-route: #ffc23d;
+  --node-route-globe: #ffc23d;
+  --node-stop: #59626e;
+  --node-stop-globe: #c9ced6;
+  --node-area: #9c7a00;
+  --node-area-globe: #f0e442;
+  --node-hotel: #2b6cb0;
+  --node-hotel-globe: #56b4e9;
+  --node-station: #2e7a59;
+  --node-station-globe: #4cc38a;
+  --node-airport: #3867c8;
+  --node-airport-globe: #7aa2f7;
+  --node-fixed-date: #c4452a;
+  --node-fixed-date-globe: #ff7a59;
+  --tag-sport: #d55e00;
+  --tag-tech: #0072b2;
+  --tag-nature: #009e73;
+  --tag-culture: #cc79a7;
+  --tag-food: #e69f00;
+  --tag-other: #8c939c;
 }
 
 html {

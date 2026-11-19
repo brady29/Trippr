@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -18,6 +19,8 @@
     "@tanstack/react-query": "5.90.2",
     "@trippr/contracts": "workspace:^",
     "@trippr/rules": "workspace:^",
+    "cytoscape": "3.34.4",
+    "cytoscape-fcose": "2.2.0",
     "maplibre-gl": "5.9.0",
     "next": "15.5.29",
     "react": "19.2.9",
