@@ -11,6 +11,6 @@ OPTIONAL MATCH (a)-[:TAGGED]->(tg:Tag)
 WITH s, c, a, planned, votes, myVote, collect(tg.name) AS tags
 OPTIONAL MATCH (cm:Comment)-[:ON]->(a)
 RETURN s.id AS stopId, c.code AS cityCode, c.name AS cityName,
-       a {.id, .title, .when, .url, .costCad} AS activity,
+       a {.id, .title, .when, .url, .costCad, .mapsQuery} AS activity,
        planned, votes, myVote, tags, count(cm) AS commentCount
 ORDER BY stopId, votes DESC

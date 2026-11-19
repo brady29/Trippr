@@ -5,6 +5,7 @@ import { dayDate } from "@trippr/rules";
 import { useEffect, useRef, useState } from "react";
 import { useAreas, useCreateArea, useCreateHotel, useDeleteHotel, useHotels, useRouteWrite, useVoteOn } from "@/lib/explorer";
 import { ThumbDownIcon, ThumbUpIcon, XIcon } from "./icons";
+import { MapsLink } from "./maps-link";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
 
 const STATUS_LABEL: Record<StayStatus, string> = { shortlist: "Shortlisted", chosen: "Chosen", booked: "Booked" };
@@ -193,7 +194,10 @@ export function HotelDrawer({
               {areas.data?.map((a) => (
                 <li key={a.id} className="flex items-start gap-3 rounded-xl border border-line bg-card p-3">
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">{a.name}</div>
+                    <div className="flex items-center gap-2 font-medium">
+                      {a.name}
+                      <MapsLink name={a.name} near={a.cityName} lat={a.lat} lon={a.lon} className="text-xs font-normal" />
+                    </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {a.vibes.map((v) => (
                         <Tag key={v}>{v}</Tag>
@@ -230,6 +234,7 @@ export function HotelDrawer({
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft">
                           <span>{h.areaName}</span>
+                          <MapsLink name={h.name} near={`${h.areaName}, ${h.cityName}`} lat={h.lat} lon={h.lon} />
                           {h.priceCadPerNight != null ? (
                             <span className="font-mono">
                               ${h.priceCadPerNight}/{h.priceBasis === "room" ? "room" : "person"}

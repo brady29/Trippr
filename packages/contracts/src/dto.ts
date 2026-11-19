@@ -116,6 +116,8 @@ export interface ActivityRef {
 }
 
 export interface Activity extends ActivityRef {
+  /** Text to search on Google Maps for this place, when it differs from the title. */
+  mapsQuery?: string | null;
   url?: string | null;
   tags: string[];
   cityCode: string;

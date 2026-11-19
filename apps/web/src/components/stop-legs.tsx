@@ -13,6 +13,7 @@ import {
   useRouteWrite,
 } from "@/lib/explorer";
 import { ModeIcon, PlusIcon, XIcon } from "./icons";
+import { MapsLink } from "./maps-link";
 import { Button, Input, Label, Select } from "./ui";
 
 const MODE_LABEL: Record<LegMode, string> = {
@@ -308,8 +309,11 @@ export function StopLegs({
           ) : (
             <li key={leg.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-paper px-2.5 py-1.5 text-xs">
               <ModeIcon mode={leg.mode === "maglev" ? "train" : leg.mode} className={leg.mode === "flight" ? "text-sky" : "text-rail"} />
-              <span className="font-mono font-semibold" title={`${leg.from.name} → ${leg.to.name}`}>
-                {hubCode(leg.from)} → {hubCode(leg.to)}
+              <span className="inline-flex items-center gap-1 font-mono font-semibold" title={`${leg.from.name} → ${leg.to.name}`}>
+                {hubCode(leg.from)}
+                <MapsLink name={leg.from.name} near={leg.from.cityName} lat={leg.from.lat} lon={leg.from.lon} label="" />
+                → {hubCode(leg.to)}
+                <MapsLink name={leg.to.name} near={leg.to.cityName} lat={leg.to.lat} lon={leg.to.lon} label="" />
               </span>
               {leg.operator || leg.number ? (
                 <span className="text-ink-soft">{[leg.operator, leg.number].filter(Boolean).join(" ")}</span>

@@ -7,6 +7,7 @@ import { ARRIVE_MODES, dayDate, isFixedDate, whenLabel, type ArriveMode } from "
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
+import { MapsLink } from "./maps-link";
 import { DownIcon, GripIcon, MinusIcon, ModeIcon, PlusIcon, StarIcon, UpIcon, XIcon } from "./icons";
 
 export const MODE_LABEL: Record<ArriveMode, string> = {
@@ -179,7 +180,10 @@ export function StopCard({
           <div className="font-mono text-3xl font-semibold leading-none tracking-tight" aria-hidden>
             {stop.city.code}
           </div>
-          <div className="mt-1 truncate text-sm font-medium">{stop.city.name}</div>
+          <div className="mt-1 flex items-center gap-1.5 text-sm font-medium">
+            <span className="truncate">{stop.city.name}</span>
+            <MapsLink name={stop.city.name} near={stop.country.name} lat={stop.city.lat} lon={stop.city.lon} label="" />
+          </div>
           <div className="flex items-center gap-1.5 text-xs text-ink-soft">
             <span className="inline-block h-2 w-2 rounded-full" style={{ background: stop.country.color ?? "#59626e" }} />
             {stop.country.name}

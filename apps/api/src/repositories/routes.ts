@@ -227,7 +227,7 @@ export function routesRepository(db: GraphClient) {
         stopId: string;
         cityCode: string;
         cityName: string;
-        activity: { id: string; title: string; when: unknown; url: string | null; costCad: unknown };
+        activity: { id: string; title: string; when: unknown; url: string | null; costCad: unknown; mapsQuery?: string | null };
         planned: boolean;
         votes: number;
         myVote: number;
@@ -242,6 +242,7 @@ export function routesRepository(db: GraphClient) {
           title: r.activity.title,
           when: parseJson<When>(r.activity.when),
           url: r.activity.url ?? null,
+          mapsQuery: r.activity.mapsQuery ?? null,
           costCad: optNum(r.activity.costCad),
           tags: [...(r.tags ?? [])].sort(),
           cityCode: r.cityCode,

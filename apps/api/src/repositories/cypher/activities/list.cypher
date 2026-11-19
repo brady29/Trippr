@@ -12,6 +12,6 @@ OPTIONAL MATCH (cm:Comment)-[:ON]->(a)
 WITH t, a, c, votes, myVote, tags, count(cm) AS commentCount
 OPTIONAL MATCH (t)-[:HAS_ROUTE]->(r:Route)-[:HAS_STOP]->(s:Stop)-[:PLANS]->(a)
 WITH a, c, votes, myVote, tags, commentCount, collect({routeId: r.id, routeName: r.name, stopId: s.id}) AS plannedIn
-RETURN a {.id, .title, .when, .url, .costCad} AS activity, c.code AS cityCode, c.name AS cityName,
+RETURN a {.id, .title, .when, .url, .costCad, .mapsQuery} AS activity, c.code AS cityCode, c.name AS cityName,
        votes, myVote, tags, commentCount, plannedIn
 ORDER BY votes DESC, a.title
