@@ -114,6 +114,7 @@ export function useRouteWrite(routeId: string) {
       qc.setQueryData(keys.route(routeId), view);
       void qc.invalidateQueries({ queryKey: keys.trip(view.route.tripId) });
       void qc.invalidateQueries({ queryKey: ["graph"] });
+      void qc.invalidateQueries({ queryKey: ["bookings"] });
       if (w.kind === "setStay" || w.kind === "removeStay") void qc.invalidateQueries({ queryKey: ["hotels"] });
     },
     onError: (error) => {
