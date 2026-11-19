@@ -24,6 +24,7 @@ import { ChecksPanel } from "@/components/checks-panel";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { StopCard } from "@/components/stop-card";
 import { StopLegs } from "@/components/stop-legs";
+import { TravelOptions } from "@/components/travel-options";
 import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
 import { Timeline } from "@/components/timeline";
 import { useToast } from "@/components/toast";
@@ -148,6 +149,23 @@ function Editor({ view }: { view: RouteView }) {
                     }}
                   >
                     <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} />
+                    <TravelOptions
+                      stop={stop}
+                      prev={view.stops[i - 1]}
+                      travellers={view.trip.travellers ?? 1}
+                      canEdit={canEdit}
+                      onUse={(o) =>
+                        edit.mutate({
+                          kind: "patchStop",
+                          stopId: stop.id,
+                          body: {
+                            arriveMode: o.arriveMode,
+                            arriveCostCad: o.costPerPersonCad,
+                            ...(stop.arriveNote ? {} : { arriveNote: o.mode === "car" ? "Rental car" : o.mode === "bus" ? "Bus" : o.label }),
+                          },
+                        })
+                      }
+                    />
                     <StaySummary stop={stop} onOpen={() => setHotelStop(stop.id)} />
                   </StopCard>
                 ))}

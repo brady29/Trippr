@@ -304,3 +304,22 @@ export type StayBody = z.input<typeof stayBody>;
 export type GraphQuery = z.input<typeof graphQuery>;
 // Re-exported for convenience in date-only fields used alongside legs.
 export { isoDate };
+
+// --- travel options -------------------------------------------------------
+
+export const travelOptionsQuery = z.object({
+  from: cityCode,
+  to: cityCode,
+  travellers: z.coerce.number().int().min(1).max(20).default(1),
+  priority: z.enum(["balanced", "fastest", "cheapest"]).default("balanced"),
+});
+export type TravelOptionsQuery = z.input<typeof travelOptionsQuery>;
+
+export interface TravelOptionsResult {
+  from: { code: string; name: string };
+  to: { code: string; name: string };
+  distanceKm: number;
+  priority: "balanced" | "fastest" | "cheapest";
+  travellers: number;
+  options: import("@trippr/rules").TravelOption[];
+}
