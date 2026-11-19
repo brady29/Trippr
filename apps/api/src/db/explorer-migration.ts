@@ -174,6 +174,9 @@ export interface ExplorerMigrationResult {
  * marker, so a leg someone deleted on purpose never comes back. `force`
  * re-runs the one-time steps (tests use it to prove they are idempotent).
  */
+/** Second batch of suggested areas, added with the 50+ city sample-data expansion. */
+const AREAS_EXPANSION_ID = "graph-explorer-areas-2026-11-19";
+
 export async function migrateGraphExplorer(
   db: GraphClient,
   options: { seedDir: string; force?: boolean; now?: string },
@@ -205,6 +208,21 @@ export async function migrateGraphExplorer(
     serves: hubs.hubs.flatMap((h) => h.serves.map((cityCode) => ({ hubId: h.hubId, cityCode }))),
   });
   const hubLinks = planHubLinks(cityLinks, hubs);
+  const seedAreas = () =>
+    db.query(q("areas-seed"), {
+      tripId: trip.id,
+      now,
+      areas: areas.areas.map((a) => ({
+        id: a.id,
+        city: a.city,
+        name: a.name,
+        vibes: a.vibes,
+        lat: a.lat,
+        lon: a.lon,
+        note: a.note ?? null,
+        source: areas.source,
+      })),
+    });
   const createLegs = (rows: PlannedLegRow[]) =>
     db.query(q("legs-create"), {
       legs: rows.map((l) => ({
@@ -230,24 +248,18 @@ export async function migrateGraphExplorer(
   if (flaggedLegs.length) await createLegs(flaggedLegs);
   if (flagged.length) await db.query(q("flagged-routes-clear"));
 
+  // Once more after the sample-data expansion: areas the trip doesn't have yet (existing ones are left as they are).
+  const [areasMarker] = await db.query<{ id: string }>(q("marker-get"), { id: AREAS_EXPANSION_ID });
+  if (!areasMarker) {
+    await seedAreas();
+    await db.query(q("marker-set"), { id: AREAS_EXPANSION_ID, now });
+  }
+
   const base = { ran: false, hubs: hubs.hubs.length, hubLinks: hubLinks.length, areas: 0, legsCreated: flaggedLegs.length };
   const [marker] = await db.query<{ id: string }>(q("marker-get"), { id: EXPLORER_MIGRATION_ID });
   if (marker && !options.force) return base;
 
-  await db.query(q("areas-seed"), {
-    tripId: trip.id,
-    now,
-    areas: areas.areas.map((a) => ({
-      id: a.id,
-      city: a.city,
-      name: a.name,
-      vibes: a.vibes,
-      lat: a.lat,
-      lon: a.lon,
-      note: a.note ?? null,
-      source: areas.source,
-    })),
-  });
+  await seedAreas();
 
   const stops = await db.query<{
     routeId: string;
