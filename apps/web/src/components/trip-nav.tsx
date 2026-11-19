@@ -67,6 +67,9 @@ export function TripNav({ tripId, tripName }: { tripId: string; tripName?: strin
       <NavLink href={`${base}/compare`} active={path.startsWith(`${base}/compare`)}>
         Compare
       </NavLink>
+      <NavLink href={`${base}/graph`} active={path.startsWith(`${base}/graph`)}>
+        Graph
+      </NavLink>
       <NavLink href={`${base}/paths`} active={path.startsWith(`${base}/paths`)}>
         Paths
       </NavLink>

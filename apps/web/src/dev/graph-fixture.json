@@ -1,0 +1,3719 @@
+{
+ "nodes": [
+  {
+   "id": "trip:asia-2027",
+   "type": "trip",
+   "label": "Asia 2027",
+   "attrs": {
+    "startDate": "2027-05-10",
+    "homeCity": "Toronto"
+   },
+   "style": {}
+  },
+  {
+   "id": "route:route-main",
+   "type": "route",
+   "label": "Main",
+   "attrs": {
+    "tags": [
+     "current"
+    ],
+    "isCurrent": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "country:JP",
+   "type": "country",
+   "label": "Japan",
+   "attrs": {
+    "iso": "JP"
+   },
+   "style": {
+    "color": "#d94f4f"
+   }
+  },
+  {
+   "id": "city:TYO",
+   "type": "city",
+   "label": "Tokyo",
+   "lat": 35.6812,
+   "lon": 139.7671,
+   "cityCode": "TYO",
+   "attrs": {
+    "code": "TYO",
+    "countryIso": "JP"
+   },
+   "style": {
+    "color": "#d94f4f",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-01",
+   "type": "stop",
+   "label": "1. Tokyo",
+   "lat": 35.6812,
+   "lon": 139.7671,
+   "cityCode": "TYO",
+   "attrs": {
+    "order": 0,
+    "nights": 4,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "country:CN",
+   "type": "country",
+   "label": "China",
+   "attrs": {
+    "iso": "CN"
+   },
+   "style": {
+    "color": "#e0a030"
+   }
+  },
+  {
+   "id": "city:BJS",
+   "type": "city",
+   "label": "Beijing",
+   "lat": 39.9042,
+   "lon": 116.4074,
+   "cityCode": "BJS",
+   "attrs": {
+    "code": "BJS",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-02",
+   "type": "stop",
+   "label": "2. Beijing",
+   "lat": 39.9042,
+   "lon": 116.4074,
+   "cityCode": "BJS",
+   "attrs": {
+    "order": 1,
+    "nights": 5,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:HND",
+   "type": "airport",
+   "label": "Tokyo Haneda",
+   "lat": 35.55,
+   "lon": 139.78,
+   "cityCode": "TYO",
+   "attrs": {
+    "code": "HND",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:PEK",
+   "type": "airport",
+   "label": "Beijing Capital",
+   "lat": 40.08,
+   "lon": 116.58,
+   "cityCode": "BJS",
+   "attrs": {
+    "code": "PEK",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-02",
+   "type": "leg",
+   "label": "HND → PEK",
+   "attrs": {
+    "mode": "flight",
+    "seq": 0,
+    "status": "booked",
+    "stopId": "stop:stop-main-02",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "apt:HND",
+    "to": "apt:PEK"
+   },
+   "style": {
+    "mode": "flight",
+    "status": "booked",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:SIA",
+   "type": "city",
+   "label": "Xi'an",
+   "lat": 34.3416,
+   "lon": 108.9398,
+   "cityCode": "SIA",
+   "attrs": {
+    "code": "SIA",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-03",
+   "type": "stop",
+   "label": "3. Xi'an",
+   "lat": 34.3416,
+   "lon": 108.9398,
+   "cityCode": "SIA",
+   "attrs": {
+    "order": 2,
+    "nights": 3,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-beijing-west",
+   "type": "station",
+   "label": "Beijing West",
+   "lat": 39.89,
+   "lon": 116.32,
+   "cityCode": "BJS",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-xian-north",
+   "type": "station",
+   "label": "Xi'an North",
+   "lat": 34.38,
+   "lon": 108.94,
+   "cityCode": "SIA",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-03",
+   "type": "leg",
+   "label": "Beijing → Xi'an",
+   "attrs": {
+    "mode": "hsr",
+    "seq": 0,
+    "status": "held",
+    "stopId": "stop:stop-main-03",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "stn:stn-beijing-west",
+    "to": "stn:stn-xian-north"
+   },
+   "style": {
+    "mode": "hsr",
+    "status": "held",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:CKG",
+   "type": "city",
+   "label": "Chongqing",
+   "lat": 29.563,
+   "lon": 106.5516,
+   "cityCode": "CKG",
+   "attrs": {
+    "code": "CKG",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-04",
+   "type": "stop",
+   "label": "4. Chongqing",
+   "lat": 29.563,
+   "lon": 106.5516,
+   "cityCode": "CKG",
+   "attrs": {
+    "order": 3,
+    "nights": 4,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-chongqing-west",
+   "type": "station",
+   "label": "Chongqing West",
+   "lat": 29.5,
+   "lon": 106.43,
+   "cityCode": "CKG",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-04",
+   "type": "leg",
+   "label": "Xi'an → Chongqing",
+   "attrs": {
+    "mode": "hsr",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-04",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "stn:stn-xian-north",
+    "to": "stn:stn-chongqing-west"
+   },
+   "style": {
+    "mode": "hsr",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:CAN",
+   "type": "city",
+   "label": "Guangzhou",
+   "lat": 23.1291,
+   "lon": 113.2644,
+   "cityCode": "CAN",
+   "attrs": {
+    "code": "CAN",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-05",
+   "type": "stop",
+   "label": "5. Guangzhou",
+   "lat": 23.1291,
+   "lon": 113.2644,
+   "cityCode": "CAN",
+   "attrs": {
+    "order": 4,
+    "nights": 3,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-guangzhou-south",
+   "type": "station",
+   "label": "Guangzhou South",
+   "lat": 22.99,
+   "lon": 113.27,
+   "cityCode": "CAN",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-05",
+   "type": "leg",
+   "label": "Chongqing → Guangzhou",
+   "attrs": {
+    "mode": "hsr",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-05",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "stn:stn-chongqing-west",
+    "to": "stn:stn-guangzhou-south"
+   },
+   "style": {
+    "mode": "hsr",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:SZX",
+   "type": "city",
+   "label": "Shenzhen",
+   "lat": 22.5431,
+   "lon": 114.0579,
+   "cityCode": "SZX",
+   "attrs": {
+    "code": "SZX",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-06",
+   "type": "stop",
+   "label": "6. Shenzhen",
+   "lat": 22.5431,
+   "lon": 114.0579,
+   "cityCode": "SZX",
+   "attrs": {
+    "order": 5,
+    "nights": 4,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-futian",
+   "type": "station",
+   "label": "Futian",
+   "lat": 22.54,
+   "lon": 114.06,
+   "cityCode": "SZX",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-06",
+   "type": "leg",
+   "label": "Guangzhou → Futian",
+   "attrs": {
+    "mode": "hsr",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-06",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "stn:stn-guangzhou-south",
+    "to": "stn:stn-futian"
+   },
+   "style": {
+    "mode": "hsr",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "country:HK",
+   "type": "country",
+   "label": "Hong Kong",
+   "attrs": {
+    "iso": "HK"
+   },
+   "style": {
+    "color": "#8e5cc7"
+   }
+  },
+  {
+   "id": "city:HKG",
+   "type": "city",
+   "label": "Hong Kong",
+   "lat": 22.3193,
+   "lon": 114.1694,
+   "cityCode": "HKG",
+   "attrs": {
+    "code": "HKG",
+    "countryIso": "HK"
+   },
+   "style": {
+    "color": "#8e5cc7",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-07",
+   "type": "stop",
+   "label": "7. Hong Kong",
+   "lat": 22.3193,
+   "lon": 114.1694,
+   "cityCode": "HKG",
+   "attrs": {
+    "order": 6,
+    "nights": 3,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "train"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "stn:stn-west-kowloon",
+   "type": "station",
+   "label": "Hong Kong West Kowloon",
+   "lat": 22.3,
+   "lon": 114.17,
+   "cityCode": "HKG",
+   "attrs": {
+    "code": null,
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-07",
+   "type": "leg",
+   "label": "Futian → Hong",
+   "attrs": {
+    "mode": "train",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-07",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "stn:stn-futian",
+    "to": "stn:stn-west-kowloon"
+   },
+   "style": {
+    "mode": "train",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "country:VN",
+   "type": "country",
+   "label": "Vietnam",
+   "attrs": {
+    "iso": "VN"
+   },
+   "style": {
+    "color": "#3f9b5a"
+   }
+  },
+  {
+   "id": "city:HAN",
+   "type": "city",
+   "label": "Hanoi",
+   "lat": 21.0285,
+   "lon": 105.8542,
+   "cityCode": "HAN",
+   "attrs": {
+    "code": "HAN",
+    "countryIso": "VN"
+   },
+   "style": {
+    "color": "#3f9b5a",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-08",
+   "type": "stop",
+   "label": "8. Hanoi",
+   "lat": 21.0285,
+   "lon": 105.8542,
+   "cityCode": "HAN",
+   "attrs": {
+    "order": 7,
+    "nights": 4,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:HKG",
+   "type": "airport",
+   "label": "Hong Kong International",
+   "lat": 22.31,
+   "lon": 113.91,
+   "cityCode": "HKG",
+   "attrs": {
+    "code": "HKG",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:HAN",
+   "type": "airport",
+   "label": "Hanoi Noi Bai",
+   "lat": 21.22,
+   "lon": 105.81,
+   "cityCode": "HAN",
+   "attrs": {
+    "code": "HAN",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-08",
+   "type": "leg",
+   "label": "HKG → HAN",
+   "attrs": {
+    "mode": "flight",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-08",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "apt:HKG",
+    "to": "apt:HAN"
+   },
+   "style": {
+    "mode": "flight",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:SGN",
+   "type": "city",
+   "label": "Ho Chi Minh City",
+   "lat": 10.8231,
+   "lon": 106.6297,
+   "cityCode": "SGN",
+   "attrs": {
+    "code": "SGN",
+    "countryIso": "VN"
+   },
+   "style": {
+    "color": "#3f9b5a",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-09",
+   "type": "stop",
+   "label": "9. Ho Chi Minh City",
+   "lat": 10.8231,
+   "lon": 106.6297,
+   "cityCode": "SGN",
+   "attrs": {
+    "order": 8,
+    "nights": 3,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:SGN",
+   "type": "airport",
+   "label": "Ho Chi Minh City Tan Son Nhat",
+   "lat": 10.82,
+   "lon": 106.66,
+   "cityCode": "SGN",
+   "attrs": {
+    "code": "SGN",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-09",
+   "type": "leg",
+   "label": "HAN → SGN",
+   "attrs": {
+    "mode": "flight",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-09",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "apt:HAN",
+    "to": "apt:SGN"
+   },
+   "style": {
+    "mode": "flight",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "country:ID",
+   "type": "country",
+   "label": "Indonesia",
+   "attrs": {
+    "iso": "ID"
+   },
+   "style": {
+    "color": "#2f8f8a"
+   }
+  },
+  {
+   "id": "city:KOM",
+   "type": "city",
+   "label": "Komodo",
+   "lat": -8.55,
+   "lon": 119.45,
+   "cityCode": "KOM",
+   "attrs": {
+    "code": "KOM",
+    "countryIso": "ID"
+   },
+   "style": {
+    "color": "#2f8f8a",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-10",
+   "type": "stop",
+   "label": "10. Komodo",
+   "lat": -8.55,
+   "lon": 119.45,
+   "cityCode": "KOM",
+   "attrs": {
+    "order": 9,
+    "nights": 3,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:LBJ",
+   "type": "airport",
+   "label": "Komodo Airport, Labuan Bajo",
+   "lat": -8.49,
+   "lon": 119.89,
+   "cityCode": "KOM",
+   "attrs": {
+    "code": "LBJ",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-10",
+   "type": "leg",
+   "label": "SGN → LBJ",
+   "attrs": {
+    "mode": "flight",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-10",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "apt:SGN",
+    "to": "apt:LBJ"
+   },
+   "style": {
+    "mode": "flight",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "city:DPS",
+   "type": "city",
+   "label": "Bali",
+   "lat": -8.65,
+   "lon": 115.2167,
+   "cityCode": "DPS",
+   "attrs": {
+    "code": "DPS",
+    "countryIso": "ID"
+   },
+   "style": {
+    "color": "#2f8f8a",
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-main-11",
+   "type": "stop",
+   "label": "11. Bali",
+   "lat": -8.65,
+   "lon": 115.2167,
+   "cityCode": "DPS",
+   "attrs": {
+    "order": 10,
+    "nights": 4,
+    "routeId": "route-main",
+    "routeName": "Main",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "apt:DPS",
+   "type": "airport",
+   "label": "Bali Ngurah Rai",
+   "lat": -8.75,
+   "lon": 115.17,
+   "cityCode": "DPS",
+   "attrs": {
+    "code": "DPS",
+    "verify": true
+   },
+   "style": {
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "leg:lg-main-11",
+   "type": "leg",
+   "label": "LBJ → DPS",
+   "attrs": {
+    "mode": "flight",
+    "seq": 0,
+    "status": "idea",
+    "stopId": "stop:stop-main-11",
+    "routeId": "route-main",
+    "departAt": null,
+    "arriveAt": null,
+    "operator": null,
+    "number": null,
+    "priceCad": null,
+    "from": "apt:LBJ",
+    "to": "apt:DPS"
+   },
+   "style": {
+    "mode": "flight",
+    "status": "idea",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "route:route-with-shanghai",
+   "type": "route",
+   "label": "With Shanghai",
+   "attrs": {
+    "tags": [
+     "older",
+     "cost estimate"
+    ],
+    "isCurrent": false
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-01",
+   "type": "stop",
+   "label": "1. Tokyo",
+   "lat": 35.6812,
+   "lon": 139.7671,
+   "cityCode": "TYO",
+   "attrs": {
+    "order": 0,
+    "nights": 4,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-02",
+   "type": "stop",
+   "label": "2. Beijing",
+   "lat": 39.9042,
+   "lon": 116.4074,
+   "cityCode": "BJS",
+   "attrs": {
+    "order": 1,
+    "nights": 8,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-03",
+   "type": "stop",
+   "label": "3. Xi'an",
+   "lat": 34.3416,
+   "lon": 108.9398,
+   "cityCode": "SIA",
+   "attrs": {
+    "order": 2,
+    "nights": 4,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "city:SHA",
+   "type": "city",
+   "label": "Shanghai",
+   "lat": 31.2304,
+   "lon": 121.4737,
+   "cityCode": "SHA",
+   "attrs": {
+    "code": "SHA",
+    "countryIso": "CN"
+   },
+   "style": {
+    "color": "#e0a030",
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-04",
+   "type": "stop",
+   "label": "4. Shanghai",
+   "lat": 31.2304,
+   "lon": 121.4737,
+   "cityCode": "SHA",
+   "attrs": {
+    "order": 3,
+    "nights": 8,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "hsr"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-05",
+   "type": "stop",
+   "label": "5. Hanoi",
+   "lat": 21.0285,
+   "lon": 105.8542,
+   "cityCode": "HAN",
+   "attrs": {
+    "order": 4,
+    "nights": 4,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-06",
+   "type": "stop",
+   "label": "6. Ho Chi Minh City",
+   "lat": 10.8231,
+   "lon": 106.6297,
+   "cityCode": "SGN",
+   "attrs": {
+    "order": 5,
+    "nights": 2,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "city:LBJ",
+   "type": "city",
+   "label": "Labuan Bajo",
+   "lat": -8.4964,
+   "lon": 119.8877,
+   "cityCode": "LBJ",
+   "attrs": {
+    "code": "LBJ",
+    "countryIso": "ID"
+   },
+   "style": {
+    "color": "#2f8f8a",
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-07",
+   "type": "stop",
+   "label": "7. Labuan Bajo",
+   "lat": -8.4964,
+   "lon": 119.8877,
+   "cityCode": "LBJ",
+   "attrs": {
+    "order": 6,
+    "nights": 1,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-08",
+   "type": "stop",
+   "label": "8. Komodo",
+   "lat": -8.55,
+   "lon": 119.45,
+   "cityCode": "KOM",
+   "attrs": {
+    "order": 7,
+    "nights": 2,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "boat"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "stop:stop-with-shanghai-09",
+   "type": "stop",
+   "label": "9. Bali",
+   "lat": -8.65,
+   "lon": 115.2167,
+   "cityCode": "DPS",
+   "attrs": {
+    "order": 8,
+    "nights": 3,
+    "routeId": "route-with-shanghai",
+    "routeName": "With Shanghai",
+    "arriveMode": "flight"
+   },
+   "style": {
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-npb",
+   "type": "activity",
+   "label": "NPB: Yokohama DeNA BayStars vs Yomiuri Giants",
+   "cityCode": "TYO",
+   "attrs": {
+    "when": {
+     "on": "2027-05-13"
+    },
+    "costCad": 45,
+    "tags": [
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "sport"
+    ],
+    "planned": true,
+    "fixedDate": true,
+    "votes": 2,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-sumo",
+   "type": "activity",
+   "label": "Sumo May tournament at Ryogoku Kokugikan",
+   "cityCode": "TYO",
+   "attrs": {
+    "when": {
+     "from": "2027-05-09",
+     "to": "2027-05-23"
+    },
+    "costCad": 60,
+    "tags": [
+     "sport",
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "sport",
+     "culture"
+    ],
+    "planned": true,
+    "fixedDate": true,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-teamlab",
+   "type": "activity",
+   "label": "teamLab Planets",
+   "cityCode": "TYO",
+   "attrs": {
+    "when": null,
+    "costCad": 40,
+    "tags": [
+     "tech",
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech",
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-akihabara",
+   "type": "activity",
+   "label": "Akihabara electronics and arcades",
+   "cityCode": "TYO",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-tsukiji",
+   "type": "activity",
+   "label": "Tsukiji outer market breakfast",
+   "cityCode": "TYO",
+   "attrs": {
+    "when": null,
+    "costCad": 25,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-xiaomi-ev",
+   "type": "activity",
+   "label": "Xiaomi EV factory tour",
+   "cityCode": "BJS",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-robot-mall",
+   "type": "activity",
+   "label": "Robot Mall in Yizhuang",
+   "cityCode": "BJS",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-mutianyu",
+   "type": "activity",
+   "label": "Great Wall at Mutianyu",
+   "cityCode": "BJS",
+   "attrs": {
+    "when": null,
+    "costCad": 45,
+    "tags": [
+     "nature",
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature",
+     "culture"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-forbidden-city",
+   "type": "activity",
+   "label": "Forbidden City",
+   "cityCode": "BJS",
+   "attrs": {
+    "when": null,
+    "costCad": 15,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-peking-duck",
+   "type": "activity",
+   "label": "Peking duck dinner",
+   "cityCode": "BJS",
+   "attrs": {
+    "when": null,
+    "costCad": 50,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-terracotta",
+   "type": "activity",
+   "label": "Terracotta Army",
+   "cityCode": "SIA",
+   "attrs": {
+    "when": null,
+    "costCad": 30,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-muslim-quarter",
+   "type": "activity",
+   "label": "Muslim Quarter night food street",
+   "cityCode": "SIA",
+   "attrs": {
+    "when": null,
+    "costCad": 15,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-city-wall",
+   "type": "activity",
+   "label": "Cycle the Xi'an city wall",
+   "cityCode": "SIA",
+   "attrs": {
+    "when": null,
+    "costCad": 15,
+    "tags": [
+     "culture",
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "culture",
+     "sport"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-liziba",
+   "type": "activity",
+   "label": "Liziba station, the monorail through a building",
+   "cityCode": "CKG",
+   "attrs": {
+    "when": null,
+    "costCad": 1,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 3,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-wulong",
+   "type": "activity",
+   "label": "Wulong Karst and the Three Natural Bridges",
+   "cityCode": "CKG",
+   "attrs": {
+    "when": null,
+    "costCad": 60,
+    "tags": [
+     "nature"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-hongyadong",
+   "type": "activity",
+   "label": "Hongyadong lit up at night",
+   "cityCode": "CKG",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-hotpot",
+   "type": "activity",
+   "label": "Chongqing hotpot",
+   "cityCode": "CKG",
+   "attrs": {
+    "when": null,
+    "costCad": 25,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-cable-car",
+   "type": "activity",
+   "label": "Yangtze River cable car",
+   "cityCode": "CKG",
+   "attrs": {
+    "when": null,
+    "costCad": 5,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-ehang",
+   "type": "activity",
+   "label": "EHang air taxi flight experience",
+   "cityCode": "CAN",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-canton-tower",
+   "type": "activity",
+   "label": "Canton Tower",
+   "cityCode": "CAN",
+   "attrs": {
+    "when": null,
+    "costCad": 40,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-dim-sum",
+   "type": "activity",
+   "label": "Dim sum morning tea",
+   "cityCode": "CAN",
+   "attrs": {
+    "when": null,
+    "costCad": 20,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-dji",
+   "type": "activity",
+   "label": "DJI flagship store",
+   "cityCode": "SZX",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-sz-museum",
+   "type": "activity",
+   "label": "Shenzhen Science & Technology Museum",
+   "cityCode": "SZX",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-huaqiangbei",
+   "type": "activity",
+   "label": "Huaqiangbei electronics market",
+   "cityCode": "SZX",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-happy-valley",
+   "type": "activity",
+   "label": "Happy Valley races",
+   "cityCode": "HKG",
+   "attrs": {
+    "when": {
+     "weekdays": [
+      3
+     ]
+    },
+    "costCad": 2,
+    "tags": [
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "sport"
+    ],
+    "planned": true,
+    "fixedDate": true,
+    "votes": 0,
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "act:act-peak",
+   "type": "activity",
+   "label": "Victoria Peak tram",
+   "cityCode": "HKG",
+   "attrs": {
+    "when": null,
+    "costCad": 15,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-dragons-back",
+   "type": "activity",
+   "label": "Dragon's Back hike",
+   "cityCode": "HKG",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "nature",
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "nature",
+     "sport"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-halong",
+   "type": "activity",
+   "label": "Ha Long Bay overnight cruise",
+   "cityCode": "HAN",
+   "attrs": {
+    "when": null,
+    "costCad": 200,
+    "tags": [
+     "nature"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-hanoi-food",
+   "type": "activity",
+   "label": "Old Quarter street food tour",
+   "cityCode": "HAN",
+   "attrs": {
+    "when": null,
+    "costCad": 40,
+    "tags": [
+     "food"
+    ]
+   },
+   "style": {
+    "tag": "food",
+    "tags": [
+     "food"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-train-street",
+   "type": "activity",
+   "label": "Train Street",
+   "cityCode": "HAN",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-cu-chi",
+   "type": "activity",
+   "label": "Cu Chi tunnels",
+   "cityCode": "SGN",
+   "attrs": {
+    "when": null,
+    "costCad": 20,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-war-remnants",
+   "type": "activity",
+   "label": "War Remnants Museum",
+   "cityCode": "SGN",
+   "attrs": {
+    "when": null,
+    "costCad": 3,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-komodo",
+   "type": "activity",
+   "label": "Komodo dragon trek on Komodo or Rinca",
+   "cityCode": "KOM",
+   "attrs": {
+    "when": null,
+    "costCad": 150,
+    "tags": [
+     "nature"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-padar",
+   "type": "activity",
+   "label": "Padar Island sunrise hike",
+   "cityCode": "KOM",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "nature",
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "nature",
+     "sport"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-pink-beach",
+   "type": "activity",
+   "label": "Pink Beach snorkelling",
+   "cityCode": "KOM",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "nature"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-batur",
+   "type": "activity",
+   "label": "Mount Batur sunrise trek",
+   "cityCode": "DPS",
+   "attrs": {
+    "when": null,
+    "costCad": 60,
+    "tags": [
+     "nature",
+     "sport"
+    ]
+   },
+   "style": {
+    "tag": "sport",
+    "tags": [
+     "nature",
+     "sport"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-main",
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-uluwatu",
+   "type": "activity",
+   "label": "Uluwatu Kecak fire dance",
+   "cityCode": "DPS",
+   "attrs": {
+    "when": null,
+    "costCad": 25,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-tegallalang",
+   "type": "activity",
+   "label": "Tegallalang rice terraces",
+   "cityCode": "DPS",
+   "attrs": {
+    "when": null,
+    "costCad": 5,
+    "tags": [
+     "nature"
+    ]
+   },
+   "style": {
+    "tag": "nature",
+    "tags": [
+     "nature"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "act:act-maglev",
+   "type": "activity",
+   "label": "Shanghai maglev ride",
+   "cityCode": "SHA",
+   "attrs": {
+    "when": null,
+    "costCad": 10,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-bund",
+   "type": "activity",
+   "label": "The Bund at night",
+   "cityCode": "SHA",
+   "attrs": {
+    "when": null,
+    "costCad": null,
+    "tags": [
+     "culture"
+    ]
+   },
+   "style": {
+    "tag": "culture",
+    "tags": [
+     "culture"
+    ],
+    "planned": true,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": [
+     "route-with-shanghai"
+    ]
+   }
+  },
+  {
+   "id": "act:act-shanghai-tower",
+   "type": "activity",
+   "label": "Shanghai Tower observation deck",
+   "cityCode": "SHA",
+   "attrs": {
+    "when": null,
+    "costCad": 35,
+    "tags": [
+     "tech"
+    ]
+   },
+   "style": {
+    "tag": "tech",
+    "tags": [
+     "tech"
+    ],
+    "planned": false,
+    "fixedDate": false,
+    "votes": 0,
+    "routes": []
+   }
+  },
+  {
+   "id": "area:tyo-shibuya",
+   "type": "area",
+   "label": "Shibuya",
+   "lat": 35.659,
+   "lon": 139.7,
+   "cityCode": "TYO",
+   "attrs": {
+    "vibes": [
+     "nightlife",
+     "transit"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:tyo-asakusa",
+   "type": "area",
+   "label": "Asakusa",
+   "lat": 35.714,
+   "lon": 139.796,
+   "cityCode": "TYO",
+   "attrs": {
+    "vibes": [
+     "culture",
+     "quiet"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:bjs-dongcheng-hutongs-gulou",
+   "type": "area",
+   "label": "Dongcheng hutongs (Gulou)",
+   "lat": 39.94,
+   "lon": 116.394,
+   "cityCode": "BJS",
+   "attrs": {
+    "vibes": [
+     "culture"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:sia-bell-tower-muslim-quarter",
+   "type": "area",
+   "label": "Bell Tower / Muslim Quarter",
+   "lat": 34.261,
+   "lon": 108.943,
+   "cityCode": "SIA",
+   "attrs": {
+    "vibes": [
+     "central",
+     "food"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:ckg-jiefangbei-yuzhong",
+   "type": "area",
+   "label": "Jiefangbei / Yuzhong",
+   "lat": 29.557,
+   "lon": 106.577,
+   "cityCode": "CKG",
+   "attrs": {
+    "vibes": [
+     "central",
+     "nightlife"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:hkg-sheung-wan",
+   "type": "area",
+   "label": "Sheung Wan",
+   "lat": 22.286,
+   "lon": 114.15,
+   "cityCode": "HKG",
+   "attrs": {
+    "vibes": [
+     "food",
+     "culture"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:han-old-quarter-hoan-kiem",
+   "type": "area",
+   "label": "Old Quarter / Hoan Kiem",
+   "lat": 21.029,
+   "lon": 105.852,
+   "cityCode": "HAN",
+   "attrs": {
+    "vibes": [
+     "food",
+     "central"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:dps-canggu",
+   "type": "area",
+   "label": "Canggu",
+   "lat": -8.65,
+   "lon": 115.13,
+   "cityCode": "DPS",
+   "attrs": {
+    "vibes": [
+     "beach",
+     "food"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "area:dps-ubud",
+   "type": "area",
+   "label": "Ubud",
+   "lat": -8.507,
+   "lon": 115.263,
+   "cityCode": "DPS",
+   "attrs": {
+    "vibes": [
+     "culture",
+     "quiet"
+    ]
+   },
+   "style": {
+    "votes": 0
+   }
+  },
+  {
+   "id": "hotel:example-shibuya",
+   "type": "hotel",
+   "label": "Example hotel (Shibuya)",
+   "lat": 35.6585,
+   "lon": 139.701,
+   "cityCode": "TYO",
+   "attrs": {
+    "priceCadPerNight": 180,
+    "priceBasis": "room",
+    "sleeps": 2,
+    "example": true
+   },
+   "style": {
+    "status": "chosen",
+    "routes": [
+     "route-main"
+    ]
+   }
+  },
+  {
+   "id": "hotel:example-sheung-wan",
+   "type": "hotel",
+   "label": "Example hotel (Sheung Wan)",
+   "lat": 22.2865,
+   "lon": 114.151,
+   "cityCode": "HKG",
+   "attrs": {
+    "priceCadPerNight": 150,
+    "priceBasis": "room",
+    "sleeps": 2,
+    "example": true
+   },
+   "style": {
+    "status": "shortlist",
+    "routes": [
+     "route-main"
+    ]
+   }
+  }
+ ],
+ "edges": [
+  {
+   "id": "HAS_ROUTE:trip:asia-2027->route:route-main",
+   "type": "HAS_ROUTE",
+   "source": "trip:asia-2027",
+   "target": "route:route-main"
+  },
+  {
+   "id": "IN:city:TYO->country:JP",
+   "type": "IN",
+   "source": "city:TYO",
+   "target": "country:JP"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-01",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-01",
+   "attrs": {
+    "order": 0
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-01->city:TYO",
+   "type": "AT",
+   "source": "stop:stop-main-01",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:city:BJS->country:CN",
+   "type": "IN",
+   "source": "city:BJS",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-02",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-02",
+   "attrs": {
+    "order": 1
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-02->city:BJS",
+   "type": "AT",
+   "source": "stop:stop-main-02",
+   "target": "city:BJS"
+  },
+  {
+   "id": "NEXT:stop:stop-main-01->stop:stop-main-02",
+   "type": "NEXT",
+   "source": "stop:stop-main-01",
+   "target": "stop:stop-main-02"
+  },
+  {
+   "id": "SERVES:apt:HND->city:TYO",
+   "type": "SERVES",
+   "source": "apt:HND",
+   "target": "city:TYO"
+  },
+  {
+   "id": "SERVES:apt:PEK->city:BJS",
+   "type": "SERVES",
+   "source": "apt:PEK",
+   "target": "city:BJS"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-02->leg:lg-main-02",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-02",
+   "target": "leg:lg-main-02",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-02->apt:HND",
+   "type": "FROM",
+   "source": "leg:lg-main-02",
+   "target": "apt:HND"
+  },
+  {
+   "id": "TO:leg:lg-main-02->apt:PEK",
+   "type": "TO",
+   "source": "leg:lg-main-02",
+   "target": "apt:PEK"
+  },
+  {
+   "id": "IN:city:SIA->country:CN",
+   "type": "IN",
+   "source": "city:SIA",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-03",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-03",
+   "attrs": {
+    "order": 2
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-03->city:SIA",
+   "type": "AT",
+   "source": "stop:stop-main-03",
+   "target": "city:SIA"
+  },
+  {
+   "id": "NEXT:stop:stop-main-02->stop:stop-main-03",
+   "type": "NEXT",
+   "source": "stop:stop-main-02",
+   "target": "stop:stop-main-03"
+  },
+  {
+   "id": "SERVES:stn:stn-beijing-west->city:BJS",
+   "type": "SERVES",
+   "source": "stn:stn-beijing-west",
+   "target": "city:BJS"
+  },
+  {
+   "id": "SERVES:stn:stn-xian-north->city:SIA",
+   "type": "SERVES",
+   "source": "stn:stn-xian-north",
+   "target": "city:SIA"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-03->leg:lg-main-03",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-03",
+   "target": "leg:lg-main-03",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-03->stn:stn-beijing-west",
+   "type": "FROM",
+   "source": "leg:lg-main-03",
+   "target": "stn:stn-beijing-west"
+  },
+  {
+   "id": "TO:leg:lg-main-03->stn:stn-xian-north",
+   "type": "TO",
+   "source": "leg:lg-main-03",
+   "target": "stn:stn-xian-north"
+  },
+  {
+   "id": "IN:city:CKG->country:CN",
+   "type": "IN",
+   "source": "city:CKG",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-04",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-04",
+   "attrs": {
+    "order": 3
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-04->city:CKG",
+   "type": "AT",
+   "source": "stop:stop-main-04",
+   "target": "city:CKG"
+  },
+  {
+   "id": "NEXT:stop:stop-main-03->stop:stop-main-04",
+   "type": "NEXT",
+   "source": "stop:stop-main-03",
+   "target": "stop:stop-main-04"
+  },
+  {
+   "id": "SERVES:stn:stn-chongqing-west->city:CKG",
+   "type": "SERVES",
+   "source": "stn:stn-chongqing-west",
+   "target": "city:CKG"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-04->leg:lg-main-04",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-04",
+   "target": "leg:lg-main-04",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-04->stn:stn-xian-north",
+   "type": "FROM",
+   "source": "leg:lg-main-04",
+   "target": "stn:stn-xian-north"
+  },
+  {
+   "id": "TO:leg:lg-main-04->stn:stn-chongqing-west",
+   "type": "TO",
+   "source": "leg:lg-main-04",
+   "target": "stn:stn-chongqing-west"
+  },
+  {
+   "id": "IN:city:CAN->country:CN",
+   "type": "IN",
+   "source": "city:CAN",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-05",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-05",
+   "attrs": {
+    "order": 4
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-05->city:CAN",
+   "type": "AT",
+   "source": "stop:stop-main-05",
+   "target": "city:CAN"
+  },
+  {
+   "id": "NEXT:stop:stop-main-04->stop:stop-main-05",
+   "type": "NEXT",
+   "source": "stop:stop-main-04",
+   "target": "stop:stop-main-05"
+  },
+  {
+   "id": "SERVES:stn:stn-guangzhou-south->city:CAN",
+   "type": "SERVES",
+   "source": "stn:stn-guangzhou-south",
+   "target": "city:CAN"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-05->leg:lg-main-05",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-05",
+   "target": "leg:lg-main-05",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-05->stn:stn-chongqing-west",
+   "type": "FROM",
+   "source": "leg:lg-main-05",
+   "target": "stn:stn-chongqing-west"
+  },
+  {
+   "id": "TO:leg:lg-main-05->stn:stn-guangzhou-south",
+   "type": "TO",
+   "source": "leg:lg-main-05",
+   "target": "stn:stn-guangzhou-south"
+  },
+  {
+   "id": "IN:city:SZX->country:CN",
+   "type": "IN",
+   "source": "city:SZX",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-06",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-06",
+   "attrs": {
+    "order": 5
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-06->city:SZX",
+   "type": "AT",
+   "source": "stop:stop-main-06",
+   "target": "city:SZX"
+  },
+  {
+   "id": "NEXT:stop:stop-main-05->stop:stop-main-06",
+   "type": "NEXT",
+   "source": "stop:stop-main-05",
+   "target": "stop:stop-main-06"
+  },
+  {
+   "id": "SERVES:stn:stn-futian->city:SZX",
+   "type": "SERVES",
+   "source": "stn:stn-futian",
+   "target": "city:SZX"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-06->leg:lg-main-06",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-06",
+   "target": "leg:lg-main-06",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-06->stn:stn-guangzhou-south",
+   "type": "FROM",
+   "source": "leg:lg-main-06",
+   "target": "stn:stn-guangzhou-south"
+  },
+  {
+   "id": "TO:leg:lg-main-06->stn:stn-futian",
+   "type": "TO",
+   "source": "leg:lg-main-06",
+   "target": "stn:stn-futian"
+  },
+  {
+   "id": "IN:city:HKG->country:HK",
+   "type": "IN",
+   "source": "city:HKG",
+   "target": "country:HK"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-07",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-07",
+   "attrs": {
+    "order": 6
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-07->city:HKG",
+   "type": "AT",
+   "source": "stop:stop-main-07",
+   "target": "city:HKG"
+  },
+  {
+   "id": "NEXT:stop:stop-main-06->stop:stop-main-07",
+   "type": "NEXT",
+   "source": "stop:stop-main-06",
+   "target": "stop:stop-main-07"
+  },
+  {
+   "id": "SERVES:stn:stn-west-kowloon->city:HKG",
+   "type": "SERVES",
+   "source": "stn:stn-west-kowloon",
+   "target": "city:HKG"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-07->leg:lg-main-07",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-07",
+   "target": "leg:lg-main-07",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-07->stn:stn-futian",
+   "type": "FROM",
+   "source": "leg:lg-main-07",
+   "target": "stn:stn-futian"
+  },
+  {
+   "id": "TO:leg:lg-main-07->stn:stn-west-kowloon",
+   "type": "TO",
+   "source": "leg:lg-main-07",
+   "target": "stn:stn-west-kowloon"
+  },
+  {
+   "id": "IN:city:HAN->country:VN",
+   "type": "IN",
+   "source": "city:HAN",
+   "target": "country:VN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-08",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-08",
+   "attrs": {
+    "order": 7
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-08->city:HAN",
+   "type": "AT",
+   "source": "stop:stop-main-08",
+   "target": "city:HAN"
+  },
+  {
+   "id": "NEXT:stop:stop-main-07->stop:stop-main-08",
+   "type": "NEXT",
+   "source": "stop:stop-main-07",
+   "target": "stop:stop-main-08"
+  },
+  {
+   "id": "SERVES:apt:HKG->city:HKG",
+   "type": "SERVES",
+   "source": "apt:HKG",
+   "target": "city:HKG"
+  },
+  {
+   "id": "SERVES:apt:HAN->city:HAN",
+   "type": "SERVES",
+   "source": "apt:HAN",
+   "target": "city:HAN"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-08->leg:lg-main-08",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-08",
+   "target": "leg:lg-main-08",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-08->apt:HKG",
+   "type": "FROM",
+   "source": "leg:lg-main-08",
+   "target": "apt:HKG"
+  },
+  {
+   "id": "TO:leg:lg-main-08->apt:HAN",
+   "type": "TO",
+   "source": "leg:lg-main-08",
+   "target": "apt:HAN"
+  },
+  {
+   "id": "IN:city:SGN->country:VN",
+   "type": "IN",
+   "source": "city:SGN",
+   "target": "country:VN"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-09",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-09",
+   "attrs": {
+    "order": 8
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-09->city:SGN",
+   "type": "AT",
+   "source": "stop:stop-main-09",
+   "target": "city:SGN"
+  },
+  {
+   "id": "NEXT:stop:stop-main-08->stop:stop-main-09",
+   "type": "NEXT",
+   "source": "stop:stop-main-08",
+   "target": "stop:stop-main-09"
+  },
+  {
+   "id": "SERVES:apt:SGN->city:SGN",
+   "type": "SERVES",
+   "source": "apt:SGN",
+   "target": "city:SGN"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-09->leg:lg-main-09",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-09",
+   "target": "leg:lg-main-09",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-09->apt:HAN",
+   "type": "FROM",
+   "source": "leg:lg-main-09",
+   "target": "apt:HAN"
+  },
+  {
+   "id": "TO:leg:lg-main-09->apt:SGN",
+   "type": "TO",
+   "source": "leg:lg-main-09",
+   "target": "apt:SGN"
+  },
+  {
+   "id": "IN:city:KOM->country:ID",
+   "type": "IN",
+   "source": "city:KOM",
+   "target": "country:ID"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-10",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-10",
+   "attrs": {
+    "order": 9
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-10->city:KOM",
+   "type": "AT",
+   "source": "stop:stop-main-10",
+   "target": "city:KOM"
+  },
+  {
+   "id": "NEXT:stop:stop-main-09->stop:stop-main-10",
+   "type": "NEXT",
+   "source": "stop:stop-main-09",
+   "target": "stop:stop-main-10"
+  },
+  {
+   "id": "SERVES:apt:LBJ->city:KOM",
+   "type": "SERVES",
+   "source": "apt:LBJ",
+   "target": "city:KOM"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-10->leg:lg-main-10",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-10",
+   "target": "leg:lg-main-10",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-10->apt:SGN",
+   "type": "FROM",
+   "source": "leg:lg-main-10",
+   "target": "apt:SGN"
+  },
+  {
+   "id": "TO:leg:lg-main-10->apt:LBJ",
+   "type": "TO",
+   "source": "leg:lg-main-10",
+   "target": "apt:LBJ"
+  },
+  {
+   "id": "IN:city:DPS->country:ID",
+   "type": "IN",
+   "source": "city:DPS",
+   "target": "country:ID"
+  },
+  {
+   "id": "HAS_STOP:route:route-main->stop:stop-main-11",
+   "type": "HAS_STOP",
+   "source": "route:route-main",
+   "target": "stop:stop-main-11",
+   "attrs": {
+    "order": 10
+   }
+  },
+  {
+   "id": "AT:stop:stop-main-11->city:DPS",
+   "type": "AT",
+   "source": "stop:stop-main-11",
+   "target": "city:DPS"
+  },
+  {
+   "id": "NEXT:stop:stop-main-10->stop:stop-main-11",
+   "type": "NEXT",
+   "source": "stop:stop-main-10",
+   "target": "stop:stop-main-11"
+  },
+  {
+   "id": "SERVES:apt:DPS->city:DPS",
+   "type": "SERVES",
+   "source": "apt:DPS",
+   "target": "city:DPS"
+  },
+  {
+   "id": "ARRIVES_VIA:stop:stop-main-11->leg:lg-main-11",
+   "type": "ARRIVES_VIA",
+   "source": "stop:stop-main-11",
+   "target": "leg:lg-main-11",
+   "attrs": {
+    "seq": 0
+   }
+  },
+  {
+   "id": "FROM:leg:lg-main-11->apt:LBJ",
+   "type": "FROM",
+   "source": "leg:lg-main-11",
+   "target": "apt:LBJ"
+  },
+  {
+   "id": "TO:leg:lg-main-11->apt:DPS",
+   "type": "TO",
+   "source": "leg:lg-main-11",
+   "target": "apt:DPS"
+  },
+  {
+   "id": "HAS_ROUTE:trip:asia-2027->route:route-with-shanghai",
+   "type": "HAS_ROUTE",
+   "source": "trip:asia-2027",
+   "target": "route:route-with-shanghai"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-01",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-01",
+   "attrs": {
+    "order": 0
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-01->city:TYO",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-01",
+   "target": "city:TYO"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-02",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-02",
+   "attrs": {
+    "order": 1
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-02->city:BJS",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-02",
+   "target": "city:BJS"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-01->stop:stop-with-shanghai-02",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-01",
+   "target": "stop:stop-with-shanghai-02"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-03",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-03",
+   "attrs": {
+    "order": 2
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-03->city:SIA",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-03",
+   "target": "city:SIA"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-02->stop:stop-with-shanghai-03",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-02",
+   "target": "stop:stop-with-shanghai-03"
+  },
+  {
+   "id": "IN:city:SHA->country:CN",
+   "type": "IN",
+   "source": "city:SHA",
+   "target": "country:CN"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-04",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-04",
+   "attrs": {
+    "order": 3
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-04->city:SHA",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-04",
+   "target": "city:SHA"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-03->stop:stop-with-shanghai-04",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-03",
+   "target": "stop:stop-with-shanghai-04"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-05",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-05",
+   "attrs": {
+    "order": 4
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-05->city:HAN",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-05",
+   "target": "city:HAN"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-04->stop:stop-with-shanghai-05",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-04",
+   "target": "stop:stop-with-shanghai-05"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-06",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-06",
+   "attrs": {
+    "order": 5
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-06->city:SGN",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-06",
+   "target": "city:SGN"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-05->stop:stop-with-shanghai-06",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-05",
+   "target": "stop:stop-with-shanghai-06"
+  },
+  {
+   "id": "IN:city:LBJ->country:ID",
+   "type": "IN",
+   "source": "city:LBJ",
+   "target": "country:ID"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-07",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-07",
+   "attrs": {
+    "order": 6
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-07->city:LBJ",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-07",
+   "target": "city:LBJ"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-06->stop:stop-with-shanghai-07",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-06",
+   "target": "stop:stop-with-shanghai-07"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-08",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-08",
+   "attrs": {
+    "order": 7
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-08->city:KOM",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-08",
+   "target": "city:KOM"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-07->stop:stop-with-shanghai-08",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-07",
+   "target": "stop:stop-with-shanghai-08"
+  },
+  {
+   "id": "HAS_STOP:route:route-with-shanghai->stop:stop-with-shanghai-09",
+   "type": "HAS_STOP",
+   "source": "route:route-with-shanghai",
+   "target": "stop:stop-with-shanghai-09",
+   "attrs": {
+    "order": 8
+   }
+  },
+  {
+   "id": "AT:stop:stop-with-shanghai-09->city:DPS",
+   "type": "AT",
+   "source": "stop:stop-with-shanghai-09",
+   "target": "city:DPS"
+  },
+  {
+   "id": "NEXT:stop:stop-with-shanghai-08->stop:stop-with-shanghai-09",
+   "type": "NEXT",
+   "source": "stop:stop-with-shanghai-08",
+   "target": "stop:stop-with-shanghai-09"
+  },
+  {
+   "id": "IN:act:act-npb->city:TYO",
+   "type": "IN",
+   "source": "act:act-npb",
+   "target": "city:TYO"
+  },
+  {
+   "id": "PLANS:stop:stop-main-01->act:act-npb",
+   "type": "PLANS",
+   "source": "stop:stop-main-01",
+   "target": "act:act-npb"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-01->act:act-npb",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-01",
+   "target": "act:act-npb"
+  },
+  {
+   "id": "IN:act:act-sumo->city:TYO",
+   "type": "IN",
+   "source": "act:act-sumo",
+   "target": "city:TYO"
+  },
+  {
+   "id": "PLANS:stop:stop-main-01->act:act-sumo",
+   "type": "PLANS",
+   "source": "stop:stop-main-01",
+   "target": "act:act-sumo"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-01->act:act-sumo",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-01",
+   "target": "act:act-sumo"
+  },
+  {
+   "id": "IN:act:act-teamlab->city:TYO",
+   "type": "IN",
+   "source": "act:act-teamlab",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:act:act-akihabara->city:TYO",
+   "type": "IN",
+   "source": "act:act-akihabara",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:act:act-tsukiji->city:TYO",
+   "type": "IN",
+   "source": "act:act-tsukiji",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:act:act-xiaomi-ev->city:BJS",
+   "type": "IN",
+   "source": "act:act-xiaomi-ev",
+   "target": "city:BJS"
+  },
+  {
+   "id": "PLANS:stop:stop-main-02->act:act-xiaomi-ev",
+   "type": "PLANS",
+   "source": "stop:stop-main-02",
+   "target": "act:act-xiaomi-ev"
+  },
+  {
+   "id": "IN:act:act-robot-mall->city:BJS",
+   "type": "IN",
+   "source": "act:act-robot-mall",
+   "target": "city:BJS"
+  },
+  {
+   "id": "IN:act:act-mutianyu->city:BJS",
+   "type": "IN",
+   "source": "act:act-mutianyu",
+   "target": "city:BJS"
+  },
+  {
+   "id": "PLANS:stop:stop-main-02->act:act-mutianyu",
+   "type": "PLANS",
+   "source": "stop:stop-main-02",
+   "target": "act:act-mutianyu"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-02->act:act-mutianyu",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-02",
+   "target": "act:act-mutianyu"
+  },
+  {
+   "id": "IN:act:act-forbidden-city->city:BJS",
+   "type": "IN",
+   "source": "act:act-forbidden-city",
+   "target": "city:BJS"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-02->act:act-forbidden-city",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-02",
+   "target": "act:act-forbidden-city"
+  },
+  {
+   "id": "IN:act:act-peking-duck->city:BJS",
+   "type": "IN",
+   "source": "act:act-peking-duck",
+   "target": "city:BJS"
+  },
+  {
+   "id": "IN:act:act-terracotta->city:SIA",
+   "type": "IN",
+   "source": "act:act-terracotta",
+   "target": "city:SIA"
+  },
+  {
+   "id": "PLANS:stop:stop-main-03->act:act-terracotta",
+   "type": "PLANS",
+   "source": "stop:stop-main-03",
+   "target": "act:act-terracotta"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-03->act:act-terracotta",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-03",
+   "target": "act:act-terracotta"
+  },
+  {
+   "id": "IN:act:act-muslim-quarter->city:SIA",
+   "type": "IN",
+   "source": "act:act-muslim-quarter",
+   "target": "city:SIA"
+  },
+  {
+   "id": "IN:act:act-city-wall->city:SIA",
+   "type": "IN",
+   "source": "act:act-city-wall",
+   "target": "city:SIA"
+  },
+  {
+   "id": "IN:act:act-liziba->city:CKG",
+   "type": "IN",
+   "source": "act:act-liziba",
+   "target": "city:CKG"
+  },
+  {
+   "id": "PLANS:stop:stop-main-04->act:act-liziba",
+   "type": "PLANS",
+   "source": "stop:stop-main-04",
+   "target": "act:act-liziba"
+  },
+  {
+   "id": "IN:act:act-wulong->city:CKG",
+   "type": "IN",
+   "source": "act:act-wulong",
+   "target": "city:CKG"
+  },
+  {
+   "id": "PLANS:stop:stop-main-04->act:act-wulong",
+   "type": "PLANS",
+   "source": "stop:stop-main-04",
+   "target": "act:act-wulong"
+  },
+  {
+   "id": "IN:act:act-hongyadong->city:CKG",
+   "type": "IN",
+   "source": "act:act-hongyadong",
+   "target": "city:CKG"
+  },
+  {
+   "id": "IN:act:act-hotpot->city:CKG",
+   "type": "IN",
+   "source": "act:act-hotpot",
+   "target": "city:CKG"
+  },
+  {
+   "id": "IN:act:act-cable-car->city:CKG",
+   "type": "IN",
+   "source": "act:act-cable-car",
+   "target": "city:CKG"
+  },
+  {
+   "id": "IN:act:act-ehang->city:CAN",
+   "type": "IN",
+   "source": "act:act-ehang",
+   "target": "city:CAN"
+  },
+  {
+   "id": "PLANS:stop:stop-main-05->act:act-ehang",
+   "type": "PLANS",
+   "source": "stop:stop-main-05",
+   "target": "act:act-ehang"
+  },
+  {
+   "id": "IN:act:act-canton-tower->city:CAN",
+   "type": "IN",
+   "source": "act:act-canton-tower",
+   "target": "city:CAN"
+  },
+  {
+   "id": "IN:act:act-dim-sum->city:CAN",
+   "type": "IN",
+   "source": "act:act-dim-sum",
+   "target": "city:CAN"
+  },
+  {
+   "id": "IN:act:act-dji->city:SZX",
+   "type": "IN",
+   "source": "act:act-dji",
+   "target": "city:SZX"
+  },
+  {
+   "id": "PLANS:stop:stop-main-06->act:act-dji",
+   "type": "PLANS",
+   "source": "stop:stop-main-06",
+   "target": "act:act-dji"
+  },
+  {
+   "id": "IN:act:act-sz-museum->city:SZX",
+   "type": "IN",
+   "source": "act:act-sz-museum",
+   "target": "city:SZX"
+  },
+  {
+   "id": "PLANS:stop:stop-main-06->act:act-sz-museum",
+   "type": "PLANS",
+   "source": "stop:stop-main-06",
+   "target": "act:act-sz-museum"
+  },
+  {
+   "id": "IN:act:act-huaqiangbei->city:SZX",
+   "type": "IN",
+   "source": "act:act-huaqiangbei",
+   "target": "city:SZX"
+  },
+  {
+   "id": "IN:act:act-happy-valley->city:HKG",
+   "type": "IN",
+   "source": "act:act-happy-valley",
+   "target": "city:HKG"
+  },
+  {
+   "id": "PLANS:stop:stop-main-07->act:act-happy-valley",
+   "type": "PLANS",
+   "source": "stop:stop-main-07",
+   "target": "act:act-happy-valley"
+  },
+  {
+   "id": "IN:act:act-peak->city:HKG",
+   "type": "IN",
+   "source": "act:act-peak",
+   "target": "city:HKG"
+  },
+  {
+   "id": "IN:act:act-dragons-back->city:HKG",
+   "type": "IN",
+   "source": "act:act-dragons-back",
+   "target": "city:HKG"
+  },
+  {
+   "id": "IN:act:act-halong->city:HAN",
+   "type": "IN",
+   "source": "act:act-halong",
+   "target": "city:HAN"
+  },
+  {
+   "id": "PLANS:stop:stop-main-08->act:act-halong",
+   "type": "PLANS",
+   "source": "stop:stop-main-08",
+   "target": "act:act-halong"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-05->act:act-halong",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-05",
+   "target": "act:act-halong"
+  },
+  {
+   "id": "IN:act:act-hanoi-food->city:HAN",
+   "type": "IN",
+   "source": "act:act-hanoi-food",
+   "target": "city:HAN"
+  },
+  {
+   "id": "IN:act:act-train-street->city:HAN",
+   "type": "IN",
+   "source": "act:act-train-street",
+   "target": "city:HAN"
+  },
+  {
+   "id": "IN:act:act-cu-chi->city:SGN",
+   "type": "IN",
+   "source": "act:act-cu-chi",
+   "target": "city:SGN"
+  },
+  {
+   "id": "IN:act:act-war-remnants->city:SGN",
+   "type": "IN",
+   "source": "act:act-war-remnants",
+   "target": "city:SGN"
+  },
+  {
+   "id": "IN:act:act-komodo->city:KOM",
+   "type": "IN",
+   "source": "act:act-komodo",
+   "target": "city:KOM"
+  },
+  {
+   "id": "PLANS:stop:stop-main-10->act:act-komodo",
+   "type": "PLANS",
+   "source": "stop:stop-main-10",
+   "target": "act:act-komodo"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-08->act:act-komodo",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-08",
+   "target": "act:act-komodo"
+  },
+  {
+   "id": "IN:act:act-padar->city:KOM",
+   "type": "IN",
+   "source": "act:act-padar",
+   "target": "city:KOM"
+  },
+  {
+   "id": "IN:act:act-pink-beach->city:KOM",
+   "type": "IN",
+   "source": "act:act-pink-beach",
+   "target": "city:KOM"
+  },
+  {
+   "id": "IN:act:act-batur->city:DPS",
+   "type": "IN",
+   "source": "act:act-batur",
+   "target": "city:DPS"
+  },
+  {
+   "id": "PLANS:stop:stop-main-11->act:act-batur",
+   "type": "PLANS",
+   "source": "stop:stop-main-11",
+   "target": "act:act-batur"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-09->act:act-batur",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-09",
+   "target": "act:act-batur"
+  },
+  {
+   "id": "IN:act:act-uluwatu->city:DPS",
+   "type": "IN",
+   "source": "act:act-uluwatu",
+   "target": "city:DPS"
+  },
+  {
+   "id": "IN:act:act-tegallalang->city:DPS",
+   "type": "IN",
+   "source": "act:act-tegallalang",
+   "target": "city:DPS"
+  },
+  {
+   "id": "IN:act:act-maglev->city:SHA",
+   "type": "IN",
+   "source": "act:act-maglev",
+   "target": "city:SHA"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-04->act:act-maglev",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-04",
+   "target": "act:act-maglev"
+  },
+  {
+   "id": "IN:act:act-bund->city:SHA",
+   "type": "IN",
+   "source": "act:act-bund",
+   "target": "city:SHA"
+  },
+  {
+   "id": "PLANS:stop:stop-with-shanghai-04->act:act-bund",
+   "type": "PLANS",
+   "source": "stop:stop-with-shanghai-04",
+   "target": "act:act-bund"
+  },
+  {
+   "id": "IN:act:act-shanghai-tower->city:SHA",
+   "type": "IN",
+   "source": "act:act-shanghai-tower",
+   "target": "city:SHA"
+  },
+  {
+   "id": "IN:area:tyo-shibuya->city:TYO",
+   "type": "IN",
+   "source": "area:tyo-shibuya",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:area:tyo-asakusa->city:TYO",
+   "type": "IN",
+   "source": "area:tyo-asakusa",
+   "target": "city:TYO"
+  },
+  {
+   "id": "IN:area:bjs-dongcheng-hutongs-gulou->city:BJS",
+   "type": "IN",
+   "source": "area:bjs-dongcheng-hutongs-gulou",
+   "target": "city:BJS"
+  },
+  {
+   "id": "IN:area:sia-bell-tower-muslim-quarter->city:SIA",
+   "type": "IN",
+   "source": "area:sia-bell-tower-muslim-quarter",
+   "target": "city:SIA"
+  },
+  {
+   "id": "IN:area:ckg-jiefangbei-yuzhong->city:CKG",
+   "type": "IN",
+   "source": "area:ckg-jiefangbei-yuzhong",
+   "target": "city:CKG"
+  },
+  {
+   "id": "IN:area:hkg-sheung-wan->city:HKG",
+   "type": "IN",
+   "source": "area:hkg-sheung-wan",
+   "target": "city:HKG"
+  },
+  {
+   "id": "IN:area:han-old-quarter-hoan-kiem->city:HAN",
+   "type": "IN",
+   "source": "area:han-old-quarter-hoan-kiem",
+   "target": "city:HAN"
+  },
+  {
+   "id": "IN:area:dps-canggu->city:DPS",
+   "type": "IN",
+   "source": "area:dps-canggu",
+   "target": "city:DPS"
+  },
+  {
+   "id": "IN:area:dps-ubud->city:DPS",
+   "type": "IN",
+   "source": "area:dps-ubud",
+   "target": "city:DPS"
+  },
+  {
+   "id": "IN:hotel:example-shibuya->area:tyo-shibuya",
+   "type": "IN",
+   "source": "hotel:example-shibuya",
+   "target": "area:tyo-shibuya"
+  },
+  {
+   "id": "STAYS_AT:stop:stop-main-01->hotel:example-shibuya",
+   "type": "STAYS_AT",
+   "source": "stop:stop-main-01",
+   "target": "hotel:example-shibuya",
+   "attrs": {
+    "status": "chosen"
+   }
+  },
+  {
+   "id": "IN:hotel:example-sheung-wan->area:hkg-sheung-wan",
+   "type": "IN",
+   "source": "hotel:example-sheung-wan",
+   "target": "area:hkg-sheung-wan"
+  },
+  {
+   "id": "STAYS_AT:stop:stop-main-07->hotel:example-sheung-wan",
+   "type": "STAYS_AT",
+   "source": "stop:stop-main-07",
+   "target": "hotel:example-sheung-wan",
+   "attrs": {
+    "status": "shortlist"
+   }
+  }
+ ],
+ "meta": {
+  "tripId": "asia-2027",
+  "scope": "trip",
+  "routeId": null,
+  "city": null,
+  "truncated": false,
+  "counts": {
+   "trip": 1,
+   "route": 2,
+   "country": 5,
+   "city": 13,
+   "stop": 20,
+   "airport": 7,
+   "leg": 10,
+   "station": 6,
+   "activity": 41,
+   "area": 9,
+   "hotel": 2
+  },
+  "generatedAt": "2026-11-19T15:15:14.321Z",
+  "routes": [
+   {
+    "id": "route-main",
+    "name": "Main",
+    "isCurrent": true
+   },
+   {
+    "id": "route-with-shanghai",
+    "name": "With Shanghai",
+    "isCurrent": false
+   }
+  ],
+  "tripStart": "2027-05-10"
+ }
+}

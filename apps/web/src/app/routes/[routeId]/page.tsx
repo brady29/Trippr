@@ -97,6 +97,9 @@ function Editor({ view }: { view: RouteView }) {
             <Link href={`/trips/${view.trip.id}/compare?a=${routeId}`}>
               <Button size="sm">Compare</Button>
             </Link>
+            <Link href={`/trips/${view.trip.id}/graph?scope=route&route=${routeId}`}>
+              <Button size="sm">View as graph</Button>
+            </Link>
             <Button size="sm" onClick={() => void download(`/routes/${routeId}/export.txt`, "itinerary.txt").catch((e) => toast(String(e.message), "error"))}>
               Export text
             </Button>

@@ -13,7 +13,7 @@
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
-    "test": "pnpm -r --filter @trippr/rules --filter @trippr/contracts test",
+    "test": "pnpm -r --filter @trippr/rules --filter @trippr/contracts --filter @trippr/web test",
     "test:integration": "pnpm --filter @trippr/api test:integration",
     "test:e2e": "pnpm --filter @trippr/web test:e2e",
     "db:up": "docker compose up -d falkordb",
