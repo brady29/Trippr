@@ -176,6 +176,8 @@ export type StayStatus = (typeof STAY_STATUSES)[number];
 export const stayBody = z.object({
   status: z.enum(STAY_STATUSES).default("shortlist"),
   rooms: z.number().int().min(1).max(10).nullish(),
+  /** Stays are route-structure writes, guarded by the route version. */
+  version: z.number().int().nonnegative(),
 });
 
 /** A hotel as it appears on a stop: shortlisted, chosen or booked. */

@@ -37,6 +37,10 @@ export interface RuleStop {
   countryName: string;
   visaRule?: VisaRule | null;
   planned?: PlannedActivity[];
+  /** Ticket segments into this stop; departAt is local ISO 8601 with an offset. */
+  legs?: { id: string; label?: string; departAt?: string | null }[];
+  /** Hotels for this stop; booked ones record the dates they were booked for. */
+  stays?: { hotelId: string; name: string; status: string; arrive?: string | null; depart?: string | null }[];
 }
 
 export interface ScheduledStop<S extends RuleStop = RuleStop> {
@@ -74,7 +78,9 @@ export type CheckKind =
   | "visa-days"
   | "visa-entries"
   | "visa-policy"
-  | "event";
+  | "event"
+  | "leg-day"
+  | "stay-dates";
 
 export interface Check {
   id: string;
@@ -84,6 +90,8 @@ export interface Check {
   detail: string;
   stopId?: string;
   activityId?: string;
+  legId?: string;
+  hotelId?: string;
 }
 
 export interface VisaEntry extends CountryEntry {

@@ -1,8 +1,36 @@
-import type { Role, RouteSummary, RouteView, StopView } from "@trippr/contracts";
-import { computeBudget, runChecks, type RuleStop } from "@trippr/rules";
+import type { Leg, Role, RouteSummary, RouteView, StopStay, StopView } from "@trippr/contracts";
+import { computeBudget, effectiveStopCosts, perPersonNightly, runChecks, type RuleStop } from "@trippr/rules";
 import type { StoredRoute, StoredStop } from "../repositories";
+import type { StoredLeg, StoredStay } from "../repositories/routes";
 
 type RuleInput = RuleStop & { stored: StoredStop };
+
+const MODE_WORD: Record<string, string> = {
+  flight: "Flight",
+  hsr: "High-speed train",
+  train: "Train",
+  maglev: "Maglev",
+  boat: "Boat",
+  road: "Road",
+};
+
+/** The shared view of a leg: never the booking reference or seat. */
+export function publicLeg(l: StoredLeg): Leg {
+  const { bookingRef: _ref, seat: _seat, ...rest } = l;
+  return rest;
+}
+
+export function stopStay(s: StoredStay): StopStay {
+  return {
+    status: s.status,
+    rooms: s.rooms,
+    hotel: s.hotel,
+    perPersonCadPerNight: perPersonNightly(s.hotel.priceCadPerNight, s.hotel.priceBasis, s.hotel.sleeps),
+  };
+}
+
+const legLabel = (l: StoredLeg) =>
+  [MODE_WORD[l.mode] ?? l.mode, [l.operator, l.number].filter(Boolean).join(" ")].filter(Boolean).join(" ");
 
 /**
  * Cypher returns the graph shape; the rules module adds computed dates and
@@ -17,6 +45,14 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     countryName: s.country.name,
     visaRule: s.country.visaRule ?? null,
     planned: s.planned,
+    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, label: legLabel(l) })),
+    stays: s.stays.map((st) => ({
+      hotelId: st.hotel.id,
+      name: st.hotel.name,
+      status: st.status,
+      arrive: st.arrive,
+      depart: st.depart,
+    })),
     stored: s,
   }));
   const result = runChecks(stored.trip.startDate, input);
@@ -39,11 +75,15 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     },
     country: stop.stored.country,
     planned: stop.stored.planned,
-    legs: [],
-    stays: [],
+    legs: stop.stored.legs.map(publicLeg),
+    stays: stop.stored.stays.map(stopStay),
   }));
 
-  const budget = computeBudget(stored.stops, stored.trip.travellers ?? 1);
+  // A chosen or booked hotel's price, and priced legs, beat the rough estimates.
+  const budget = computeBudget(
+    stops.map((s) => ({ id: s.id, nights: s.nights, planned: s.planned, ...effectiveStopCosts(s) })),
+    stored.trip.travellers ?? 1,
+  );
 
   return {
     route: { ...stored.route, tripId: stored.trip.id },
