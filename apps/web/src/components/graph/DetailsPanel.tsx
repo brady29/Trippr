@@ -35,7 +35,9 @@ export function DetailsPanel({
   onClose,
   onExpand,
   onCityScope,
+  dates,
 }: {
+  dates?: Map<string, { arrive: string; depart: string }>;
   node: GraphNode;
   index: GraphIndex;
   tripId: string;
@@ -120,7 +122,9 @@ export function DetailsPanel({
           ) : null}
           {node.type === "stop" ? (
             <>
-              {a.arrive ? <Row label="Dates">{`${shortDate(String(a.arrive))} → ${shortDate(String(a.depart))}`}</Row> : null}
+              {dates?.get(node.id) ? (
+                <Row label="Dates">{`${shortDate(dates.get(node.id)!.arrive)} → ${shortDate(dates.get(node.id)!.depart)}`}</Row>
+              ) : null}
               {a.nights != null ? <Row label="Nights">{String(a.nights)}</Row> : null}
               {a.routeName ? <Row label="Route">{String(a.routeName)}</Row> : null}
             </>

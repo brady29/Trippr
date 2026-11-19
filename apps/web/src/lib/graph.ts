@@ -5,6 +5,7 @@ import { GRAPH_NODE_TYPES } from "@trippr/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { addDays } from "@trippr/rules";
 import { api } from "./api";
 import { useAuth } from "./auth";
 import { ACTIVITY_TAGS, type ActivityTag } from "./graph-palette";
@@ -97,9 +98,13 @@ export function useFixtureMode(): boolean {
 }
 
 async function loadFixture(): Promise<GraphJSON> {
-  if (process.env.NODE_ENV === "production") throw new Error("Fixture is development-only");
-  const mod = await import("@/dev/graph-fixture.json");
-  return mod.default as unknown as GraphJSON;
+  // The import sits inside the constant condition so webpack drops it (and
+  // the fixture chunk) from production builds entirely.
+  if (process.env.NODE_ENV !== "production") {
+    const mod = await import("@/dev/graph-fixture.json");
+    return mod.default as unknown as GraphJSON;
+  }
+  throw new Error("The graph fixture is development-only");
 }
 
 export const graphKey = (tripId: string, scope: GraphScope, routeId: string | null, city: string | null) =>
@@ -267,6 +272,35 @@ export interface JourneyStep {
   leg: GraphNode | null;
   from: GraphNode | null;
   to: GraphNode | null;
+  arrive?: string;
+  depart?: string;
+}
+
+/**
+ * Stop dates are computed, never stored: trip start plus the nights before
+ * each stop, per route. Only possible when the graph has every stop of a
+ * route (orders 0..n-1), so city scope gets no dates.
+ */
+export function stopDates(g: GraphJSON): Map<string, { arrive: string; depart: string }> {
+  const out = new Map<string, { arrive: string; depart: string }>();
+  const byRoute = new Map<string, GraphNode[]>();
+  for (const n of g.nodes) {
+    if (n.type !== "stop") continue;
+    const r = String(n.attrs.routeId ?? n.style.routes?.[0] ?? "");
+    byRoute.set(r, [...(byRoute.get(r) ?? []), n]);
+  }
+  for (const stops of byRoute.values()) {
+    stops.sort((a, b) => Number(a.attrs.order ?? 0) - Number(b.attrs.order ?? 0));
+    const complete = stops.every((s, i) => Number(s.attrs.order) === i);
+    if (!complete || !g.meta.tripStart) continue;
+    let cursor = g.meta.tripStart;
+    for (const s of stops) {
+      const depart = addDays(cursor, Number(s.attrs.nights ?? 0));
+      out.set(s.id, { arrive: cursor, depart });
+      cursor = depart;
+    }
+  }
+  return out;
 }
 
 /**
@@ -280,6 +314,7 @@ export function journey(g: GraphJSON, index: GraphIndex, routeId: string | null)
   const stops = g.nodes
     .filter((n) => n.type === "stop" && (n.style.routes?.includes(rid) || n.attrs.routeId === rid))
     .sort((a, b) => Number(a.attrs.order ?? 0) - Number(b.attrs.order ?? 0));
+  const dates = stopDates(g);
   return stops.map((stop, i) => {
     const via = (index.out.get(stop.id) ?? [])
       .filter((e) => e.type === "ARRIVES_VIA")
@@ -290,7 +325,7 @@ export function journey(g: GraphJSON, index: GraphIndex, routeId: string | null)
       const e = (index.out.get(leg.id) ?? []).find((x) => x.type === type);
       return e ? index.byId.get(e.target) ?? null : null;
     };
-    return { index: i, stop, leg, from: end("FROM"), to: end("TO") };
+    return { index: i, stop, leg, from: end("FROM"), to: end("TO"), ...dates.get(stop.id) };
   });
 }
 

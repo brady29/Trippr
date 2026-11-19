@@ -14,6 +14,7 @@ import {
   indexGraph,
   journey,
   mergeGraphs,
+  stopDates,
   useFixtureMode,
   useGraph,
   useGraphUrlState,
@@ -78,6 +79,7 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
     return extra ? mergeGraphs(graphQuery.data, extra) : graphQuery.data;
   }, [graphQuery.data, extra]);
   const index = useMemo(() => (full ? indexGraph(full) : null), [full]);
+  const dates = useMemo(() => (full ? stopDates(full) : undefined), [full]);
   const filters: GraphFilters = {
     types: state.types,
     tags: state.tags,
@@ -361,6 +363,7 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
                   onClose={() => select(null)}
                   onExpand={(id) => void expand(id)}
                   onCityScope={(code) => update({ scope: "city", city: code, route: null, focus: `city:${code}` })}
+                  dates={dates}
                 />
               </aside>
             ) : null}

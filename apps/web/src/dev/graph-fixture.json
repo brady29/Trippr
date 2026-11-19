@@ -68,8 +68,6 @@
     "nights": 4,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-10",
-    "depart": "2027-05-14",
     "arriveMode": "flight"
    },
    "style": {
@@ -120,8 +118,6 @@
     "nights": 5,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-14",
-    "depart": "2027-05-19",
     "arriveMode": "flight"
    },
    "style": {
@@ -221,8 +217,6 @@
     "nights": 3,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-19",
-    "depart": "2027-05-22",
     "arriveMode": "hsr"
    },
    "style": {
@@ -321,8 +315,6 @@
     "nights": 4,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-22",
-    "depart": "2027-05-26",
     "arriveMode": "hsr"
    },
    "style": {
@@ -404,8 +396,6 @@
     "nights": 3,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-26",
-    "depart": "2027-05-29",
     "arriveMode": "hsr"
    },
    "style": {
@@ -487,8 +477,6 @@
     "nights": 4,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-05-29",
-    "depart": "2027-06-02",
     "arriveMode": "hsr"
    },
    "style": {
@@ -581,8 +569,6 @@
     "nights": 3,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-06-02",
-    "depart": "2027-06-05",
     "arriveMode": "train"
    },
    "style": {
@@ -676,8 +662,6 @@
     "nights": 4,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-06-05",
-    "depart": "2027-06-09",
     "arriveMode": "flight"
    },
    "style": {
@@ -777,8 +761,6 @@
     "nights": 3,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-06-09",
-    "depart": "2027-06-12",
     "arriveMode": "flight"
    },
    "style": {
@@ -872,8 +854,6 @@
     "nights": 3,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-06-12",
-    "depart": "2027-06-15",
     "arriveMode": "flight"
    },
    "style": {
@@ -956,8 +936,6 @@
     "nights": 4,
     "routeId": "route-main",
     "routeName": "Main",
-    "arrive": "2027-06-15",
-    "depart": "2027-06-19",
     "arriveMode": "flight"
    },
    "style": {
@@ -1038,8 +1016,6 @@
     "nights": 4,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-05-10",
-    "depart": "2027-05-14",
     "arriveMode": "flight"
    },
    "style": {
@@ -1060,8 +1036,6 @@
     "nights": 8,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-05-14",
-    "depart": "2027-05-22",
     "arriveMode": "flight"
    },
    "style": {
@@ -1082,8 +1056,6 @@
     "nights": 4,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-05-22",
-    "depart": "2027-05-26",
     "arriveMode": "hsr"
    },
    "style": {
@@ -1122,8 +1094,6 @@
     "nights": 8,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-05-26",
-    "depart": "2027-06-03",
     "arriveMode": "hsr"
    },
    "style": {
@@ -1144,8 +1114,6 @@
     "nights": 4,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-06-03",
-    "depart": "2027-06-07",
     "arriveMode": "flight"
    },
    "style": {
@@ -1166,8 +1134,6 @@
     "nights": 2,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-06-07",
-    "depart": "2027-06-09",
     "arriveMode": "flight"
    },
    "style": {
@@ -1206,8 +1172,6 @@
     "nights": 1,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-06-09",
-    "depart": "2027-06-10",
     "arriveMode": "flight"
    },
    "style": {
@@ -1228,8 +1192,6 @@
     "nights": 2,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-06-10",
-    "depart": "2027-06-12",
     "arriveMode": "boat"
    },
    "style": {
@@ -1250,8 +1212,6 @@
     "nights": 3,
     "routeId": "route-with-shanghai",
     "routeName": "With Shanghai",
-    "arrive": "2027-06-12",
-    "depart": "2027-06-15",
     "arriveMode": "flight"
    },
    "style": {
@@ -3741,7 +3701,7 @@
    "area": 9,
    "hotel": 2
   },
-  "generatedAt": "2026-11-19T03:55:13.149Z",
+  "generatedAt": "2026-11-19T15:15:14.321Z",
   "routes": [
    {
     "id": "route-main",
