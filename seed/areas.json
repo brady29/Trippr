@@ -1,0 +1,26 @@
+{
+  "_comment": "Areas worth staying in, per city: suggestions for the group to vote on, not recommendations. Coordinates are approximate neighbourhood centres. Added once to the trip's library; edits and deletions are never overwritten.",
+  "source": "suggestion to vote on",
+  "areas": [
+    { "id": "area-tyo-shibuya", "city": "TYO", "name": "Shibuya", "vibes": ["nightlife", "transit"], "lat": 35.659, "lon": 139.7 },
+    { "id": "area-tyo-asakusa", "city": "TYO", "name": "Asakusa", "vibes": ["culture", "quiet"], "lat": 35.715, "lon": 139.797 },
+    { "id": "area-tyo-shinjuku", "city": "TYO", "name": "Shinjuku", "vibes": ["central", "nightlife"], "lat": 35.69, "lon": 139.7 },
+    { "id": "area-bjs-gulou", "city": "BJS", "name": "Dongcheng hutongs near Gulou", "vibes": ["culture"], "lat": 39.94, "lon": 116.395 },
+    { "id": "area-bjs-sanlitun", "city": "BJS", "name": "Sanlitun", "vibes": ["nightlife", "food"], "lat": 39.936, "lon": 116.455 },
+    { "id": "area-sia-bell-tower", "city": "SIA", "name": "Bell Tower / Muslim Quarter", "vibes": ["central", "food"], "lat": 34.261, "lon": 108.943 },
+    { "id": "area-ckg-jiefangbei", "city": "CKG", "name": "Jiefangbei / Yuzhong", "vibes": ["central", "nightlife"], "lat": 29.557, "lon": 106.577 },
+    { "id": "area-can-tianhe", "city": "CAN", "name": "Tianhe", "vibes": ["transit"], "lat": null, "lon": null },
+    { "id": "area-can-yuexiu", "city": "CAN", "name": "Yuexiu", "vibes": ["culture", "food"], "lat": null, "lon": null },
+    { "id": "area-szx-futian", "city": "SZX", "name": "Futian", "vibes": ["central", "transit"], "lat": 22.54, "lon": 114.055 },
+    { "id": "area-szx-nanshan", "city": "SZX", "name": "Nanshan", "vibes": ["central"], "lat": null, "lon": null, "note": "Tech district" },
+    { "id": "area-hkg-sheung-wan", "city": "HKG", "name": "Sheung Wan", "vibes": ["food", "culture"], "lat": 22.286, "lon": 114.15 },
+    { "id": "area-hkg-tsim-sha-tsui", "city": "HKG", "name": "Tsim Sha Tsui", "vibes": ["central", "transit"], "lat": 22.298, "lon": 114.172 },
+    { "id": "area-han-old-quarter", "city": "HAN", "name": "Old Quarter / Hoan Kiem", "vibes": ["food", "central"], "lat": 21.034, "lon": 105.85 },
+    { "id": "area-sgn-district-1", "city": "SGN", "name": "District 1", "vibes": ["central", "nightlife"], "lat": 10.776, "lon": 106.7 },
+    { "id": "area-sgn-district-3", "city": "SGN", "name": "District 3", "vibes": ["quiet", "food"], "lat": 10.783, "lon": 106.683 },
+    { "id": "area-lbj-harbour", "city": "LBJ", "name": "Harbour front", "vibes": ["transit"], "lat": null, "lon": null },
+    { "id": "area-dps-canggu", "city": "DPS", "name": "Canggu", "vibes": ["beach", "food"], "lat": -8.65, "lon": 115.13 },
+    { "id": "area-dps-ubud", "city": "DPS", "name": "Ubud", "vibes": ["culture", "quiet"], "lat": -8.507, "lon": 115.263 },
+    { "id": "area-dps-uluwatu", "city": "DPS", "name": "Uluwatu", "vibes": ["beach"], "lat": null, "lon": null }
+  ]
+}
