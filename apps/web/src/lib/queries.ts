@@ -16,7 +16,7 @@ import type {
   TripDetail,
   TripListItem,
 } from "@trippr/contracts";
-import { runChecks } from "@trippr/rules";
+import { computeBudget, runChecks } from "@trippr/rules";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, isConflict } from "./api";
 import { useToast } from "@/components/toast";
@@ -126,9 +126,12 @@ export function recompute(view: RouteView, stops: StopView[]): RouteView {
       view: s,
     })),
   );
+  const budget = computeBudget(stops, view.trip.travellers ?? 1);
   return {
     ...view,
     stops: result.schedule.stops.map(({ stop, arrive, depart }, i) => ({ ...stop.view, order: i, arrive, depart })),
+    budget,
+    plannedCostCad: budget.perPerson.activities,
     checks: {
       level: result.level,
       totalNights: result.schedule.totalNights,

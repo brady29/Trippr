@@ -397,6 +397,75 @@ describe("compare", () => {
   });
 });
 
+describe("budget (stretch)", () => {
+  let routeId: string;
+
+  it("starts with the seeded traveller count and no stop estimates", async () => {
+    const trip = (await owner.api.get<TripDetail>(`/trips/${TRIP}`)).body;
+    expect(trip.trip.travellers).toBe(6);
+    const dup = await editor.api.post<RouteView>(`/trips/${TRIP}/routes`, { fromRouteId: MAIN, name: "Budget test" });
+    routeId = dup.body.route.id;
+    const b = dup.body.budget;
+    expect(b.travellers).toBe(6);
+    expect(b.perPerson).toMatchObject({ stay: 0, travel: 0 });
+    expect(b.perPerson.activities).toBe(dup.body.plannedCostCad);
+    expect(b.missing).toMatchObject({ stayNights: 40, travelLegs: 11 });
+  });
+
+  it("adds stay and travel estimates per person and for the group", async () => {
+    const view = (await editor.api.get<RouteView>(`/routes/${routeId}`)).body;
+    const tokyo = view.stops[0]!;
+    const res = await editor.api.patch<RouteView>(`/stops/${tokyo.id}`, {
+      stayCadPerNight: 60,
+      arriveCostCad: 900,
+      version: view.route.version,
+    });
+    expect(res.status).toBe(200);
+    const b = res.body.budget;
+    const activities = b.perPerson.activities;
+    expect(b.perPerson).toEqual({ stay: 240, travel: 900, activities, total: 1140 + activities });
+    expect(b.group.total).toBe((1140 + activities) * 6);
+    expect(b.missing).toMatchObject({ stayNights: 36, travelLegs: 10 });
+    expect(res.body.stops[0]).toMatchObject({ stayCadPerNight: 60, arriveCostCad: 900 });
+  });
+
+  it("clears an estimate with null and leaves absent fields alone", async () => {
+    const view = (await editor.api.get<RouteView>(`/routes/${routeId}`)).body;
+    const res = await editor.api.patch<RouteView>(`/stops/${view.stops[0]!.id}`, {
+      stayCadPerNight: null,
+      version: view.route.version,
+    });
+    expect(res.body.stops[0]!.stayCadPerNight ?? null).toBeNull();
+    expect(res.body.stops[0]!.arriveCostCad).toBe(900);
+    expect(res.body.budget.perPerson.stay).toBe(0);
+    expect(res.body.budget.missing.stayNights).toBe(40);
+  });
+
+  it("copies estimates when a route is duplicated", async () => {
+    const dup = await editor.api.post<RouteView>(`/trips/${TRIP}/routes`, { fromRouteId: routeId, name: "Budget copy" });
+    expect(dup.body.stops[0]!.arriveCostCad).toBe(900);
+    expect(dup.body.budget.perPerson.travel).toBe(900);
+  });
+
+  it("changes the group total when the owner changes the traveller count", async () => {
+    expect((await editor.api.patch(`/trips/${TRIP}`, { travellers: 2 })).status).toBe(403);
+    expect((await owner.api.patch(`/trips/${TRIP}`, { travellers: 2 })).status).toBe(200);
+    const view = (await owner.api.get<RouteView>(`/routes/${routeId}`)).body;
+    expect(view.budget.travellers).toBe(2);
+    expect(view.budget.group.total).toBe(view.budget.perPerson.total * 2);
+    const trip = (await owner.api.get<TripDetail>(`/trips/${TRIP}`)).body;
+    expect(trip.routes.find((r) => r.id === routeId)!.perPersonCad).toBe(view.budget.perPerson.total);
+    expect((await owner.api.patch(`/trips/${TRIP}`, { travellers: 0 })).status).toBe(400);
+    await owner.api.patch(`/trips/${TRIP}`, { travellers: 6 });
+  });
+
+  it("includes each side's budget in compare", async () => {
+    const res = await viewer.api.get<CompareResult>(`/compare?a=${MAIN}&b=${routeId}`);
+    expect(res.body.budget.b.perPerson.travel).toBe(900);
+    expect(res.body.budget.a.travellers).toBe(6);
+  });
+});
+
 describe("pathfinding (stretch)", () => {
   it("finds the fastest way from Chongqing to Hong Kong", async () => {
     const res = await viewer.api.get<PathResult>("/paths?from=CKG&to=HKG&by=minutes");

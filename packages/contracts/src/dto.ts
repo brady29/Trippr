@@ -1,4 +1,4 @@
-import type { ArriveMode, Check, CheckLevel, EventCheck, VisaRule, VisaSummary, When } from "@trippr/rules";
+import type { ArriveMode, Budget, Check, CheckLevel, EventCheck, VisaRule, VisaSummary, When } from "@trippr/rules";
 import type { Role } from "./schemas";
 
 /** Every error response uses this one shape. */
@@ -33,6 +33,8 @@ export interface TripRef {
   name: string;
   startDate: string;
   homeCity?: string | null;
+  /** Number of people travelling; 1 when not set. */
+  travellers?: number | null;
 }
 
 export interface TripListItem extends TripRef {
@@ -62,6 +64,8 @@ export interface RouteSummary extends RouteRef {
   returnDate: string;
   checksLevel: CheckLevel;
   cities: string[];
+  /** Estimated cost per person in CAD (stay + travel + planned activities). */
+  perPersonCad: number;
 }
 
 export interface TripDetail {
@@ -136,6 +140,10 @@ export interface StopView {
   arriveMode: ArriveMode;
   arriveNote?: string | null;
   notes?: string | null;
+  /** Accommodation per person per night in CAD, when estimated. */
+  stayCadPerNight?: number | null;
+  /** Per-person cost of getting here in CAD, when estimated. */
+  arriveCostCad?: number | null;
   arrive: string;
   depart: string;
   city: City;
@@ -158,7 +166,9 @@ export interface RouteView {
   role: Role;
   stops: StopView[];
   checks: RouteChecks;
+  /** Kept for compatibility: the planned-activities part of the budget, per person. */
   plannedCostCad: number;
+  budget: Budget;
 }
 
 export interface StopLibrary {
@@ -185,6 +195,7 @@ export interface CompareResult {
   activitiesGained: ActivityRef[];
   /** Planned in A but not in B. */
   activitiesLost: ActivityRef[];
+  budget: { a: Budget; b: Budget };
 }
 
 export interface PathLeg {

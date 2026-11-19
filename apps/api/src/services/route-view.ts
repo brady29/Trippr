@@ -1,5 +1,5 @@
 import type { Role, RouteSummary, RouteView, StopView } from "@trippr/contracts";
-import { runChecks, type RuleStop } from "@trippr/rules";
+import { computeBudget, runChecks, type RuleStop } from "@trippr/rules";
 import type { StoredRoute, StoredStop } from "../repositories";
 
 type RuleInput = RuleStop & { stored: StoredStop };
@@ -28,6 +28,8 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     arriveMode: stop.stored.arriveMode,
     arriveNote: stop.stored.arriveNote,
     notes: stop.stored.notes,
+    stayCadPerNight: stop.stored.stayCadPerNight,
+    arriveCostCad: stop.stored.arriveCostCad,
     arrive,
     depart,
     city: {
@@ -39,10 +41,7 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     planned: stop.stored.planned,
   }));
 
-  const plannedCostCad = stored.stops.reduce(
-    (total, s) => total + s.planned.reduce((t, a) => t + (a.costCad ?? 0), 0),
-    0,
-  );
+  const budget = computeBudget(stored.stops, stored.trip.travellers ?? 1);
 
   return {
     route: { ...stored.route, tripId: stored.trip.id },
@@ -57,7 +56,8 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
       visa: result.visa,
       events: result.events,
     },
-    plannedCostCad,
+    plannedCostCad: budget.perPerson.activities,
+    budget,
   };
 }
 
@@ -70,5 +70,6 @@ export function summarize(view: RouteView): RouteSummary {
     returnDate: view.checks.returnDate,
     checksLevel: view.checks.level,
     cities: view.stops.map((s) => s.city.name),
+    perPersonCad: view.budget.perPerson.total,
   };
 }

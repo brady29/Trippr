@@ -5,7 +5,7 @@ import { shortDate } from "@trippr/rules";
 import { ChecksBadge, LevelIcon, Panel } from "./ui";
 
 /** China visa-free days per entry against the limit, entries, fixed-date events, and the return date. */
-export function ChecksPanel({ view, plannedCostCad }: { view: RouteView; plannedCostCad: number }) {
+export function ChecksPanel({ view }: { view: RouteView }) {
   const { checks } = view;
   const problems = checks.checks.filter((c) => c.kind !== "total-nights" && c.kind !== "return-date" && c.kind !== "visa-days");
   return (
@@ -24,8 +24,8 @@ export function ChecksPanel({ view, plannedCostCad }: { view: RouteView; planned
           </dd>
         </div>
         <div className="rounded-lg bg-paper px-2 py-2">
-          <dt className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">Planned</dt>
-          <dd className="font-mono text-lg font-semibold">${Math.round(plannedCostCad)}</dd>
+          <dt className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">Per person</dt>
+          <dd className="font-mono text-lg font-semibold">${Math.round(view.budget.perPerson.total)}</dd>
         </div>
       </dl>
 
