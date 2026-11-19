@@ -3,5 +3,9 @@
   "name": "Asia 2027",
   "startDate": "2027-05-10",
   "homeCity": "Toronto",
-  "routes": ["main-route.json", "with-shanghai-route.json"]
+  "travellers": 6,
+  "routes": [
+    "main-route.json",
+    "with-shanghai-route.json"
+  ]
 }

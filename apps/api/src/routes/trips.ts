@@ -168,6 +168,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
       nightsByCountry: [...countries.values()].sort((x, y) => y.a + y.b - (x.a + x.b)),
       activitiesGained: [...pb.values()].filter((p) => !pa.has(p.id)),
       activitiesLost: [...pa.values()].filter((p) => !pb.has(p.id)),
+      budget: { a: viewA.budget, b: viewB.budget },
     };
   });
 }

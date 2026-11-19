@@ -17,7 +17,7 @@ export function tripsRepository(db: GraphClient) {
       return rows.map((r) => ({ ...r.trip, role: r.role, routeCount: num(r.routeCount) }));
     },
 
-    async create(userId: string, input: { name: string; startDate: string; homeCity?: string }) {
+    async create(userId: string, input: { name: string; startDate: string; homeCity?: string; travellers?: number }) {
       const id = newId("trip");
       await db.query(q("trips/create"), {
         userId,
@@ -26,6 +26,7 @@ export function tripsRepository(db: GraphClient) {
         name: input.name,
         startDate: input.startDate,
         homeCity: input.homeCity ?? null,
+        travellers: input.travellers ?? 1,
         now: nowIso(),
       });
       return id;
@@ -36,12 +37,13 @@ export function tripsRepository(db: GraphClient) {
       return row?.trip ?? null;
     },
 
-    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string }) {
+    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string; travellers?: number }) {
       await db.query(q("trips/patch"), {
         tripId,
         name: input.name ?? null,
         startDate: input.startDate ?? null,
         homeCity: input.homeCity ?? null,
+        travellers: input.travellers ?? null,
       });
     },
 

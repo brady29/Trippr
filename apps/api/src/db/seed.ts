@@ -58,6 +58,7 @@ interface SeedTrip {
   name: string;
   startDate: string;
   homeCity?: string;
+  travellers?: number;
   routes: string[];
 }
 
@@ -125,6 +126,7 @@ export async function seedDatabase(db: GraphClient, options: SeedOptions): Promi
     name: trip.name,
     startDate: trip.startDate,
     homeCity: trip.homeCity ?? null,
+    travellers: trip.travellers ?? 1,
     now: stamp,
   });
   const tripCreated = Boolean(tripRow?.created);

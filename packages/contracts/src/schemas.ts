@@ -64,6 +64,8 @@ export const patchTripBody = z.object({
   name: shortText(80).min(1).optional(),
   startDate: isoDate.optional(),
   homeCity: shortText(80).optional(),
+  /** How many people are travelling; drives the group budget. */
+  travellers: z.number().int().min(1).max(20).optional(),
 });
 
 export const createInviteBody = z.object({
@@ -105,6 +107,10 @@ export const patchStopBody = z.object({
   arriveMode: arriveModeSchema.optional(),
   arriveNote: shortText(200).optional(),
   notes: shortText(2000).optional(),
+  /** Accommodation per person per night in CAD; null clears the estimate. */
+  stayCadPerNight: z.number().min(0).max(100_000).nullable().optional(),
+  /** Per-person cost of getting to this stop in CAD; null clears the estimate. */
+  arriveCostCad: z.number().min(0).max(100_000).nullable().optional(),
   version,
 });
 

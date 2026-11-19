@@ -20,6 +20,8 @@ export interface StopCardActions {
   onMode(mode: ArriveMode): void;
   onArriveNote(note: string): void;
   onNotes(notes: string): void;
+  /** Cost estimates in CAD per person; null clears one. */
+  onCosts(patch: { stayCadPerNight?: number | null; arriveCostCad?: number | null }): void;
   onMove(delta: -1 | 1): void;
   onRemove(): void;
   onOpenActivities(): void;
@@ -71,6 +73,55 @@ function BlurText({
       aria-label={rest["aria-label"]}
       className={cls}
     />
+  );
+}
+
+/** A compact CAD amount saved on blur; an empty box clears the estimate. */
+function BlurMoney({
+  value,
+  onSave,
+  disabled,
+  label,
+  suffix,
+}: {
+  value: number | null | undefined;
+  onSave: (v: number | null) => void;
+  disabled: boolean;
+  label: string;
+  suffix: string;
+}) {
+  const [draft, setDraft] = useState(value == null ? "" : String(value));
+  useEffect(() => setDraft(value == null ? "" : String(value)), [value]);
+  const commit = () => {
+    const trimmed = draft.trim();
+    const next = trimmed === "" ? null : Number(trimmed);
+    if (next !== null && (!Number.isFinite(next) || next < 0)) {
+      setDraft(value == null ? "" : String(value));
+      return;
+    }
+    if (next !== (value ?? null)) onSave(next);
+  };
+  return (
+    <label className="flex items-center gap-1 rounded-md bg-paper px-2 py-1 text-xs text-ink-soft">
+      <span aria-hidden>$</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step="any"
+        value={draft}
+        disabled={disabled}
+        placeholder="?"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        aria-label={label}
+        className="w-16 bg-transparent font-mono text-xs text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-70"
+      />
+      <span>{suffix}</span>
+    </label>
   );
 }
 
@@ -186,6 +237,23 @@ export function StopCard({
               aria-label={`Travel note for ${stop.city.name}`}
             />
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2" data-testid="stop-costs">
+          <BlurMoney
+            value={stop.stayCadPerNight}
+            onSave={(v) => actions.onCosts({ stayCadPerNight: v })}
+            disabled={!canEdit}
+            label={`Stay in ${stop.city.name}, CAD per person per night`}
+            suffix="/night stay"
+          />
+          <BlurMoney
+            value={stop.arriveCostCad}
+            onSave={(v) => actions.onCosts({ arriveCostCad: v })}
+            disabled={!canEdit}
+            label={`Getting to ${stop.city.name}, CAD per person`}
+            suffix="to get here"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
