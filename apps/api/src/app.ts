@@ -12,6 +12,7 @@ import { activityRoutes } from "./routes/activities";
 import { authRoutes } from "./routes/auth";
 import { explorerRoutes } from "./routes/explorer";
 import { liveRoutes } from "./routes/live";
+import { travelRoutes } from "./routes/travel";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { tripRoutes } from "./routes/trips";
@@ -128,6 +129,7 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     routeRoutes(scope, ctx);
     activityRoutes(scope, ctx);
     liveRoutes(scope, ctx);
+    travelRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
   });
 

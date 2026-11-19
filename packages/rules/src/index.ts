@@ -6,3 +6,4 @@ export * from "./events";
 export * from "./checks";
 export * from "./budget";
 export * from "./stays";
+export * from "./travel";
