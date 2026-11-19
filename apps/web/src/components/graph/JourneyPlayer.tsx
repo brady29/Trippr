@@ -73,13 +73,13 @@ export function JourneyPlayer({
         value={index}
         onChange={(e) => onIndex(Number(e.target.value))}
         aria-label="Journey position"
-        aria-valuetext={`${step.stop.label}, arriving ${step.stop.attrs.arrive ? dayDate(String(step.stop.attrs.arrive)) : ""}`}
+        aria-valuetext={`${step.stop.label}${step.arrive ? `, arriving ${dayDate(step.arrive)}` : ""}`}
         className="h-11 min-w-0 flex-1 accent-[#ffc23d]"
         data-testid="journey-scrubber"
       />
       <span className="min-w-0 basis-full truncate font-mono text-xs sm:basis-auto" aria-live="polite">
         {index + 1}/{steps.length} · {step.stop.label}
-        {step.stop.attrs.arrive ? ` · ${dayDate(String(step.stop.attrs.arrive))}` : ""}
+        {step.arrive ? ` · ${dayDate(step.arrive)}` : ""}
         {step.leg ? ` · by ${MODE[String(step.leg.style.mode)] ?? step.leg.style.mode}` : ""}
       </span>
       {!hasLegs ? <span className="basis-full text-xs text-amber-soft/70">Add how you get to each stop to see the journey.</span> : null}

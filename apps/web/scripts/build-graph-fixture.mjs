@@ -135,7 +135,7 @@ for (const route of routes) {
       lat: city.lat,
       lon: city.lon,
       cityCode: s.city,
-      attrs: { order: i, nights: s.nights, routeId: route.id, routeName: route.name, arrive, depart, arriveMode: s.arriveMode ?? "flight" },
+      attrs: { order: i, nights: s.nights, routeId: route.id, routeName: route.name, arriveMode: s.arriveMode ?? "flight" },
       style: { routes: [route.id] },
     });
     link("HAS_STOP", rId, sId, { order: i });
