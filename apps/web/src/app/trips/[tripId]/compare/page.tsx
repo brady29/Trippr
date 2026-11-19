@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { BoardHeader, RequireAuth, TopBar } from "@/components/shell";
+import { cad } from "@/components/budget-panel";
 import { TripNav } from "@/components/trip-nav";
 import { ChecksBadge, ErrorNote, Panel, Select, Spinner } from "@/components/ui";
 import { useCompare, useTrip } from "@/lib/queries";
@@ -25,6 +26,7 @@ function RouteHead({ route, side }: { route: RouteSummary; side: "A" | "B" }) {
         <span>{route.totalNights} nights</span>
         <span>home {shortDate(route.returnDate)}</span>
         <span>{route.stopCount} stops</span>
+        <span>{cad(route.perPersonCad)} pp</span>
         <ChecksBadge level={route.checksLevel} />
       </div>
     </div>
@@ -66,6 +68,44 @@ function CompareView({ data }: { data: CompareResult }) {
             <CityList title={`Only in ${data.b.name}`} cities={data.onlyB} tone="b" />
           </div>
         </div>
+      </Panel>
+      <Panel title="Budget per person (CAD)">
+        <table className="w-full text-sm" data-testid="compare-budget">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+              <th className="pb-1 text-left font-medium" scope="col">
+                <span className="sr-only">Category</span>
+              </th>
+              <th className="pb-1 text-right font-medium" scope="col">
+                A: {data.a.name}
+              </th>
+              <th className="pb-1 text-right font-medium" scope="col">
+                B: {data.b.name}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {(
+              [
+                ["Stays", "stay"],
+                ["Getting around", "travel"],
+                ["Planned activities", "activities"],
+                ["Total", "total"],
+              ] as const
+            ).map(([label, key]) => (
+              <tr key={key} className={key === "total" ? "border-t border-line font-semibold" : ""}>
+                <th scope="row" className="py-1 text-left font-normal text-ink-soft">
+                  {label}
+                </th>
+                <td className="py-1 text-right font-mono">{cad(data.budget.a.perPerson[key])}</td>
+                <td className="py-1 text-right font-mono">{cad(data.budget.b.perPerson[key])}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {data.budget.a.missing.stayNights + data.budget.a.missing.travelLegs + data.budget.b.missing.stayNights + data.budget.b.missing.travelLegs > 0 ? (
+          <p className="mt-2 text-xs text-ink-faint">Stays or legs without an estimate count as $0; fill them in on each route&apos;s stop cards.</p>
+        ) : null}
       </Panel>
       <Panel title="Nights per country">
         <ul className="space-y-3">

@@ -11,6 +11,7 @@ import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell"
 import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ChecksBadge, ErrorNote, Input, Panel, Select, Spinner, Tag } from "@/components/ui";
+import { cad } from "@/components/budget-panel";
 import { api } from "@/lib/api";
 import { keys, useTrip } from "@/lib/queries";
 
@@ -163,9 +164,60 @@ function RouteCard({
           <div className="text-[10px] uppercase tracking-[0.2em] text-ink-faint">Home</div>
           <div className="font-mono text-sm">{shortDate(route.returnDate)}</div>
         </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-ink-faint">Per person</div>
+          <div className="font-mono text-sm" data-testid="route-per-person">
+            {cad(route.perPersonCad)}
+          </div>
+        </div>
         <ChecksBadge level={route.checksLevel} />
       </div>
     </li>
+  );
+}
+
+/** Owner sets how many people are travelling; it drives every group budget. */
+function GroupSizePanel({ tripId, travellers }: { tripId: string; travellers: number }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [value, setValue] = useState(String(travellers));
+  const save = useMutation({
+    mutationFn: (n: number) => api(`/trips/${tripId}`, { method: "PATCH", body: { travellers: n } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.trip(tripId) });
+      void qc.invalidateQueries({ queryKey: ["route"] });
+      void qc.invalidateQueries({ queryKey: ["compare"] });
+      toast("Group size saved", "ok");
+    },
+    onError: (e) => toast(e instanceof Error ? e.message : "That didn't save", "error"),
+  });
+  const n = Number(value);
+  const valid = Number.isInteger(n) && n >= 1 && n <= 20;
+  return (
+    <Panel title="Group size">
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valid && n !== travellers) save.mutate(n);
+        }}
+      >
+        <Input
+          type="number"
+          min={1}
+          max={20}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label="Number of travellers"
+          className="w-20"
+        />
+        <span className="text-sm text-ink-soft">travellers</span>
+        <Button type="submit" size="sm" disabled={!valid || n === travellers || save.isPending} className="ml-auto">
+          Save
+        </Button>
+      </form>
+      <p className="mt-2 text-xs text-ink-faint">Group budgets multiply the per-person estimate by this.</p>
+    </Panel>
   );
 }
 
@@ -239,6 +291,7 @@ function TripHome({ tripId }: { tripId: string }) {
             <BoardStat label="Departs" value={shortDate(t.trip.startDate)} />
             {t.trip.homeCity ? <BoardStat label="From" value={t.trip.homeCity} /> : null}
             <BoardStat label="Routes" value={t.routes.length} />
+            <BoardStat label="Travellers" value={t.trip.travellers ?? 1} />
             {current ? <BoardStat label="Current" value={`${current.name} · ${current.totalNights} nights`} /> : null}
           </>
         }
@@ -277,6 +330,9 @@ function TripHome({ tripId }: { tripId: string }) {
           </ul>
         </section>
         <aside className="space-y-4">
+          {t.role === "owner" ? (
+            <GroupSizePanel key={t.trip.travellers ?? 1} tripId={tripId} travellers={t.trip.travellers ?? 1} />
+          ) : null}
           {t.role === "owner" ? <InvitePanel tripId={tripId} /> : null}
           <Panel title="Travellers">
             <ul className="space-y-2">

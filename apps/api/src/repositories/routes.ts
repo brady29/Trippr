@@ -13,6 +13,8 @@ export interface StoredStop {
   arriveMode: ArriveModeName;
   arriveNote: string | null;
   notes: string | null;
+  stayCadPerNight: number | null;
+  arriveCostCad: number | null;
   city: { code: string; name: string; lat: number; lon: number };
   country: Country & { color?: string | null };
   planned: ActivityRef[];
@@ -63,6 +65,8 @@ export function routesRepository(db: GraphClient) {
             arriveMode: (str(s.stop.arriveMode) ?? "flight") as ArriveModeName,
             arriveNote: str(s.stop.arriveNote),
             notes: str(s.stop.notes),
+            stayCadPerNight: optNum(s.stop.stayCadPerNight),
+            arriveCostCad: optNum(s.stop.arriveCostCad),
             city: { code: s.city.code, name: s.city.name, lat: num(s.city.lat), lon: num(s.city.lon) },
             country: {
               iso: s.country.iso,
@@ -154,6 +158,8 @@ export function routesRepository(db: GraphClient) {
           arriveMode: s.arriveMode,
           arriveNote: s.arriveNote,
           notes: s.notes,
+          stayCadPerNight: s.stayCadPerNight,
+          arriveCostCad: s.arriveCostCad,
           plans: s.planned.map((p) => ({ activityId: p.id, day: p.day ?? null })),
         })),
       });
@@ -196,7 +202,14 @@ export function routesRepository(db: GraphClient) {
     patchStop: (
       stopId: string,
       version: number,
-      input: { nights?: number; arriveMode?: string; arriveNote?: string; notes?: string },
+      input: {
+        nights?: number;
+        arriveMode?: string;
+        arriveNote?: string;
+        notes?: string;
+        stayCadPerNight?: number | null;
+        arriveCostCad?: number | null;
+      },
     ) =>
       guarded("stops/patch", {
         stopId,
@@ -205,6 +218,10 @@ export function routesRepository(db: GraphClient) {
         arriveMode: input.arriveMode ?? null,
         arriveNote: input.arriveNote ?? null,
         notes: input.notes ?? null,
+        setStay: input.stayCadPerNight !== undefined,
+        stayCadPerNight: input.stayCadPerNight ?? null,
+        setArriveCost: input.arriveCostCad !== undefined,
+        arriveCostCad: input.arriveCostCad ?? null,
       }),
 
     deleteStop: (stopId: string, version: number) => guarded("stops/delete", { stopId, version }),

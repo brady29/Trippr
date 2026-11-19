@@ -19,6 +19,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ActivityDrawer } from "@/components/activity-drawer";
 import { AddStop } from "@/components/add-stop";
+import { BudgetPanel } from "@/components/budget-panel";
 import { ChecksPanel } from "@/components/checks-panel";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { StopCard } from "@/components/stop-card";
@@ -129,6 +130,7 @@ function Editor({ view }: { view: RouteView }) {
                       onMode: (arriveMode) => edit.mutate({ kind: "patchStop", stopId: stop.id, body: { arriveMode } }),
                       onArriveNote: (arriveNote) => edit.mutate({ kind: "patchStop", stopId: stop.id, body: { arriveNote } }),
                       onNotes: (notes) => edit.mutate({ kind: "patchStop", stopId: stop.id, body: { notes } }),
+                      onCosts: (costs) => edit.mutate({ kind: "patchStop", stopId: stop.id, body: costs }),
                       onMove: (delta) => reorder(arrayMove(ids, i, i + delta)),
                       onRemove: () => {
                         if (window.confirm(`Remove ${stop.city.name} from ${view.route.name}?`)) {
@@ -157,7 +159,10 @@ function Editor({ view }: { view: RouteView }) {
         </section>
 
         <div className="lg:col-start-2 lg:row-start-2">
-          <ChecksPanel view={view} plannedCostCad={view.plannedCostCad} />
+          <div className="space-y-4">
+            <ChecksPanel view={view} />
+            <BudgetPanel view={view} />
+          </div>
         </div>
       </main>
       {drawer ? (
