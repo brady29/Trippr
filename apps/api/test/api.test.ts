@@ -424,6 +424,75 @@ describe("pathfinding (stretch)", () => {
   });
 });
 
+describe("live updates", () => {
+  /** Opens the trip's event stream as `token` and collects parsed events. */
+  async function openStream(baseUrl: string, token: string) {
+    const controller = new AbortController();
+    const res = await fetch(`${baseUrl}/trips/${TRIP}/live`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/event-stream");
+    const events: { event: string; data: any }[] = [];
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    void (async () => {
+      try {
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let cut: number;
+          while ((cut = buffer.indexOf("\n\n")) >= 0) {
+            const block = buffer.slice(0, cut);
+            buffer = buffer.slice(cut + 2);
+            const event = /^event: (.+)$/m.exec(block)?.[1];
+            const data = /^data: (.+)$/m.exec(block)?.[1];
+            if (event && data) events.push({ event, data: JSON.parse(data) });
+          }
+        }
+      } catch {
+        /* aborted */
+      }
+    })();
+    const waitFor = async (pred: (e: { event: string; data: any }) => boolean) => {
+      for (let i = 0; i < 100; i++) {
+        const hit = events.find(pred);
+        if (hit) return hit;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error(`event not received; got ${JSON.stringify(events)}`);
+    };
+    return { events, waitFor, close: () => controller.abort() };
+  }
+
+  it("streams presence and other people's changes to everyone on the trip", async () => {
+    const address = await h.app.listen({ port: 0, host: "127.0.0.1" });
+    const ownerStream = await openStream(address, owner.token);
+    const editorStream = await openStream(address, editor.token);
+    try {
+      const presence = await ownerStream.waitFor(
+        (e) => e.event === "presence" && e.data.some((p: { id: string }) => p.id === editor.id),
+      );
+      expect(presence.data.map((p: { name: string }) => p.name)).toEqual(expect.arrayContaining(["Brady", "Editor Friend"]));
+
+      const view = (await editor.api.get<RouteView>(`/routes/${SHANGHAI}`)).body;
+      await editor.api.patch(`/stops/${view.stops[0]!.id}`, { notes: "Live!", version: view.route.version });
+      const change = await ownerStream.waitFor((e) => e.event === "change" && e.data.kind === "route");
+      expect(change.data).toEqual({ kind: "route", routeId: SHANGHAI, by: editor.id });
+
+      // Strangers cannot listen in.
+      const res = await fetch(`${address}/trips/${TRIP}/live`, { headers: { authorization: `Bearer ${stranger.token}` } });
+      expect(res.status).toBe(404);
+    } finally {
+      ownerStream.close();
+      editorStream.close();
+    }
+  });
+});
+
 describe("deleting activities", () => {
   it("removes an activity from every route, with its comments (editors only)", async () => {
     const created = await editor.api.post<LibraryActivity>("/activities", { tripId: TRIP, cityCode: "SIA", title: "Temporary idea" });

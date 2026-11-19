@@ -36,12 +36,13 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
   }
 
   /** A null version from a guarded write means someone else saved first. */
-  async function afterWrite(routeId: string, newVersion: number | null, role: Role) {
+  async function afterWrite(routeId: string, newVersion: number | null, role: Role, who: { tripId: string; by: string }) {
     if (newVersion === null) {
       const current = await repos.routes.load(routeId);
       if (!current) throw notFound("Route");
       throw versionConflict(current.route.version);
     }
+    ctx.notify(who.tripId, { kind: "route", routeId }, who.by);
     return view(routeId, role);
   }
 
@@ -57,21 +58,22 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
   app.patch("/routes/:id", async (req) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    const { role } = await guards.route(user, id, "editor");
+    const { role, tripId } = await guards.route(user, id, "editor");
     const body = ctx.parse(patchRouteBody, req.body);
     const version = await repos.routes.patch(id, body.version, {
       name: body.name,
       tags: body.tags,
       makeCurrent: body.isCurrent === true,
     });
-    return afterWrite(id, version, role);
+    return afterWrite(id, version, role, { tripId, by: user.id });
   });
 
   app.delete("/routes/:id", async (req, reply) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    await guards.route(user, id, "owner");
+    const { tripId } = await guards.route(user, id, "owner");
     await repos.routes.delete(id);
+    ctx.notify(tripId, { kind: "trip" }, user.id);
     reply.status(204);
   });
 
@@ -92,7 +94,7 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
   app.post("/routes/:id/stops", async (req, reply) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    const { role } = await guards.route(user, id, "editor");
+    const { role, tripId } = await guards.route(user, id, "editor");
     const body = ctx.parse(addStopBody, req.body);
     const [stored, city] = await Promise.all([loadOrThrow(id), repos.cities.get(body.cityCode)]);
     if (!city) throw notFound(`City ${body.cityCode}`);
@@ -108,14 +110,14 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
       ids.map((sid, order) => ({ id: sid, order })),
     );
     reply.status(201);
-    return afterWrite(id, version, role);
+    return afterWrite(id, version, role, { tripId, by: user.id });
   });
 
   /** Reorder: { stopIds: [...], version }. */
   app.put("/routes/:id/order", async (req) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    const { role } = await guards.route(user, id, "editor");
+    const { role, tripId } = await guards.route(user, id, "editor");
     const body = ctx.parse(reorderBody, req.body);
     const stored = await loadOrThrow(id);
     if (stored.route.version !== body.version) throw versionConflict(stored.route.version);
@@ -129,25 +131,25 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
       body.version,
       body.stopIds.map((sid, order) => ({ id: sid, order })),
     );
-    return afterWrite(id, version, role);
+    return afterWrite(id, version, role, { tripId, by: user.id });
   });
 
   /** Nights, travel mode, travel note, notes. */
   app.patch("/stops/:id", async (req) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    const { role, routeId } = await guards.stop(user, id, "editor");
+    const { role, routeId, tripId } = await guards.stop(user, id, "editor");
     const body = ctx.parse(patchStopBody, req.body);
     const version = await repos.routes.patchStop(id, body.version, body);
-    return afterWrite(routeId, version, role);
+    return afterWrite(routeId, version, role, { tripId, by: user.id });
   });
 
   app.delete("/stops/:id", async (req) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    const { role, routeId } = await guards.stop(user, id, "editor");
+    const { role, routeId, tripId } = await guards.stop(user, id, "editor");
     const { version } = ctx.parse(versionQuery, req.query);
-    return afterWrite(routeId, await repos.routes.deleteStop(id, version), role);
+    return afterWrite(routeId, await repos.routes.deleteStop(id, version), role, { tripId, by: user.id });
   });
 
   /** Plan an activity at a stop. Idempotent, so it needs no version. */
@@ -161,14 +163,16 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
     if (!(await repos.routes.plan(id, activityId, day ?? null))) {
       throw badRequest("That activity is in a different city from this stop");
     }
+    ctx.notify(tripId, { kind: "route", routeId }, user.id);
     return view(routeId, role);
   });
 
   app.delete("/stops/:id/plans/:activityId", async (req) => {
     const user = ctx.user(req);
     const { id, activityId } = ctx.parse(planParams, req.params);
-    const { role, routeId } = await guards.stop(user, id, "editor");
+    const { role, routeId, tripId } = await guards.stop(user, id, "editor");
     await repos.routes.unplan(id, activityId);
+    ctx.notify(tripId, { kind: "route", routeId }, user.id);
     return view(routeId, role);
   });
 

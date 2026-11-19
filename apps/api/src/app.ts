@@ -5,10 +5,12 @@ import { createAuth, type Auth, type AuthUser } from "./auth";
 import type { Config } from "./config";
 import type { GraphClient } from "./db/graph";
 import { AppError, badRequest, forbidden, unauthorized } from "./errors";
+import { LiveHub, type LiveChange } from "./live";
 import { createRepositories, type Repositories } from "./repositories";
 import { preloadQueries } from "./repositories/queries";
 import { activityRoutes } from "./routes/activities";
 import { authRoutes } from "./routes/auth";
+import { liveRoutes } from "./routes/live";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { tripRoutes } from "./routes/trips";
@@ -26,6 +28,9 @@ export interface AppContext {
   repos: Repositories;
   auth: Auth;
   guards: Guards;
+  live: LiveHub;
+  /** Tell everyone viewing the trip that `by` just changed something. */
+  notify(tripId: string, change: LiveChange, by: string): void;
   /** The signed-in caller; throws 401 when there is none. */
   user(req: FastifyRequest): AuthUser;
   parse<S extends ZodTypeAny>(schema: S, data: unknown): z.output<S>;
@@ -53,6 +58,8 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
   const repos = createRepositories(db);
   const auth = createAuth(config);
   const knownUsers = new Map<string, number>();
+  const live = new LiveHub();
+  app.addHook("onClose", async () => live.closeAll());
 
   // Verify the bearer token (if any) and map it to a User node.
   app.addHook("preHandler", async (req) => {
@@ -77,6 +84,10 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     repos,
     auth,
     guards: createGuards(repos),
+    live,
+    notify(tripId, change, by) {
+      live.publish(tripId, change, by);
+    },
     user(req) {
       if (!req.authUser) throw unauthorized();
       return req.authUser;
@@ -115,6 +126,7 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     tripRoutes(scope, ctx);
     routeRoutes(scope, ctx);
     activityRoutes(scope, ctx);
+    liveRoutes(scope, ctx);
   });
 
   return app;

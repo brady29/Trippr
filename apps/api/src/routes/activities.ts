@@ -41,6 +41,7 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
     await guards.trip(user, body.tripId, "editor");
     if (!(await repos.cities.get(body.cityCode))) throw notFound(`City ${body.cityCode}`);
     const id = await repos.activities.create(user.id, body);
+    ctx.notify(body.tripId, { kind: "activities" }, user.id);
     reply.status(201);
     return repos.activities.get(body.tripId, user.id, id);
   });
@@ -60,6 +61,7 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
       ...("url" in raw ? { url: body.url ?? null } : {}),
       ...("costCad" in raw ? { costCad: body.costCad ?? null } : {}),
     });
+    ctx.notify(tripId, { kind: "activities" }, user.id);
     return repos.activities.get(tripId, user.id, id);
   });
 
@@ -67,8 +69,9 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
   app.delete("/activities/:id", async (req, reply) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    await guards.activity(user, id, "editor");
+    const { tripId } = await guards.activity(user, id, "editor");
     await repos.activities.delete(id);
+    ctx.notify(tripId, { kind: "activities" }, user.id);
     reply.status(204);
   });
 
@@ -79,6 +82,7 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
     const { tripId } = await guards.activity(user, id, "viewer");
     const { value } = ctx.parse(voteBody, req.body);
     await repos.activities.vote(user.id, id, value);
+    ctx.notify(tripId, { kind: "activities" }, user.id);
     return repos.activities.get(tripId, user.id, id);
   });
 
@@ -92,9 +96,10 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
   app.post("/activities/:id/comments", async (req, reply) => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    await guards.activity(user, id, "viewer");
+    const { tripId } = await guards.activity(user, id, "viewer");
     const { text } = ctx.parse(commentBody, req.body);
     await repos.activities.addComment(user.id, id, text);
+    ctx.notify(tripId, { kind: "activities" }, user.id);
     reply.status(201);
     return repos.activities.comments(id);
   });
