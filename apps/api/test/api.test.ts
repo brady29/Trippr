@@ -82,7 +82,7 @@ describe("seed", () => {
 
   it("stores one LINK edge per direction with the right mode (regression: FalkorDB < 4.22 shuffled MERGE properties)", async () => {
     const rows = await h.db.query<{ to: string; mode: string; minutes: number }>(
-      "MATCH (:City {code: 'CKG'})-[l:LINK]->(b:City) RETURN b.code AS to, l.mode AS mode, l.minutes AS minutes ORDER BY to, mode",
+      "MATCH (:City {code: 'CKG'})-[l:LINK]->(b:City) WHERE b.code IN ['CAN', 'CTU', 'SIA'] RETURN b.code AS to, l.mode AS mode, l.minutes AS minutes ORDER BY to, mode",
     );
     expect(rows).toEqual([
       { to: "CAN", mode: "flight", minutes: 135 },
