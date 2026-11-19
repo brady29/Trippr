@@ -1,0 +1,47 @@
+{
+  "_comment": "Stations and airports for the Asia 2027 routes (Trip Graph Explorer spec). Coordinates are approximate (about 0.01 degrees). Rows with source 'planner research (verify)' are planning assumptions to check against real tickets. `serves` lists the cities a hub serves (the first is its home city). `defaults` picks the hub a leg uses into or out of a city for each mode; `home` is where the first leg departs.",
+  "asOf": "2026-11-18",
+  "hubs": [
+    { "hubId": "YYZ", "kind": "airport", "code": "YYZ", "name": "Toronto Pearson", "lat": 43.68, "lon": -79.63, "cityCode": "YTO", "cityName": "Toronto", "serves": [], "source": "planner research" },
+    { "hubId": "HND", "kind": "airport", "code": "HND", "name": "Tokyo Haneda", "lat": 35.55, "lon": 139.78, "cityCode": "TYO", "cityName": "Tokyo", "serves": ["TYO"], "source": "planner research (verify)" },
+    { "hubId": "NRT", "kind": "airport", "code": "NRT", "name": "Tokyo Narita", "lat": 35.77, "lon": 140.39, "cityCode": "TYO", "cityName": "Tokyo", "serves": ["TYO"], "source": "planner research (verify)" },
+    { "hubId": "PEK", "kind": "airport", "code": "PEK", "name": "Beijing Capital", "lat": 40.08, "lon": 116.58, "cityCode": "BJS", "cityName": "Beijing", "serves": ["BJS"], "source": "planner research (verify)" },
+    { "hubId": "PKX", "kind": "airport", "code": "PKX", "name": "Beijing Daxing", "lat": 39.51, "lon": 116.41, "cityCode": "BJS", "cityName": "Beijing", "serves": ["BJS"], "source": "planner research (verify)" },
+    { "hubId": "stn-beijing-west", "kind": "station", "stationKind": "hsr", "name": "Beijing West", "lat": 39.89, "lon": 116.32, "cityCode": "BJS", "cityName": "Beijing", "serves": ["BJS"], "source": "planner research (verify)" },
+    { "hubId": "stn-xian-north", "kind": "station", "stationKind": "hsr", "name": "Xi'an North", "lat": 34.38, "lon": 108.94, "cityCode": "SIA", "cityName": "Xi'an", "serves": ["SIA"], "source": "planner research" },
+    { "hubId": "stn-chongqing-west", "kind": "station", "stationKind": "hsr", "name": "Chongqing West", "lat": 29.5, "lon": 106.43, "cityCode": "CKG", "cityName": "Chongqing", "serves": ["CKG"], "source": "planner research (verify)" },
+    { "hubId": "stn-chongqing-north", "kind": "station", "stationKind": "hsr", "name": "Chongqing North", "lat": 29.61, "lon": 106.55, "cityCode": "CKG", "cityName": "Chongqing", "serves": ["CKG"], "source": "planner research (verify)" },
+    { "hubId": "stn-guangzhou-south", "kind": "station", "stationKind": "hsr", "name": "Guangzhou South", "lat": 22.99, "lon": 113.27, "cityCode": "CAN", "cityName": "Guangzhou", "serves": ["CAN"], "source": "planner research" },
+    { "hubId": "stn-shenzhen-north", "kind": "station", "stationKind": "hsr", "name": "Shenzhen North", "lat": 22.61, "lon": 114.03, "cityCode": "SZX", "cityName": "Shenzhen", "serves": ["SZX"], "source": "planner research" },
+    { "hubId": "stn-futian", "kind": "station", "stationKind": "hsr", "name": "Futian", "lat": 22.54, "lon": 114.06, "cityCode": "SZX", "cityName": "Shenzhen", "serves": ["SZX"], "source": "planner research (verify)" },
+    { "hubId": "stn-west-kowloon", "kind": "station", "stationKind": "hsr", "name": "Hong Kong West Kowloon", "lat": 22.3, "lon": 114.17, "cityCode": "HKG", "cityName": "Hong Kong", "serves": ["HKG"], "source": "planner research" },
+    { "hubId": "HKG", "kind": "airport", "code": "HKG", "name": "Hong Kong International", "lat": 22.31, "lon": 113.91, "cityCode": "HKG", "cityName": "Hong Kong", "serves": ["HKG"], "source": "planner research" },
+    { "hubId": "HAN", "kind": "airport", "code": "HAN", "name": "Hanoi Noi Bai", "lat": 21.22, "lon": 105.81, "cityCode": "HAN", "cityName": "Hanoi", "serves": ["HAN"], "source": "planner research" },
+    { "hubId": "SGN", "kind": "airport", "code": "SGN", "name": "Ho Chi Minh City Tan Son Nhat", "lat": 10.82, "lon": 106.66, "cityCode": "SGN", "cityName": "Ho Chi Minh City", "serves": ["SGN"], "source": "planner research" },
+    { "hubId": "LBJ", "kind": "airport", "code": "LBJ", "name": "Komodo Airport, Labuan Bajo", "lat": -8.49, "lon": 119.89, "cityCode": "LBJ", "cityName": "Labuan Bajo", "serves": ["LBJ", "KOM"], "source": "planner research" },
+    { "hubId": "DPS", "kind": "airport", "code": "DPS", "name": "Bali Ngurah Rai", "lat": -8.75, "lon": 115.17, "cityCode": "DPS", "cityName": "Bali", "serves": ["DPS"], "source": "planner research" },
+    { "hubId": "PVG", "kind": "airport", "code": "PVG", "name": "Shanghai Pudong", "lat": 31.14, "lon": 121.81, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" },
+    { "hubId": "SHA", "kind": "airport", "code": "SHA", "name": "Shanghai Hongqiao", "lat": 31.2, "lon": 121.34, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" },
+    { "hubId": "stn-shanghai-hongqiao", "kind": "station", "stationKind": "hsr", "name": "Shanghai Hongqiao", "lat": 31.19, "lon": 121.32, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research (verify)" },
+    { "hubId": "stn-longyang-road", "kind": "station", "stationKind": "maglev", "name": "Longyang Road (maglev)", "lat": 31.2, "lon": 121.56, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" }
+  ],
+  "home": "YYZ",
+  "defaults": {
+    "TYO": { "flight": "HND" },
+    "BJS": { "flight": "PEK", "hsr": "stn-beijing-west", "train": "stn-beijing-west" },
+    "SIA": { "hsr": "stn-xian-north", "train": "stn-xian-north" },
+    "CKG": { "hsr": "stn-chongqing-west", "train": "stn-chongqing-west" },
+    "CAN": { "hsr": "stn-guangzhou-south", "train": "stn-guangzhou-south" },
+    "SZX": { "hsr": "stn-shenzhen-north", "train": "stn-futian" },
+    "HKG": { "flight": "HKG", "hsr": "stn-west-kowloon", "train": "stn-west-kowloon" },
+    "HAN": { "flight": "HAN" },
+    "SGN": { "flight": "SGN" },
+    "LBJ": { "flight": "LBJ" },
+    "KOM": { "flight": "LBJ" },
+    "DPS": { "flight": "DPS" },
+    "SHA": { "flight": "PVG", "hsr": "stn-shanghai-hongqiao", "train": "stn-shanghai-hongqiao", "maglev": "stn-longyang-road" }
+  },
+  "links": [
+    { "from": "PVG", "to": "stn-longyang-road", "mode": "maglev", "minutes": 8, "costCad": 10, "note": "About 8 min, capped at 300 km/h", "source": "planner research", "bothWays": true }
+  ]
+}

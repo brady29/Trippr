@@ -187,3 +187,5 @@ export async function seedDatabase(db: GraphClient, options: SeedOptions): Promi
     ...(invite ? { ownerInvite: invite } : {}),
   };
 }
+
+export { migrateGraphExplorer } from "./explorer-migration";

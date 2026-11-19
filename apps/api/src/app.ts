@@ -10,6 +10,7 @@ import { createRepositories, type Repositories } from "./repositories";
 import { preloadQueries } from "./repositories/queries";
 import { activityRoutes } from "./routes/activities";
 import { authRoutes } from "./routes/auth";
+import { explorerRoutes } from "./routes/explorer";
 import { liveRoutes } from "./routes/live";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
@@ -127,6 +128,7 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     routeRoutes(scope, ctx);
     activityRoutes(scope, ctx);
     liveRoutes(scope, ctx);
+    explorerRoutes(scope, ctx);
   });
 
   return app;

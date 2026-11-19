@@ -1,4 +1,4 @@
-import { shortDate } from "./dates";
+import { addDays, shortDate } from "./dates";
 import { eventFits, isFixedDate, whenLabel } from "./events";
 import { computeSchedule } from "./schedule";
 import type { Check, CheckLevel, ChecksResult, EventCheck, RuleStop } from "./types";
@@ -97,6 +97,37 @@ export function runChecks<S extends RuleStop>(startDate: string, stops: readonly
         detail: `${label}; you are in ${stop.cityName} ${shortDate(arrive)} to ${shortDate(depart)}`,
         stopId: stop.id,
         activityId: activity.id,
+      });
+    }
+  }
+
+  for (const { stop, arrive, depart } of schedule.stops) {
+    // A leg into a stop departs on the arrival day, or the day before for an overnight train or flight.
+    for (const leg of stop.legs ?? []) {
+      const day = leg.departAt?.slice(0, 10);
+      if (!day || day === arrive || day === addDays(arrive, -1)) continue;
+      checks.push({
+        id: `leg-day-${stop.id}-${leg.id}`,
+        kind: "leg-day",
+        level: "warn",
+        title: `${leg.label ?? "A ticket"} into ${stop.cityName} departs ${shortDate(day)}`,
+        detail: `You arrive in ${stop.cityName} on ${shortDate(arrive)}; the ticket should depart that day or the day before.`,
+        stopId: stop.id,
+        legId: leg.id,
+      });
+    }
+    // A booked hotel keeps the dates it was booked for; a reorder can move the stop away from them.
+    for (const stay of stop.stays ?? []) {
+      if (stay.status !== "booked" || !stay.arrive || !stay.depart) continue;
+      if (stay.arrive === arrive && stay.depart === depart) continue;
+      checks.push({
+        id: `stay-dates-${stop.id}-${stay.hotelId}`,
+        kind: "stay-dates",
+        level: "warn",
+        title: `${stay.name} is booked for other dates`,
+        detail: `Booked ${shortDate(stay.arrive)} to ${shortDate(stay.depart)}; you are now in ${stop.cityName} ${shortDate(arrive)} to ${shortDate(depart)}.`,
+        stopId: stop.id,
+        hotelId: stay.hotelId,
       });
     }
   }
