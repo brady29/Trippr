@@ -16,7 +16,7 @@ import type {
   TripDetail,
   TripListItem,
 } from "@trippr/contracts";
-import { computeBudget, runChecks } from "@trippr/rules";
+import { computeBudget, effectiveStopCosts, runChecks, worstLevel } from "@trippr/rules";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, isConflict } from "./api";
 import { useToast } from "@/components/toast";
@@ -123,20 +123,32 @@ export function recompute(view: RouteView, stops: StopView[]): RouteView {
       countryName: s.country.name,
       visaRule: s.country.visaRule ?? null,
       planned: s.planned,
+      legs: (s.legs ?? []).map((l) => ({
+        id: l.id,
+        label: [l.operator, l.number].filter(Boolean).join(" ") || `${l.from.name} → ${l.to.name}`,
+        departAt: l.departAt ?? null,
+      })),
       view: s,
     })),
   );
-  const budget = computeBudget(stops, view.trip.travellers ?? 1);
+  // Chosen hotels and priced legs override the rough estimates, as on the server.
+  const budget = computeBudget(
+    stops.map((s) => ({ id: s.id, nights: s.nights, planned: s.planned, ...effectiveStopCosts(s) })),
+    view.trip.travellers ?? 1,
+  );
+  // Only the server knows the dates a hotel was booked for, so keep its stay-date checks until it answers.
+  const stayChecks = view.checks.checks.filter((c) => c.kind === "stay-dates");
+  const checks = [...result.checks, ...stayChecks];
   return {
     ...view,
     stops: result.schedule.stops.map(({ stop, arrive, depart }, i) => ({ ...stop.view, order: i, arrive, depart })),
     budget,
     plannedCostCad: budget.perPerson.activities,
     checks: {
-      level: result.level,
+      level: worstLevel(checks.map((c) => c.level)),
       totalNights: result.schedule.totalNights,
       returnDate: result.schedule.returnDate,
-      checks: result.checks,
+      checks,
       visa: result.visa,
       events: result.events,
     },
