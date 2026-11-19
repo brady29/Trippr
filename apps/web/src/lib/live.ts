@@ -46,6 +46,7 @@ export function useTripLive(tripId: string | undefined): { present: Present[]; c
           void qc.invalidateQueries({ queryKey: keys.library(change.routeId) });
           void qc.invalidateQueries({ queryKey: keys.trip(tripId) });
           void qc.invalidateQueries({ queryKey: ["compare"] });
+          void qc.invalidateQueries({ queryKey: ["bookings"] });
           break;
         case "trip":
         case "members":

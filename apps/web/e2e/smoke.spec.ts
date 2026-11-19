@@ -89,3 +89,13 @@ test("route editor fits a phone screen @phone", async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("Booked tab lists the route's bookings and what is still to book", async ({ page }) => {
+  await page.goto("/trips/asia-2027");
+  await page.getByRole("link", { name: "Booked", exact: true }).click();
+  await expect(page).toHaveURL(/\/trips\/asia-2027\/bookings/);
+  await expect(page.getByLabel("Route")).toBeVisible();
+  await expect(page.getByTestId("to-book")).toBeVisible();
+  await page.getByLabel("Route").selectOption("route-with-shanghai");
+  await expect(page).toHaveURL(/route=route-with-shanghai/);
+});

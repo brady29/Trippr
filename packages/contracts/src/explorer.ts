@@ -323,3 +323,66 @@ export interface TravelOptionsResult {
   travellers: number;
   options: import("@trippr/rules").TravelOption[];
 }
+
+// --- bookings -------------------------------------------------------------
+
+export const bookingsQuery = z.object({ routeId: id.optional() });
+
+interface BookingBase {
+  stopId: string;
+  stopOrder: number;
+  cityCode: string;
+  cityName: string;
+  /** YYYY-MM-DD the item happens (departure day for legs, check-in for stays). */
+  date: string;
+  pricePerPersonCad: number | null;
+  /** pricePerPersonCad × travellers. */
+  groupCad: number | null;
+}
+
+export interface LegBooking extends BookingBase {
+  kind: "leg";
+  id: string;
+  status: LegStatus;
+  mode: LegMode;
+  from: { id: string; name: string; kind: HubKind };
+  to: { id: string; name: string; kind: HubKind };
+  operator?: string | null;
+  number?: string | null;
+  departAt?: string | null;
+  arriveAt?: string | null;
+  /** Editors and the owner only. */
+  bookingRef?: string | null;
+  seat?: string | null;
+}
+
+export interface StayBooking extends BookingBase {
+  kind: "stay";
+  id: string;
+  status: StayStatus;
+  hotelId: string;
+  hotelName: string;
+  areaName: string;
+  url?: string | null;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  rooms?: number | null;
+  perPersonPerNightCad: number | null;
+}
+
+export type BookingItem = LegBooking | StayBooking;
+
+export interface BookingsResult {
+  trip: { id: string; name: string; travellers: number };
+  route: { id: string; name: string; isCurrent: boolean };
+  routes: { id: string; name: string; isCurrent: boolean }[];
+  canSeePrivate: boolean;
+  /** Booked legs and stays, by date. */
+  booked: BookingItem[];
+  /** Held legs and chosen hotels: picked but not booked yet. */
+  pending: BookingItem[];
+  /** Stops still missing a booked hotel or booked transport. */
+  toBook: { stopId: string; stopOrder: number; cityName: string; arrive: string; nights: number; needsStay: boolean; needsTransport: boolean }[];
+  totals: { bookedPerPersonCad: number; pendingPerPersonCad: number; bookedGroupCad: number; bookedCount: number; pendingCount: number };
+}
