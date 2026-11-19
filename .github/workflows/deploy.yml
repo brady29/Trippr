@@ -9,6 +9,7 @@ name: Deploy
 # below is only for token-based deploys and stays skipped unless
 # VERCEL_TOKEN is set.
 #
+# Env vars are passed with "##" as the separator, since values (URLs, the inbox email) contain "@" and ",".
 # Repository variables: GCP_PROJECT_ID, GCP_REGION, GCP_WORKLOAD_IDENTITY_PROVIDER,
 #   GCP_SERVICE_ACCOUNT, PUBLIC_WEB_URL, WEB_ORIGIN, DEMO_TRIP_ID, DB_DIALECT,
 #   AUTH_JWKS_URL, AUTH_ISSUER (Clerk; public values)
@@ -63,7 +64,7 @@ jobs:
             --min-instances 0 --max-instances 1 --timeout 3600 \
             --memory 512Mi \
             --network default --subnet default --vpc-egress private-ranges-only \
-            --set-env-vars "^@^NODE_ENV=production@DB_DIALECT=${{ vars.DB_DIALECT || 'falkordb' }}@DB_AUTO_MIGRATE=true@DB_AUTO_SEED=true@PUBLIC_WEB_URL=${{ vars.PUBLIC_WEB_URL }}@WEB_ORIGIN=${{ vars.WEB_ORIGIN }}@DEMO_TRIP_ID=${{ vars.DEMO_TRIP_ID }}@AUTH_JWKS_URL=${{ vars.AUTH_JWKS_URL }}@AUTH_ISSUER=${{ vars.AUTH_ISSUER }}@INBOX_EMAIL_ADDRESS=${{ vars.INBOX_EMAIL_ADDRESS }}" \
+            --set-env-vars "^##^NODE_ENV=production##DB_DIALECT=${{ vars.DB_DIALECT || 'falkordb' }}##DB_AUTO_MIGRATE=true##DB_AUTO_SEED=true##PUBLIC_WEB_URL=${{ vars.PUBLIC_WEB_URL }}##WEB_ORIGIN=${{ vars.WEB_ORIGIN }}##DEMO_TRIP_ID=${{ vars.DEMO_TRIP_ID }}##AUTH_JWKS_URL=${{ vars.AUTH_JWKS_URL }}##AUTH_ISSUER=${{ vars.AUTH_ISSUER }}##INBOX_EMAIL_ADDRESS=${{ vars.INBOX_EMAIL_ADDRESS }}" \
             --set-secrets "$SECRETS"
       - name: Smoke check /health
         run: |
