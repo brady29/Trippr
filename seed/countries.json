@@ -1,6 +1,6 @@
 [
   { "iso": "JP", "name": "Japan", "color": "#d94f4f" },
-  { "iso": "CN", "name": "China", "color": "#e0a030", "visaRule": { "visaFreeDays": 30, "entriesUntil": "2026-12-31" } },
+  { "iso": "CN", "name": "China", "color": "#e0a030", "visaRule": {"visaFreeDays": 30, "entriesUntil": "2026-12-31"} },
   { "iso": "HK", "name": "Hong Kong", "color": "#8e5cc7" },
   { "iso": "MO", "name": "Macau", "color": "#5c7cc7" },
   { "iso": "TW", "name": "Taiwan", "color": "#3fa7a0" },
@@ -12,5 +12,10 @@
   { "iso": "MY", "name": "Malaysia", "color": "#3f6b9b" },
   { "iso": "SG", "name": "Singapore", "color": "#c7465c" },
   { "iso": "PH", "name": "Philippines", "color": "#3f8a9b" },
-  { "iso": "ID", "name": "Indonesia", "color": "#2f8f8a" }
+  { "iso": "ID", "name": "Indonesia", "color": "#2f8f8a" },
+  { "iso": "BN", "name": "Brunei", "color": "#b8862b" },
+  { "iso": "MN", "name": "Mongolia", "color": "#5a6fb0" },
+  { "iso": "LK", "name": "Sri Lanka", "color": "#a34a6a" },
+  { "iso": "NP", "name": "Nepal", "color": "#6a8f3a" },
+  { "iso": "MV", "name": "Maldives", "color": "#2a9db8" }
 ]

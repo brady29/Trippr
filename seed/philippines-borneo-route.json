@@ -1,0 +1,22 @@
+{
+  "_comment": "Sample route: Palawan, the Visayas and Siargao, then Sabah and Sarawak.",
+  "id": "route-philippines-borneo",
+  "name": "Philippines and Borneo islands",
+  "tags": [
+    "sample",
+    "islands",
+    "diving"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "MNL", "nights": 3, "arriveMode": "flight", "arriveNote": "Toronto to Manila", "plans": ["act-mnl-intramuros", "act-mnl-binondo"] },
+    { "city": "USU", "nights": 4, "arriveMode": "flight", "arriveNote": "Manila to Busuanga, about 1 h", "plans": ["act-usu-kayangan", "act-usu-wrecks", "act-usu-maquinit"] },
+    { "city": "ENI", "nights": 4, "arriveMode": "boat", "arriveNote": "Fast ferry from Coron, about 4 h", "plans": ["act-eni-tour-a", "act-eni-nacpan"] },
+    { "city": "PPS", "nights": 3, "arriveMode": "road", "arriveNote": "Van, about 5 to 6 h", "plans": ["act-pps-underground-river", "act-pps-honda-bay"] },
+    { "city": "CEB", "nights": 3, "arriveMode": "flight", "arriveNote": "Puerto Princesa to Cebu, about 1.5 h", "plans": ["act-ceb-kawasan", "act-ceb-magellan", "act-ceb-lechon"] },
+    { "city": "TAG", "nights": 4, "arriveMode": "boat", "arriveNote": "Fast ferry to Tagbilaran, about 2 h", "plans": ["act-tag-chocolate-hills", "act-tag-tarsier", "act-tag-alona"] },
+    { "city": "IAO", "nights": 5, "arriveMode": "flight", "arriveNote": "Flights are limited; usually via Cebu", "plans": ["act-iao-cloud9", "act-iao-island-hopping", "act-iao-sugba"] },
+    { "city": "BKI", "nights": 5, "arriveMode": "flight", "arriveNote": "To Kota Kinabalu, usually via Manila or Cebu", "plans": ["act-bki-kinabalu", "act-bki-islands", "act-bki-night-market"] },
+    { "city": "KCH", "nights": 4, "arriveMode": "flight", "arriveNote": "Kota Kinabalu to Kuching, about 1.5 h", "plans": ["act-kch-semenggoh", "act-kch-bako", "act-kch-laksa"] }
+  ]
+}

@@ -6,6 +6,12 @@
   "travellers": 6,
   "routes": [
     "main-route.json",
-    "with-shanghai-route.json"
+    "with-shanghai-route.json",
+    "japan-rail-route.json",
+    "korea-taiwan-route.json",
+    "china-west-route.json",
+    "indochina-route.json",
+    "philippines-borneo-route.json",
+    "malaysia-indonesia-route.json"
   ]
 }
