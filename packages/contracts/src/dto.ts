@@ -1,4 +1,5 @@
 import type { ArriveMode, Budget, Check, CheckLevel, EventCheck, VisaRule, VisaSummary, When } from "@trippr/rules";
+import type { Leg, StopStay } from "./explorer";
 import type { Role } from "./schemas";
 
 /** Every error response uses this one shape. */
@@ -149,6 +150,10 @@ export interface StopView {
   city: City;
   country: Country;
   planned: ActivityRef[];
+  /** How this stop is reached: chained ticket segments between hubs, in order. */
+  legs: Leg[];
+  /** Hotels shortlisted, chosen or booked for this stop. */
+  stays: StopStay[];
 }
 
 export interface RouteChecks {

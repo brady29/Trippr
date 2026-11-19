@@ -39,6 +39,8 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     },
     country: stop.stored.country,
     planned: stop.stored.planned,
+    legs: [],
+    stays: [],
   }));
 
   const budget = computeBudget(stored.stops, stored.trip.travellers ?? 1);
