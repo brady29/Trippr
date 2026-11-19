@@ -1,0 +1,23 @@
+{
+  "_comment": "Sample route: Silk Road deserts, Sichuan and Yunnan, out via Guilin to Hong Kong.",
+  "id": "route-china-west",
+  "name": "China west and Yunnan",
+  "tags": [
+    "sample",
+    "china",
+    "silk road"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "BJS", "nights": 4, "arriveMode": "flight", "arriveNote": "Toronto to Beijing", "plans": ["act-forbidden-city", "act-mutianyu"] },
+    { "city": "SIA", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 4.5 h", "plans": ["act-terracotta", "act-city-wall"] },
+    { "city": "DNH", "nights": 3, "arriveMode": "flight", "arriveNote": "Xi'an to Dunhuang, about 3 h", "plans": ["act-dnh-mogao", "act-dnh-crescent-lake"] },
+    { "city": "YZY", "nights": 2, "arriveMode": "train", "arriveNote": "Train to Zhangye; check the timetable", "plans": ["act-yzy-danxia", "act-yzy-giant-buddha"] },
+    { "city": "CTU", "nights": 4, "arriveMode": "flight", "arriveNote": "Zhangye to Chengdu; few flights, or rail via Lanzhou", "plans": ["act-ctu-panda-base", "act-ctu-kuanzhai", "act-ctu-hotpot"] },
+    { "city": "KMG", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 6 h", "plans": ["act-kmg-stone-forest", "act-kmg-noodles"] },
+    { "city": "DLU", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 2 h", "plans": ["act-dlu-erhai", "act-dlu-three-pagodas"] },
+    { "city": "LJG", "nights": 4, "arriveMode": "hsr", "arriveNote": "About 1.5 h", "plans": ["act-ljg-old-town", "act-ljg-jade-dragon", "act-ljg-tiger-leaping"] },
+    { "city": "KWL", "nights": 4, "arriveMode": "flight", "arriveNote": "Lijiang to Guilin, about 2 h", "plans": ["act-kwl-li-river", "act-kwl-longji"] },
+    { "city": "HKG", "nights": 4, "arriveMode": "hsr", "arriveNote": "High-speed train to West Kowloon, about 3 h", "plans": ["act-peak", "act-dragons-back"] }
+  ]
+}

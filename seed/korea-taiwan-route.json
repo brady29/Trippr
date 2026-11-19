@@ -1,0 +1,22 @@
+{
+  "_comment": "Sample route: KTX down Korea, then Taiwan's high-speed line and east coast.",
+  "id": "route-korea-taiwan",
+  "name": "Korea and Taiwan",
+  "tags": [
+    "sample",
+    "korea",
+    "taiwan"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "SEL", "nights": 6, "arriveMode": "flight", "arriveNote": "Toronto to Seoul Incheon", "plans": ["act-sel-gyeongbokgung", "act-sel-gwangjang", "act-sel-bukhansan"] },
+    { "city": "TAE", "nights": 2, "arriveMode": "hsr", "arriveNote": "KTX, about 1 h 50 min", "plans": ["act-tae-seomun", "act-tae-donghwasa"] },
+    { "city": "PUS", "nights": 4, "arriveMode": "hsr", "arriveNote": "KTX, about 50 min", "plans": ["act-pus-gamcheon", "act-pus-jagalchi", "act-pus-haeundae"] },
+    { "city": "CJU", "nights": 4, "arriveMode": "flight", "arriveNote": "Busan to Jeju, about 1 h", "plans": ["act-cju-hallasan", "act-cju-seongsan", "act-cju-black-pork"] },
+    { "city": "TPE", "nights": 6, "arriveMode": "flight", "arriveNote": "Jeju to Taipei; check for direct flights", "plans": ["act-tpe-taipei-101", "act-tpe-shilin", "act-tpe-jiufen"] },
+    { "city": "RMQ", "nights": 3, "arriveMode": "hsr", "arriveNote": "Taiwan High Speed Rail, about 50 min", "plans": ["act-rmq-fengjia", "act-rmq-sun-moon-lake", "act-rmq-theater"] },
+    { "city": "TNN", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 45 min", "plans": ["act-tnn-anping", "act-tnn-chihkan", "act-tnn-beef-soup"] },
+    { "city": "KHH", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 15 min to Zuoying", "plans": ["act-khh-pier2", "act-khh-lotus-pond", "act-khh-liuhe"] },
+    { "city": "HUN", "nights": 4, "arriveMode": "train", "arriveNote": "South-link line around the coast, about 4.5 h", "plans": ["act-hun-taroko", "act-hun-qixingtan"] }
+  ]
+}

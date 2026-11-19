@@ -1,0 +1,22 @@
+{
+  "_comment": "Sample route: Japan by Shinkansen, ending on Okinawa.",
+  "id": "route-japan-rail",
+  "name": "Japan rail circuit",
+  "tags": [
+    "sample",
+    "japan",
+    "rail"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "TYO", "nights": 5, "arriveMode": "flight", "arriveNote": "Toronto to Tokyo Haneda", "plans": ["act-teamlab", "act-tsukiji"] },
+    { "city": "KMQ", "nights": 3, "arriveMode": "hsr", "arriveNote": "Hokuriku Shinkansen, about 2.5 h", "plans": ["act-kmq-kenrokuen", "act-kmq-omicho", "act-kmq-higashi-chaya"] },
+    { "city": "UKY", "nights": 5, "arriveMode": "train", "arriveNote": "Limited express to Tsuruga, then the Shinkansen; about 2 h", "plans": ["act-uky-fushimi-inari", "act-uky-arashiyama", "act-uky-kinkakuji"] },
+    { "city": "OSA", "nights": 4, "arriveMode": "train", "arriveNote": "About 30 min by JR", "plans": ["act-osa-dotonbori", "act-osa-castle"] },
+    { "city": "HIJ", "nights": 3, "arriveMode": "hsr", "arriveNote": "Sanyo Shinkansen, about 1.5 h", "plans": ["act-hij-peace-museum", "act-hij-miyajima", "act-hij-okonomiyaki"] },
+    { "city": "FUK", "nights": 3, "arriveMode": "hsr", "arriveNote": "About 1 h", "plans": ["act-fuk-yatai", "act-fuk-dazaifu"] },
+    { "city": "NGS", "nights": 3, "arriveMode": "hsr", "arriveNote": "Relay train to Takeo-Onsen, then the Nishi-Kyushu Shinkansen", "plans": ["act-ngs-peace-park", "act-ngs-gunkanjima", "act-ngs-inasa"] },
+    { "city": "KOJ", "nights": 4, "arriveMode": "hsr", "arriveNote": "Via Shin-Tosu on the Kyushu Shinkansen, about 2.5 h", "plans": ["act-koj-sakurajima", "act-koj-sengan-en"] },
+    { "city": "OKA", "nights": 6, "arriveMode": "flight", "arriveNote": "Kagoshima to Naha, about 1.5 h", "plans": ["act-oka-churaumi", "act-oka-shuri", "act-oka-kokusai"] }
+  ]
+}
