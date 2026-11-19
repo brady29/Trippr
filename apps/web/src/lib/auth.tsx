@@ -86,9 +86,14 @@ export function AuthProvider({ children, clerkEnabled }: { children: ReactNode; 
       try {
         let user = await api<Me>("/me");
         const profile = clerk.profile;
-        // Clerk session tokens carry no name by default; copy it from the Clerk profile once.
-        if (!localToken && profile?.name && user.name === "Traveller") {
-          user = (await api<Me>("/me", { method: "PATCH", body: profile })) ?? user;
+        // Clerk session tokens carry no name or email by default; copy them from the Clerk
+        // profile once. The email lets the trip inbox recognise mail you send it.
+        if (!localToken && profile) {
+          const patch = {
+            ...(profile.name && user.name === "Traveller" ? { name: profile.name } : {}),
+            ...(profile.email && !user.email ? { email: profile.email } : {}),
+          };
+          if (Object.keys(patch).length) user = (await api<Me>("/me", { method: "PATCH", body: patch })) ?? user;
         }
         if (!cancelled) {
           setMe(user);

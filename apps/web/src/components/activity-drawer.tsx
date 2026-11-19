@@ -1,10 +1,11 @@
 "use client";
 
 import type { StopView } from "@trippr/contracts";
-import { dayDate } from "@trippr/rules";
+import { activityLinks, dayDate } from "@trippr/rules";
 import { useEffect, useRef } from "react";
 import { usePlanToggle, useRouteLibrary } from "@/lib/queries";
 import { ActivityItem, NewActivityForm } from "./activity";
+import { BookingLinks } from "./booking-links";
 import { XIcon } from "./icons";
 import { ErrorNote, Spinner } from "./ui";
 
@@ -63,6 +64,10 @@ export function ActivityDrawer({
           </p>
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <BookingLinks
+            label="Tours and tickets on"
+            links={activityLinks({ code: stop.city.code, name: stop.city.name, countryIso: stop.city.countryIso })}
+          />
           {library.isPending ? <Spinner /> : null}
           {library.error ? <ErrorNote error={library.error} /> : null}
           {library.data && activities.length === 0 ? (

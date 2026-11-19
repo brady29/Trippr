@@ -1,12 +1,16 @@
 "use client";
 
 import type { StopView, TravelOptionsResult } from "@trippr/contracts";
-import { formatDuration, type TravelOption, type TravelPriority } from "@trippr/rules";
+import { formatDuration, travelLinks, type TravelOption, type TravelPriority } from "@trippr/rules";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { BookingLinks } from "./booking-links";
 import { BusIcon, ModeIcon } from "./icons";
+
+/** The fields the booking-link builders need from a stop. */
+export const linkCity = (s: StopView) => ({ code: s.city.code, name: s.city.name, countryIso: s.city.countryIso });
 
 const PRIORITIES: { id: TravelPriority; label: string }[] = [
   { id: "balanced", label: "Best overall" },
@@ -109,6 +113,11 @@ export function TravelOptions({
                   </button>
                 ) : null}
                 <p className="w-full text-[11px] text-ink-soft">{o.note}</p>
+                <BookingLinks
+                  className="w-full"
+                  label="Find tickets on"
+                  links={travelLinks(o.mode, linkCity(prev), linkCity(stop), prev.depart, travellers)}
+                />
               </li>
             ))}
           </ul>

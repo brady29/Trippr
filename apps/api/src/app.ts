@@ -1,5 +1,5 @@
 import cors from "@fastify/cors";
-import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequest, type InjectOptions } from "fastify";
 import { ZodError, type ZodTypeAny, type z } from "zod";
 import { createAuth, type Auth, type AuthUser } from "./auth";
 import type { Config } from "./config";
@@ -14,6 +14,9 @@ import { explorerRoutes } from "./routes/explorer";
 import { liveRoutes } from "./routes/live";
 import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
+import { inboxRoutes } from "./routes/inbox";
+import { createInbox, type Inbox } from "./services/inbox/service";
+import { basicReader, createClaudeReader, type InboxReader } from "./services/inbox/reader";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { tripRoutes } from "./routes/trips";
@@ -34,6 +37,12 @@ export interface AppContext {
   live: LiveHub;
   /** Tell everyone viewing the trip that `by` just changed something. */
   notify(tripId: string, change: LiveChange, by: string): void;
+  /** Reads inbox messages (Claude when configured, otherwise links only). */
+  inboxReader: InboxReader;
+  inbox: Inbox;
+  log: FastifyBaseLogger;
+  /** Calls this API in-process, e.g. to apply an inbox item as the person who sent it. */
+  inject(opts: InjectOptions): Promise<{ statusCode: number; json(): unknown; body: string }>;
   /** The signed-in caller; throws 401 when there is none. */
   user(req: FastifyRequest): AuthUser;
   parse<S extends ZodTypeAny>(schema: S, data: unknown): z.output<S>;
@@ -43,9 +52,11 @@ export interface BuildOptions {
   config: Config;
   db: GraphClient;
   logger?: boolean | object;
+  /** Overrides the inbox reader (tests). */
+  inboxReader?: InboxReader;
 }
 
-export async function buildApp({ config, db, logger = true }: BuildOptions): Promise<FastifyInstance> {
+export async function buildApp({ config, db, logger = true, inboxReader }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
     logger: logger === true ? { level: config.LOG_LEVEL } : logger,
@@ -81,7 +92,13 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     }
   });
 
+  const reader =
+    inboxReader ?? (config.ANTHROPIC_API_KEY ? createClaudeReader({ apiKey: config.ANTHROPIC_API_KEY, model: config.INBOX_MODEL }) : basicReader);
   const ctx: AppContext = {
+    inboxReader: reader,
+    inbox: undefined as unknown as Inbox,
+    log: app.log,
+    inject: (opts) => app.inject(opts),
     config,
     db,
     repos,
@@ -101,6 +118,8 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
       return result.data;
     },
   };
+
+  ctx.inbox = createInbox(ctx);
 
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof AppError) {
@@ -132,6 +151,7 @@ export async function buildApp({ config, db, logger = true }: BuildOptions): Pro
     liveRoutes(scope, ctx);
     travelRoutes(scope, ctx);
     bookingsRoutes(scope, ctx);
+    inboxRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
   });
 

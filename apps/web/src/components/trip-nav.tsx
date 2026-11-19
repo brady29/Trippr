@@ -73,6 +73,9 @@ export function TripNav({ tripId, tripName }: { tripId: string; tripName?: strin
       <NavLink href={`${base}/bookings`} active={path.startsWith(`${base}/bookings`)}>
         Booked
       </NavLink>
+      <NavLink href={`${base}/inbox`} active={path.startsWith(`${base}/inbox`)}>
+        Inbox
+      </NavLink>
       <NavLink href={`${base}/paths`} active={path.startsWith(`${base}/paths`)}>
         Paths
       </NavLink>

@@ -96,6 +96,18 @@ test("Booked tab lists the route's bookings and what is still to book", async ({
   await expect(page).toHaveURL(/\/trips\/asia-2027\/bookings/);
   await expect(page.getByLabel("Route")).toBeVisible();
   await expect(page.getByTestId("to-book")).toBeVisible();
+  await expect(page.getByTestId("to-book").locator('a[data-provider="booking"]').first()).toHaveAttribute("href", /booking\.com\/searchresults/);
   await page.getByLabel("Route").selectOption("route-with-shanghai");
   await expect(page).toHaveURL(/route=route-with-shanghai/);
+});
+
+test("Inbox turns a pasted link into an activity idea", async ({ page }) => {
+  await page.goto("/trips/asia-2027");
+  await page.getByRole("link", { name: "Inbox", exact: true }).click();
+  await expect(page).toHaveURL(/\/trips\/asia-2027\/inbox/);
+  await page.getByLabel("Paste a confirmation or a link").fill("Night view from Shibuya Sky in Tokyo\nhttps://www.youtube.com/watch?v=e2e123");
+  await page.getByRole("button", { name: "Read it" }).click();
+  const item = page.getByTestId("inbox-item").filter({ hasText: "Night view from Shibuya Sky in Tokyo" });
+  await expect(item).toHaveAttribute("data-status", "applied");
+  await expect(item).toContainText("Tokyo (stop 1)");
 });
