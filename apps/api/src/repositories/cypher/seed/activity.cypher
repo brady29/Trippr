@@ -3,7 +3,7 @@ MATCH (t:Trip {id: $tripId})
 UNWIND $activities AS row
 MATCH (c:City {code: row.city})
 MERGE (a:Activity {id: row.id})
-SET a.title = row.title, a.url = row.url, a.when = row.when, a.costCad = row.costCad
+SET a.title = row.title, a.url = row.url, a.when = row.when, a.costCad = row.costCad, a.mapsQuery = row.mapsQuery
 MERGE (a)-[:IN]->(c)
 MERGE (a)-[:FOR]->(t)
 WITH a, row

@@ -204,7 +204,7 @@ export async function buildGraph(
       type: "activity",
       label: a.title,
       cityCode: a.cityCode,
-      attrs: { when: a.when ?? null, costCad: a.costCad ?? null, url: a.url ?? null, tags: a.tags, commentCount: a.commentCount },
+      attrs: { when: a.when ?? null, costCad: a.costCad ?? null, url: a.url ?? null, mapsQuery: a.mapsQuery ?? null, tags: a.tags, commentCount: a.commentCount },
       style: {
         tag: primaryTag(a.tags),
         tags: a.tags,

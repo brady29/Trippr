@@ -6,7 +6,7 @@ import { cypher } from "./queries";
 import { num, optNum, parseJson, toJson } from "./util";
 
 type Row = {
-  activity: { id: string; title: string; when: unknown; url: string | null; costCad: unknown };
+  activity: { id: string; title: string; when: unknown; url: string | null; costCad: unknown; mapsQuery?: string | null };
   cityCode: string;
   cityName: string;
   votes: number;
@@ -35,6 +35,7 @@ export function activitiesRepository(db: GraphClient) {
       title: r.activity.title,
       when: parseJson<When>(r.activity.when),
       url: r.activity.url ?? null,
+      mapsQuery: r.activity.mapsQuery ?? null,
       costCad: optNum(r.activity.costCad),
       tags: [...(r.tags ?? [])].sort(),
       cityCode: r.cityCode,

@@ -19,6 +19,8 @@ interface SeedCity {
   kind?: string;
 }
 interface SeedActivity {
+  /** What to search on Google Maps to find this place. */
+  mapsQuery?: string;
   id: string;
   city: string;
   title: string;
@@ -141,13 +143,23 @@ export async function seedDatabase(db: GraphClient, options: SeedOptions): Promi
       when: json(a.when),
       url: a.url ?? null,
       costCad: a.costCad ?? null,
+      mapsQuery: a.mapsQuery ?? null,
     })),
   });
 
+  /**
+   * Routes are created with the trip. Sample routes added to seed/ later are
+   * created once on an existing trip too (and flagged so the explorer
+   * migration gives them idea legs), but never re-created after someone
+   * deletes them, and existing routes are never touched.
+   */
   const routesSeeded: string[] = [];
-  if (tripCreated || options.forceRoutes) {
-    for (const file of trip.routes) {
-      const route = readJson<SeedRoute>(dir, file);
+  for (const file of trip.routes) {
+    const route = readJson<SeedRoute>(dir, file);
+    const marker = `seed-route:${route.id}`;
+    const [state] = await db.query<{ present: boolean; marked: boolean }>(q("route-state"), { id: route.id, marker });
+    const addLater = !tripCreated && !options.forceRoutes && !state?.present && !state?.marked;
+    if (tripCreated || options.forceRoutes || addLater) {
       const shortId = route.id.replace(/^route-/, "");
       await db.query(q("route"), {
         tripId: trip.id,
@@ -168,7 +180,9 @@ export async function seedDatabase(db: GraphClient, options: SeedOptions): Promi
         })),
       });
       routesSeeded.push(route.id);
+      if (addLater) await db.query(q("route-needs-legs"), { id: route.id });
     }
+    await db.query(cypher("explorer/marker-set", db.dialect), { id: marker, now: stamp });
   }
 
   const expiresAt = new Date(Date.parse(stamp) + 30 * 86_400_000).toISOString();

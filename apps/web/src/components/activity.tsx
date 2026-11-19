@@ -12,6 +12,7 @@ import {
   useVote,
 } from "@/lib/queries";
 import { ChatIcon, StarIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
+import { MapsLink } from "./maps-link";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
 
 function Comments({ activityId, canComment }: { activityId: string; canComment: boolean }) {
@@ -150,6 +151,7 @@ export function ActivityItem({
           <ChatIcon className="h-3.5 w-3.5" />
           {activity.commentCount} comment{activity.commentCount === 1 ? "" : "s"}
         </button>
+        <MapsLink query={activity.mapsQuery} name={activity.title} near={activity.cityName} />
         {canEdit ? (
           <>
             <button onClick={() => setEditing(true)} className="ml-auto text-sky hover:underline" aria-label={`Edit ${activity.title}`}>

@@ -205,9 +205,32 @@ export async function migrateGraphExplorer(
     serves: hubs.hubs.flatMap((h) => h.serves.map((cityCode) => ({ hubId: h.hubId, cityCode }))),
   });
   const hubLinks = planHubLinks(cityLinks, hubs);
+  const createLegs = (rows: PlannedLegRow[]) =>
+    db.query(q("legs-create"), {
+      legs: rows.map((l) => ({
+        ...l,
+        createdAt: now,
+        operator: null,
+        number: null,
+        departAt: null,
+        arriveAt: null,
+        durationMin: null,
+        priceCad: null,
+        bookingRef: null,
+        seat: null,
+      })),
+    });
   await db.query(q("hub-links"), { links: hubLinks });
 
-  const base = { ran: false, hubs: hubs.hubs.length, hubLinks: hubLinks.length, areas: 0, legsCreated: 0 };
+  // Every run: sample routes added to an existing trip get their idea legs now that the hubs exist.
+  const flagged = await db.query<{ routeId: string; stopId: string; arriveMode: string | null; cityCode: string; legs: number }>(
+    q("flagged-route-stops"),
+  );
+  const flaggedLegs = planLegs(flagged.map((s) => ({ ...s, legs: Number(s.legs) })), hubs, now.slice(0, 10));
+  if (flaggedLegs.length) await createLegs(flaggedLegs);
+  if (flagged.length) await db.query(q("flagged-routes-clear"));
+
+  const base = { ran: false, hubs: hubs.hubs.length, hubLinks: hubLinks.length, areas: 0, legsCreated: flaggedLegs.length };
   const [marker] = await db.query<{ id: string }>(q("marker-get"), { id: EXPLORER_MIGRATION_ID });
   if (marker && !options.force) return base;
 
@@ -239,24 +262,9 @@ export async function migrateGraphExplorer(
     hubs,
     now.slice(0, 10),
   );
-  if (legs.length) {
-    await db.query(q("legs-create"), {
-      legs: legs.map((l) => ({
-        ...l,
-        createdAt: now,
-        operator: null,
-        number: null,
-        departAt: null,
-        arriveAt: null,
-        durationMin: null,
-        priceCad: null,
-        bookingRef: null,
-        seat: null,
-      })),
-    });
-  }
+  if (legs.length) await createLegs(legs);
 
   await db.query(q("cities-cleanup"), { codes: RETIRED_CITY_CODES });
   await db.query(q("marker-set"), { id: EXPLORER_MIGRATION_ID, now });
-  return { ran: true, hubs: hubs.hubs.length, hubLinks: hubLinks.length, areas: areas.areas.length, legsCreated: legs.length };
+  return { ran: true, hubs: hubs.hubs.length, hubLinks: hubLinks.length, areas: areas.areas.length, legsCreated: legs.length + flaggedLegs.length };
 }

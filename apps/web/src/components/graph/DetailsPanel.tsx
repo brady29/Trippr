@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import type { GraphIndex } from "@/lib/graph";
 import { NODE_LABEL, primaryTag, TAG_LABEL } from "@/lib/graph-palette";
 import { NodeGlyph } from "./glyphs";
+import { MapsLink } from "@/components/maps-link";
 
 const MODE: Record<string, string> = { flight: "Flight", hsr: "High-speed train", train: "Train", maglev: "Maglev", boat: "Boat", road: "Road" };
 
@@ -166,6 +167,17 @@ export function DetailsPanel({
         </dl>
 
         <div className="mb-4 flex flex-wrap gap-2">
+          {["activity", "city", "station", "airport", "area", "hotel", "stop"].includes(node.type) ? (
+            <MapsLink
+              query={typeof a.mapsQuery === "string" ? a.mapsQuery : null}
+              name={node.type === "stop" ? (index.byId.get(`city:${node.cityCode}`)?.label ?? node.label) : node.label}
+              near={node.type === "city" || node.type === "stop" ? null : (index.byId.get(`city:${node.cityCode}`)?.label ?? (a.cityName as string | undefined) ?? null)}
+              lat={node.lat}
+              lon={node.lon}
+              label="Open in Google Maps"
+              className="min-h-11 rounded-lg border border-line bg-card px-3 text-sm font-medium no-underline hover:border-ink-faint"
+            />
+          ) : null}
           {routeId && ["activity", "stop", "leg", "hotel"].includes(node.type) ? (
             <Link href={`/routes/${routeId}`} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm font-medium hover:border-ink-faint">
               Open in route editor
