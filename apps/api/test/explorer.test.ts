@@ -344,11 +344,15 @@ describe("graph export", () => {
 
   it("truncates by priority over the limits, keeping the route skeleton", async () => {
     const repos = createRepositories(h.db);
-    const g = (await buildGraph(repos, { tripId: TRIP, userId: viewer.id, scope: "trip" }, { nodes: 60, edges: 80 }))!;
-    expect(g.meta.truncated).toBe(true);
-    expect(g.nodes.length).toBeLessThanOrEqual(60);
-    expect(g.edges.length).toBeLessThanOrEqual(80);
     const full = (await buildGraph(repos, { tripId: TRIP, userId: viewer.id, scope: "trip" }))!;
+    // Room for the route skeleton (trip, routes, stops) plus a little more, well under the full graph.
+    const skeleton = full.nodes.filter((n) => ["trip", "route", "stop"].includes(n.type)).length;
+    const limits = { nodes: skeleton + 15, edges: Math.floor(full.edges.length / 2) };
+    expect(full.nodes.length).toBeGreaterThan(limits.nodes);
+    const g = (await buildGraph(repos, { tripId: TRIP, userId: viewer.id, scope: "trip" }, limits))!;
+    expect(g.meta.truncated).toBe(true);
+    expect(g.nodes.length).toBeLessThanOrEqual(limits.nodes);
+    expect(g.edges.length).toBeLessThanOrEqual(limits.edges);
     expect(g.nodes.filter((n) => n.type === "stop").length).toBe(full.nodes.filter((n) => n.type === "stop").length);
   });
 
