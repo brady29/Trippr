@@ -23,6 +23,7 @@ import { BudgetPanel } from "@/components/budget-panel";
 import { ChecksPanel } from "@/components/checks-panel";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { StopCard } from "@/components/stop-card";
+import { StopLegs } from "@/components/stop-legs";
 import { Timeline } from "@/components/timeline";
 import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
@@ -139,7 +140,9 @@ function Editor({ view }: { view: RouteView }) {
                       },
                       onOpenActivities: () => setDrawerStop(stop.id),
                     }}
-                  />
+                  >
+                    <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} />
+                  </StopCard>
                 ))}
               </ol>
             </SortableContext>

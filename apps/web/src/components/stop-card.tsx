@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import type { StopView } from "@trippr/contracts";
 import { ARRIVE_MODES, dayDate, isFixedDate, whenLabel, type ArriveMode } from "@trippr/rules";
 import { useSortable } from "@dnd-kit/sortable";
@@ -132,6 +134,7 @@ export function StopCard({
   canEdit,
   libraryCount,
   actions,
+  children,
 }: {
   stop: StopView;
   index: number;
@@ -139,6 +142,8 @@ export function StopCard({
   canEdit: boolean;
   libraryCount?: number;
   actions: StopCardActions;
+  /** Extra sections inside the card body (legs, stays). */
+  children?: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
@@ -275,6 +280,8 @@ export function StopCard({
             {libraryCount !== undefined ? ` (${libraryCount} in ${stop.city.name})` : ""}
           </button>
         </div>
+
+        {children}
 
         <BlurText
           value={stop.notes ?? ""}
