@@ -1,0 +1,25 @@
+{
+  "_comment": "Sample route: Thailand, Laos, Vietnam top to bottom, and Cambodia, mostly by train, bus and boat.",
+  "id": "route-indochina",
+  "name": "Indochina overland",
+  "tags": [
+    "sample",
+    "overland",
+    "budget"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "BKK", "nights": 4, "arriveMode": "flight", "arriveNote": "Toronto to Bangkok", "plans": ["act-bkk-grand-palace", "act-bkk-yaowarat", "act-bkk-chatuchak"] },
+    { "city": "CNX", "nights": 4, "arriveMode": "train", "arriveNote": "Overnight sleeper, about 11 to 13 h", "plans": ["act-cnx-doi-suthep", "act-cnx-elephant-park", "act-cnx-sunday-market"] },
+    { "city": "CEI", "nights": 2, "arriveMode": "road", "arriveNote": "Bus, about 3 h", "plans": ["act-cei-white-temple", "act-cei-blue-temple"] },
+    { "city": "LPQ", "nights": 4, "arriveMode": "boat", "arriveNote": "Cross at Huay Xai, then the two-day slow boat down the Mekong", "plans": ["act-lpq-kuang-si", "act-lpq-alms", "act-lpq-phousi"] },
+    { "city": "HAN", "nights": 4, "arriveMode": "flight", "arriveNote": "Luang Prabang to Hanoi, about 1 h", "plans": ["act-hanoi-food", "act-train-street", "act-halong"] },
+    { "city": "HUI", "nights": 3, "arriveMode": "train", "arriveNote": "Reunification Express overnight, about 13 h", "plans": ["act-hui-citadel", "act-hui-khai-dinh", "act-hui-bun-bo"] },
+    { "city": "DAD", "nights": 4, "arriveMode": "road", "arriveNote": "Over the Hai Van Pass, about 3 h; stay in Hoi An", "plans": ["act-dad-hoi-an", "act-dad-marble-mountains"] },
+    { "city": "CXR", "nights": 3, "arriveMode": "train", "arriveNote": "Train, about 9 to 10 h", "plans": ["act-cxr-po-nagar", "act-cxr-islands"] },
+    { "city": "DLI", "nights": 3, "arriveMode": "road", "arriveNote": "Mountain road, about 3.5 h", "plans": ["act-dli-crazy-house", "act-dli-datanla", "act-dli-coffee"] },
+    { "city": "SGN", "nights": 3, "arriveMode": "flight", "arriveNote": "Da Lat to Ho Chi Minh City, about 1 h", "plans": ["act-cu-chi", "act-war-remnants"] },
+    { "city": "PNH", "nights": 3, "arriveMode": "road", "arriveNote": "Bus, about 6 to 7 h with the border crossing", "plans": ["act-pnh-tuol-sleng", "act-pnh-royal-palace"] },
+    { "city": "REP", "nights": 4, "arriveMode": "road", "arriveNote": "Bus, about 5 to 6 h", "plans": ["act-rep-angkor-wat", "act-rep-tonle-sap", "act-rep-pub-street"] }
+  ]
+}

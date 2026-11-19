@@ -1,0 +1,23 @@
+{
+  "_comment": "Sample route: peninsular Malaysia by train, Singapore, then Java to Bali and Lombok.",
+  "id": "route-malaysia-indonesia",
+  "name": "Malaysia, Singapore and Indonesia",
+  "tags": [
+    "sample",
+    "food",
+    "temples"
+  ],
+  "isCurrent": false,
+  "stops": [
+    { "city": "KUL", "nights": 4, "arriveMode": "flight", "arriveNote": "Toronto to Kuala Lumpur", "plans": ["act-kul-petronas", "act-kul-batu-caves", "act-kul-jalan-alor"] },
+    { "city": "IPH", "nights": 2, "arriveMode": "train", "arriveNote": "ETS electric train, about 2.5 h", "plans": ["act-iph-old-town", "act-iph-kek-lok-tong"] },
+    { "city": "PEN", "nights": 4, "arriveMode": "train", "arriveNote": "ETS to Butterworth, then the ferry; about 2 h", "plans": ["act-pen-street-art", "act-pen-gurney", "act-pen-kek-lok-si"] },
+    { "city": "LGK", "nights": 4, "arriveMode": "flight", "arriveNote": "Penang to Langkawi, about 45 min", "plans": ["act-lgk-sky-bridge", "act-lgk-kilim"] },
+    { "city": "SIN", "nights": 4, "arriveMode": "flight", "arriveNote": "Langkawi to Singapore, about 1.5 h", "plans": ["act-sin-gardens-bay", "act-sin-maxwell", "act-sin-night-safari"] },
+    { "city": "JKT", "nights": 2, "arriveMode": "flight", "arriveNote": "Singapore to Jakarta, about 2 h", "plans": ["act-jkt-kota-tua", "act-jkt-monas"] },
+    { "city": "BDO", "nights": 3, "arriveMode": "hsr", "arriveNote": "Whoosh high-speed train from Halim, about 45 min", "plans": ["act-bdo-kawah-putih", "act-bdo-braga"] },
+    { "city": "JOG", "nights": 4, "arriveMode": "train", "arriveNote": "Train, about 3 to 4 h", "plans": ["act-jog-borobudur", "act-jog-prambanan", "act-jog-malioboro"] },
+    { "city": "DPS", "nights": 5, "arriveMode": "flight", "arriveNote": "Yogyakarta to Bali, about 1.5 h", "plans": ["act-uluwatu", "act-tegallalang"] },
+    { "city": "LOP", "nights": 4, "arriveMode": "boat", "arriveNote": "Fast boat via the Gili Islands, about 2 to 3 h", "plans": ["act-lop-gili", "act-lop-kuta", "act-lop-rinjani"] }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "_comment": "Stations and airports for the Asia 2027 routes (Trip Graph Explorer spec). Coordinates are approximate (about 0.01 degrees). Rows with source 'planner research (verify)' are planning assumptions to check against real tickets. `serves` lists the cities a hub serves (the first is its home city). `defaults` picks the hub a leg uses into or out of a city for each mode; `home` is where the first leg departs.",
+  "_comment": "Stations and airports for the Asia 2027 routes (Trip Graph Explorer spec). Coordinates are approximate (about 0.01 degrees). Rows with source 'planner research (verify)' are planning assumptions to check against real tickets. `serves` lists the cities a hub serves (the first is its home city). `defaults` picks the hub a leg uses into or out of a city for each mode; `home` is where the first leg departs. Hubs added on 2026-11-19 for the sample routes; airports use airport coordinates, and anything uncertain is marked verify.",
   "asOf": "2026-11-18",
   "hubs": [
     { "hubId": "YYZ", "kind": "airport", "code": "YYZ", "name": "Toronto Pearson", "lat": 43.68, "lon": -79.63, "cityCode": "YTO", "cityName": "Toronto", "serves": [], "source": "planner research" },
@@ -23,25 +23,562 @@
     { "hubId": "PVG", "kind": "airport", "code": "PVG", "name": "Shanghai Pudong", "lat": 31.14, "lon": 121.81, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" },
     { "hubId": "SHA", "kind": "airport", "code": "SHA", "name": "Shanghai Hongqiao", "lat": 31.2, "lon": 121.34, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" },
     { "hubId": "stn-shanghai-hongqiao", "kind": "station", "stationKind": "hsr", "name": "Shanghai Hongqiao", "lat": 31.19, "lon": 121.32, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research (verify)" },
-    { "hubId": "stn-longyang-road", "kind": "station", "stationKind": "maglev", "name": "Longyang Road (maglev)", "lat": 31.2, "lon": 121.56, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" }
+    { "hubId": "stn-longyang-road", "kind": "station", "stationKind": "maglev", "name": "Longyang Road (maglev)", "lat": 31.2, "lon": 121.56, "cityCode": "SHA", "cityName": "Shanghai", "serves": ["SHA"], "source": "planner research" },
+    { "hubId": "KIX", "kind": "airport", "code": "KIX", "name": "Osaka Kansai", "lat": 34.432, "lon": 135.2304, "cityCode": "OSA", "cityName": "Osaka", "serves": ["OSA"], "source": "planner research" },
+    { "hubId": "HIJ", "kind": "airport", "code": "HIJ", "name": "Hiroshima Airport", "lat": 34.4361, "lon": 132.9195, "cityCode": "HIJ", "cityName": "Hiroshima", "serves": ["HIJ"], "source": "planner research" },
+    { "hubId": "FUK", "kind": "airport", "code": "FUK", "name": "Fukuoka Airport", "lat": 33.5859, "lon": 130.451, "cityCode": "FUK", "cityName": "Fukuoka", "serves": ["FUK"], "source": "planner research" },
+    { "hubId": "ICN", "kind": "airport", "code": "ICN", "name": "Seoul Incheon", "lat": 37.4602, "lon": 126.4407, "cityCode": "SEL", "cityName": "Seoul", "serves": ["SEL"], "source": "planner research" },
+    { "hubId": "PUS", "kind": "airport", "code": "PUS", "name": "Busan Gimhae", "lat": 35.1795, "lon": 128.9382, "cityCode": "PUS", "cityName": "Busan", "serves": ["PUS"], "source": "planner research" },
+    { "hubId": "TPE", "kind": "airport", "code": "TPE", "name": "Taipei Taoyuan", "lat": 25.0797, "lon": 121.2342, "cityCode": "TPE", "cityName": "Taipei", "serves": ["TPE"], "source": "planner research" },
+    { "hubId": "XIY", "kind": "airport", "code": "XIY", "name": "Xi'an Xianyang", "lat": 34.4471, "lon": 108.7516, "cityCode": "SIA", "cityName": "Xi'an", "serves": ["SIA"], "source": "planner research" },
+    { "hubId": "CTU", "kind": "airport", "code": "CTU", "name": "Chengdu Shuangliu", "lat": 30.5785, "lon": 103.947, "cityCode": "CTU", "cityName": "Chengdu", "serves": ["CTU"], "source": "planner research" },
+    { "hubId": "KWL", "kind": "airport", "code": "KWL", "name": "Guilin Liangjiang", "lat": 25.2181, "lon": 110.039, "cityCode": "KWL", "cityName": "Guilin", "serves": ["KWL"], "source": "planner research" },
+    { "hubId": "BKK", "kind": "airport", "code": "BKK", "name": "Bangkok Suvarnabhumi", "lat": 13.69, "lon": 100.7501, "cityCode": "BKK", "cityName": "Bangkok", "serves": ["BKK"], "source": "planner research" },
+    { "hubId": "CNX", "kind": "airport", "code": "CNX", "name": "Chiang Mai International", "lat": 18.7668, "lon": 98.9626, "cityCode": "CNX", "cityName": "Chiang Mai", "serves": ["CNX"], "source": "planner research" },
+    { "hubId": "LPQ", "kind": "airport", "code": "LPQ", "name": "Luang Prabang International", "lat": 19.8973, "lon": 102.161, "cityCode": "LPQ", "cityName": "Luang Prabang", "serves": ["LPQ"], "source": "planner research" },
+    { "hubId": "VTE", "kind": "airport", "code": "VTE", "name": "Vientiane Wattay", "lat": 17.9883, "lon": 102.5633, "cityCode": "VTE", "cityName": "Vientiane", "serves": ["VTE"], "source": "planner research" },
+    { "hubId": "DAD", "kind": "airport", "code": "DAD", "name": "Da Nang International", "lat": 16.0439, "lon": 108.199, "cityCode": "DAD", "cityName": "Da Nang", "serves": ["DAD"], "source": "planner research" },
+    { "hubId": "KTI", "kind": "airport", "code": "KTI", "name": "Phnom Penh Techo International", "lat": 11.36, "lon": 104.91, "cityCode": "PNH", "cityName": "Phnom Penh", "serves": ["PNH"], "source": "planner research (verify)" },
+    { "hubId": "SAI", "kind": "airport", "code": "SAI", "name": "Siem Reap-Angkor International", "lat": 13.37, "lon": 104.23, "cityCode": "REP", "cityName": "Siem Reap", "serves": ["REP"], "source": "planner research (verify)" },
+    { "hubId": "KUL", "kind": "airport", "code": "KUL", "name": "Kuala Lumpur International", "lat": 2.7456, "lon": 101.7072, "cityCode": "KUL", "cityName": "Kuala Lumpur", "serves": ["KUL"], "source": "planner research" },
+    { "hubId": "SIN", "kind": "airport", "code": "SIN", "name": "Singapore Changi", "lat": 1.3644, "lon": 103.9915, "cityCode": "SIN", "cityName": "Singapore", "serves": ["SIN"], "source": "planner research" },
+    { "hubId": "CGK", "kind": "airport", "code": "CGK", "name": "Jakarta Soekarno-Hatta", "lat": -6.1256, "lon": 106.6558, "cityCode": "JKT", "cityName": "Jakarta", "serves": ["JKT"], "source": "planner research" },
+    { "hubId": "YIA", "kind": "airport", "code": "YIA", "name": "Yogyakarta International", "lat": -7.9, "lon": 110.057, "cityCode": "JOG", "cityName": "Yogyakarta", "serves": ["JOG"], "source": "planner research (verify)" },
+    { "hubId": "MNL", "kind": "airport", "code": "MNL", "name": "Manila Ninoy Aquino", "lat": 14.5086, "lon": 121.0198, "cityCode": "MNL", "cityName": "Manila", "serves": ["MNL"], "source": "planner research" },
+    { "hubId": "ENI", "kind": "airport", "code": "ENI", "name": "El Nido (Lio) Airport", "lat": 11.2027, "lon": 119.416, "cityCode": "ENI", "cityName": "El Nido", "serves": ["ENI"], "source": "planner research (verify)" },
+    { "hubId": "NGO", "kind": "airport", "code": "NGO", "name": "Nagoya Chubu Centrair", "lat": 34.8584, "lon": 136.8054, "cityCode": "NGO", "cityName": "Nagoya", "serves": ["NGO"], "source": "planner research" },
+    { "hubId": "KMQ", "kind": "airport", "code": "KMQ", "name": "Komatsu (for Kanazawa)", "lat": 36.3946, "lon": 136.4065, "cityCode": "KMQ", "cityName": "Kanazawa", "serves": ["KMQ"], "source": "planner research" },
+    { "hubId": "OKA", "kind": "airport", "code": "OKA", "name": "Naha Airport", "lat": 26.1958, "lon": 127.6459, "cityCode": "OKA", "cityName": "Naha (Okinawa)", "serves": ["OKA"], "source": "planner research" },
+    { "hubId": "KOJ", "kind": "airport", "code": "KOJ", "name": "Kagoshima Airport", "lat": 31.8034, "lon": 130.7194, "cityCode": "KOJ", "cityName": "Kagoshima", "serves": ["KOJ"], "source": "planner research" },
+    { "hubId": "NGS", "kind": "airport", "code": "NGS", "name": "Nagasaki Airport", "lat": 32.9169, "lon": 129.9136, "cityCode": "NGS", "cityName": "Nagasaki", "serves": ["NGS"], "source": "planner research" },
+    { "hubId": "SDJ", "kind": "airport", "code": "SDJ", "name": "Sendai Airport", "lat": 38.1397, "lon": 140.917, "cityCode": "SDJ", "cityName": "Sendai", "serves": ["SDJ"], "source": "planner research" },
+    { "hubId": "HKD", "kind": "airport", "code": "HKD", "name": "Hakodate Airport", "lat": 41.77, "lon": 140.8219, "cityCode": "HKD", "cityName": "Hakodate", "serves": ["HKD"], "source": "planner research" },
+    { "hubId": "TAK", "kind": "airport", "code": "TAK", "name": "Takamatsu Airport", "lat": 34.2142, "lon": 134.0156, "cityCode": "TAK", "cityName": "Takamatsu", "serves": ["TAK"], "source": "planner research" },
+    { "hubId": "MYJ", "kind": "airport", "code": "MYJ", "name": "Matsuyama Airport", "lat": 33.8272, "lon": 132.6997, "cityCode": "MYJ", "cityName": "Matsuyama", "serves": ["MYJ"], "source": "planner research" },
+    { "hubId": "CJU", "kind": "airport", "code": "CJU", "name": "Jeju International", "lat": 33.5113, "lon": 126.493, "cityCode": "CJU", "cityName": "Jeju", "serves": ["CJU"], "source": "planner research" },
+    { "hubId": "TAE", "kind": "airport", "code": "TAE", "name": "Daegu International", "lat": 35.8941, "lon": 128.6588, "cityCode": "TAE", "cityName": "Daegu", "serves": ["TAE"], "source": "planner research" },
+    { "hubId": "KWJ", "kind": "airport", "code": "KWJ", "name": "Gwangju Airport", "lat": 35.1264, "lon": 126.8089, "cityCode": "KWJ", "cityName": "Gwangju", "serves": ["KWJ"], "source": "planner research" },
+    { "hubId": "CSX", "kind": "airport", "code": "CSX", "name": "Changsha Huanghua", "lat": 28.1892, "lon": 113.2196, "cityCode": "CSX", "cityName": "Changsha", "serves": ["CSX"], "source": "planner research" },
+    { "hubId": "WUH", "kind": "airport", "code": "WUH", "name": "Wuhan Tianhe", "lat": 30.7838, "lon": 114.2081, "cityCode": "WUH", "cityName": "Wuhan", "serves": ["WUH"], "source": "planner research" },
+    { "hubId": "NKG", "kind": "airport", "code": "NKG", "name": "Nanjing Lukou", "lat": 31.742, "lon": 118.862, "cityCode": "NKG", "cityName": "Nanjing", "serves": ["NKG"], "source": "planner research" },
+    { "hubId": "KMG", "kind": "airport", "code": "KMG", "name": "Kunming Changshui", "lat": 25.1019, "lon": 102.9292, "cityCode": "KMG", "cityName": "Kunming", "serves": ["KMG"], "source": "planner research" },
+    { "hubId": "LJG", "kind": "airport", "code": "LJG", "name": "Lijiang Sanyi", "lat": 26.68, "lon": 100.246, "cityCode": "LJG", "cityName": "Lijiang", "serves": ["LJG"], "source": "planner research" },
+    { "hubId": "DLU", "kind": "airport", "code": "DLU", "name": "Dali Airport", "lat": 25.6494, "lon": 100.3191, "cityCode": "DLU", "cityName": "Dali", "serves": ["DLU"], "source": "planner research" },
+    { "hubId": "HRB", "kind": "airport", "code": "HRB", "name": "Harbin Taiping", "lat": 45.6234, "lon": 126.2503, "cityCode": "HRB", "cityName": "Harbin", "serves": ["HRB"], "source": "planner research" },
+    { "hubId": "TAO", "kind": "airport", "code": "TAO", "name": "Qingdao Jiaodong", "lat": 36.3617, "lon": 120.088, "cityCode": "TAO", "cityName": "Qingdao", "serves": ["TAO"], "source": "planner research (verify)" },
+    { "hubId": "XMN", "kind": "airport", "code": "XMN", "name": "Xiamen Gaoqi", "lat": 24.544, "lon": 118.1277, "cityCode": "XMN", "cityName": "Xiamen", "serves": ["XMN"], "source": "planner research" },
+    { "hubId": "LXA", "kind": "airport", "code": "LXA", "name": "Lhasa Gonggar", "lat": 29.2978, "lon": 90.9119, "cityCode": "LXA", "cityName": "Lhasa", "serves": ["LXA"], "source": "planner research" },
+    { "hubId": "URC", "kind": "airport", "code": "URC", "name": "Urumqi Diwopu", "lat": 43.9071, "lon": 87.4742, "cityCode": "URC", "cityName": "Urumqi", "serves": ["URC"], "source": "planner research" },
+    { "hubId": "DNH", "kind": "airport", "code": "DNH", "name": "Dunhuang Mogao", "lat": 40.1611, "lon": 94.8092, "cityCode": "DNH", "cityName": "Dunhuang", "serves": ["DNH"], "source": "planner research" },
+    { "hubId": "TSN", "kind": "airport", "code": "TSN", "name": "Tianjin Binhai", "lat": 39.1244, "lon": 117.3462, "cityCode": "TSN", "cityName": "Tianjin", "serves": ["TSN"], "source": "planner research" },
+    { "hubId": "SYX", "kind": "airport", "code": "SYX", "name": "Sanya Phoenix", "lat": 18.3029, "lon": 109.4122, "cityCode": "SYX", "cityName": "Sanya", "serves": ["SYX"], "source": "planner research" },
+    { "hubId": "TXN", "kind": "airport", "code": "TXN", "name": "Huangshan Tunxi", "lat": 29.7333, "lon": 118.256, "cityCode": "TXN", "cityName": "Huangshan", "serves": ["TXN"], "source": "planner research" },
+    { "hubId": "YZY", "kind": "airport", "code": "YZY", "name": "Zhangye Ganzhou", "lat": 38.8019, "lon": 100.675, "cityCode": "YZY", "cityName": "Zhangye", "serves": ["YZY"], "source": "planner research (verify)" },
+    { "hubId": "KHH", "kind": "airport", "code": "KHH", "name": "Kaohsiung International", "lat": 22.5771, "lon": 120.35, "cityCode": "KHH", "cityName": "Kaohsiung", "serves": ["KHH"], "source": "planner research" },
+    { "hubId": "RMQ", "kind": "airport", "code": "RMQ", "name": "Taichung International", "lat": 24.2647, "lon": 120.6208, "cityCode": "RMQ", "cityName": "Taichung", "serves": ["RMQ"], "source": "planner research" },
+    { "hubId": "HUN", "kind": "airport", "code": "HUN", "name": "Hualien Airport", "lat": 24.0231, "lon": 121.6162, "cityCode": "HUN", "cityName": "Hualien", "serves": ["HUN"], "source": "planner research" },
+    { "hubId": "TNN", "kind": "airport", "code": "TNN", "name": "Tainan Airport", "lat": 22.9504, "lon": 120.2057, "cityCode": "TNN", "cityName": "Tainan", "serves": ["TNN"], "source": "planner research" },
+    { "hubId": "HUI", "kind": "airport", "code": "HUI", "name": "Hue Phu Bai", "lat": 16.4015, "lon": 107.7026, "cityCode": "HUI", "cityName": "Hue", "serves": ["HUI"], "source": "planner research" },
+    { "hubId": "PQC", "kind": "airport", "code": "PQC", "name": "Phu Quoc International", "lat": 10.1698, "lon": 103.9931, "cityCode": "PQC", "cityName": "Phu Quoc", "serves": ["PQC"], "source": "planner research" },
+    { "hubId": "CXR", "kind": "airport", "code": "CXR", "name": "Cam Ranh (for Nha Trang)", "lat": 11.9982, "lon": 109.2194, "cityCode": "CXR", "cityName": "Nha Trang", "serves": ["CXR"], "source": "planner research" },
+    { "hubId": "DLI", "kind": "airport", "code": "DLI", "name": "Da Lat Lien Khuong", "lat": 11.75, "lon": 108.367, "cityCode": "DLI", "cityName": "Da Lat", "serves": ["DLI"], "source": "planner research" },
+    { "hubId": "VCA", "kind": "airport", "code": "VCA", "name": "Can Tho International", "lat": 10.0851, "lon": 105.7119, "cityCode": "VCA", "cityName": "Can Tho", "serves": ["VCA"], "source": "planner research" },
+    { "hubId": "KBV", "kind": "airport", "code": "KBV", "name": "Krabi International", "lat": 8.0991, "lon": 98.9862, "cityCode": "KBV", "cityName": "Krabi", "serves": ["KBV"], "source": "planner research" },
+    { "hubId": "USM", "kind": "airport", "code": "USM", "name": "Samui Airport", "lat": 9.5478, "lon": 100.0623, "cityCode": "USM", "cityName": "Koh Samui", "serves": ["USM"], "source": "planner research" },
+    { "hubId": "CEI", "kind": "airport", "code": "CEI", "name": "Chiang Rai Mae Fah Luang", "lat": 19.9523, "lon": 99.8829, "cityCode": "CEI", "cityName": "Chiang Rai", "serves": ["CEI"], "source": "planner research" },
+    { "hubId": "HDY", "kind": "airport", "code": "HDY", "name": "Hat Yai International", "lat": 6.9332, "lon": 100.393, "cityCode": "HDY", "cityName": "Hat Yai", "serves": ["HDY"], "source": "planner research" },
+    { "hubId": "KOS", "kind": "airport", "code": "KOS", "name": "Sihanoukville International", "lat": 10.5797, "lon": 103.637, "cityCode": "KOS", "cityName": "Sihanoukville", "serves": ["KOS"], "source": "planner research" },
+    { "hubId": "PKZ", "kind": "airport", "code": "PKZ", "name": "Pakse International", "lat": 15.1321, "lon": 105.781, "cityCode": "PKZ", "cityName": "Pakse", "serves": ["PKZ"], "source": "planner research" },
+    { "hubId": "PEN", "kind": "airport", "code": "PEN", "name": "Penang International", "lat": 5.2971, "lon": 100.277, "cityCode": "PEN", "cityName": "Penang (George Town)", "serves": ["PEN"], "source": "planner research" },
+    { "hubId": "LGK", "kind": "airport", "code": "LGK", "name": "Langkawi International", "lat": 6.3297, "lon": 99.7287, "cityCode": "LGK", "cityName": "Langkawi", "serves": ["LGK"], "source": "planner research" },
+    { "hubId": "BKI", "kind": "airport", "code": "BKI", "name": "Kota Kinabalu International", "lat": 5.9372, "lon": 116.051, "cityCode": "BKI", "cityName": "Kota Kinabalu", "serves": ["BKI"], "source": "planner research" },
+    { "hubId": "KCH", "kind": "airport", "code": "KCH", "name": "Kuching International", "lat": 1.4847, "lon": 110.347, "cityCode": "KCH", "cityName": "Kuching", "serves": ["KCH"], "source": "planner research" },
+    { "hubId": "MKZ", "kind": "airport", "code": "MKZ", "name": "Malacca International", "lat": 2.2634, "lon": 102.252, "cityCode": "MKZ", "cityName": "Malacca", "serves": ["MKZ"], "source": "planner research" },
+    { "hubId": "IPH", "kind": "airport", "code": "IPH", "name": "Ipoh Sultan Azlan Shah", "lat": 4.568, "lon": 101.092, "cityCode": "IPH", "cityName": "Ipoh", "serves": ["IPH"], "source": "planner research" },
+    { "hubId": "CEB", "kind": "airport", "code": "CEB", "name": "Mactan-Cebu International", "lat": 10.3075, "lon": 123.979, "cityCode": "CEB", "cityName": "Cebu", "serves": ["CEB"], "source": "planner research" },
+    { "hubId": "PPS", "kind": "airport", "code": "PPS", "name": "Puerto Princesa International", "lat": 9.7421, "lon": 118.759, "cityCode": "PPS", "cityName": "Puerto Princesa", "serves": ["PPS"], "source": "planner research" },
+    { "hubId": "MPH", "kind": "airport", "code": "MPH", "name": "Caticlan (for Boracay)", "lat": 11.9245, "lon": 121.954, "cityCode": "MPH", "cityName": "Boracay", "serves": ["MPH"], "source": "planner research" },
+    { "hubId": "TAG", "kind": "airport", "code": "TAG", "name": "Bohol-Panglao International", "lat": 9.5664, "lon": 123.774, "cityCode": "TAG", "cityName": "Bohol (Tagbilaran)", "serves": ["TAG"], "source": "planner research (verify)" },
+    { "hubId": "USU", "kind": "airport", "code": "USU", "name": "Busuanga (for Coron)", "lat": 12.1215, "lon": 120.1, "cityCode": "USU", "cityName": "Coron", "serves": ["USU"], "source": "planner research" },
+    { "hubId": "IAO", "kind": "airport", "code": "IAO", "name": "Siargao Sayak", "lat": 9.8591, "lon": 126.014, "cityCode": "IAO", "cityName": "Siargao (General Luna)", "serves": ["IAO"], "source": "planner research" },
+    { "hubId": "LOP", "kind": "airport", "code": "LOP", "name": "Lombok International", "lat": -8.7573, "lon": 116.277, "cityCode": "LOP", "cityName": "Lombok (Mataram)", "serves": ["LOP"], "source": "planner research" },
+    { "hubId": "SUB", "kind": "airport", "code": "SUB", "name": "Surabaya Juanda", "lat": -7.3798, "lon": 112.787, "cityCode": "SUB", "cityName": "Surabaya", "serves": ["SUB"], "source": "planner research" },
+    { "hubId": "MLG", "kind": "airport", "code": "MLG", "name": "Malang Abdul Rachman Saleh", "lat": -7.9266, "lon": 112.714, "cityCode": "MLG", "cityName": "Malang", "serves": ["MLG"], "source": "planner research" },
+    { "hubId": "UPG", "kind": "airport", "code": "UPG", "name": "Makassar Sultan Hasanuddin", "lat": -5.0617, "lon": 119.554, "cityCode": "UPG", "cityName": "Makassar", "serves": ["UPG"], "source": "planner research" },
+    { "hubId": "SOQ", "kind": "airport", "code": "SOQ", "name": "Sorong Domine Eduard Osok", "lat": -0.8945, "lon": 131.287, "cityCode": "SOQ", "cityName": "Sorong (Raja Ampat)", "serves": ["SOQ"], "source": "planner research" },
+    { "hubId": "KNO", "kind": "airport", "code": "KNO", "name": "Medan Kualanamu", "lat": 3.6422, "lon": 98.8853, "cityCode": "KNO", "cityName": "Medan", "serves": ["KNO"], "source": "planner research" },
+    { "hubId": "BDO", "kind": "airport", "code": "BDO", "name": "Bandung Husein Sastranegara", "lat": -6.9006, "lon": 107.576, "cityCode": "BDO", "cityName": "Bandung", "serves": ["BDO"], "source": "planner research (verify)" },
+    { "hubId": "BWN", "kind": "airport", "code": "BWN", "name": "Brunei International", "lat": 4.9442, "lon": 114.928, "cityCode": "BWN", "cityName": "Bandar Seri Begawan", "serves": ["BWN"], "source": "planner research" },
+    { "hubId": "UBN", "kind": "airport", "code": "UBN", "name": "Ulaanbaatar Chinggis Khaan International", "lat": 47.6469, "lon": 106.8197, "cityCode": "ULN", "cityName": "Ulaanbaatar", "serves": ["ULN"], "source": "planner research (verify)" },
+    { "hubId": "CMB", "kind": "airport", "code": "CMB", "name": "Colombo Bandaranaike", "lat": 7.1808, "lon": 79.8841, "cityCode": "CMB", "cityName": "Colombo", "serves": ["CMB"], "source": "planner research" },
+    { "hubId": "KTM", "kind": "airport", "code": "KTM", "name": "Kathmandu Tribhuvan", "lat": 27.6966, "lon": 85.3591, "cityCode": "KTM", "cityName": "Kathmandu", "serves": ["KTM"], "source": "planner research" },
+    { "hubId": "MLE", "kind": "airport", "code": "MLE", "name": "Male Velana International", "lat": 4.1918, "lon": 73.5291, "cityCode": "MLE", "cityName": "Male", "serves": ["MLE"], "source": "planner research" },
+    { "hubId": "stn-tokyo", "kind": "station", "stationKind": "hsr", "name": "Tokyo Station", "lat": 35.6812, "lon": 139.7671, "cityCode": "TYO", "cityName": "Tokyo", "serves": ["TYO"], "source": "planner research" },
+    { "hubId": "stn-kanazawa", "kind": "station", "stationKind": "hsr", "name": "Kanazawa", "lat": 36.5781, "lon": 136.6478, "cityCode": "KMQ", "cityName": "Kanazawa", "serves": ["KMQ"], "source": "planner research" },
+    { "hubId": "stn-kyoto", "kind": "station", "stationKind": "hsr", "name": "Kyoto", "lat": 34.9858, "lon": 135.7588, "cityCode": "UKY", "cityName": "Kyoto", "serves": ["UKY"], "source": "planner research" },
+    { "hubId": "stn-shin-osaka", "kind": "station", "stationKind": "hsr", "name": "Shin-Osaka", "lat": 34.7335, "lon": 135.5003, "cityCode": "OSA", "cityName": "Osaka", "serves": ["OSA"], "source": "planner research" },
+    { "hubId": "stn-hiroshima", "kind": "station", "stationKind": "hsr", "name": "Hiroshima", "lat": 34.3974, "lon": 132.4754, "cityCode": "HIJ", "cityName": "Hiroshima", "serves": ["HIJ"], "source": "planner research" },
+    { "hubId": "stn-hakata", "kind": "station", "stationKind": "hsr", "name": "Hakata", "lat": 33.5897, "lon": 130.4207, "cityCode": "FUK", "cityName": "Fukuoka", "serves": ["FUK"], "source": "planner research" },
+    { "hubId": "stn-nagasaki", "kind": "station", "stationKind": "hsr", "name": "Nagasaki", "lat": 32.7522, "lon": 129.8696, "cityCode": "NGS", "cityName": "Nagasaki", "serves": ["NGS"], "source": "planner research" },
+    { "hubId": "stn-kagoshima-chuo", "kind": "station", "stationKind": "hsr", "name": "Kagoshima-Chuo", "lat": 31.5838, "lon": 130.5413, "cityCode": "KOJ", "cityName": "Kagoshima", "serves": ["KOJ"], "source": "planner research" },
+    { "hubId": "stn-nagoya", "kind": "station", "stationKind": "hsr", "name": "Nagoya", "lat": 35.1709, "lon": 136.8815, "cityCode": "NGO", "cityName": "Nagoya", "serves": ["NGO"], "source": "planner research" },
+    { "hubId": "stn-sendai", "kind": "station", "stationKind": "hsr", "name": "Sendai", "lat": 38.2601, "lon": 140.8822, "cityCode": "SDJ", "cityName": "Sendai", "serves": ["SDJ"], "source": "planner research" },
+    { "hubId": "stn-shin-hakodate-hokuto", "kind": "station", "stationKind": "hsr", "name": "Shin-Hakodate-Hokuto", "lat": 41.9048, "lon": 140.6489, "cityCode": "HKD", "cityName": "Hakodate", "serves": ["HKD"], "source": "planner research" },
+    { "hubId": "stn-takamatsu", "kind": "station", "stationKind": "rail", "name": "Takamatsu", "lat": 34.3507, "lon": 134.0469, "cityCode": "TAK", "cityName": "Takamatsu", "serves": ["TAK"], "source": "planner research (verify)" },
+    { "hubId": "stn-matsuyama", "kind": "station", "stationKind": "rail", "name": "Matsuyama", "lat": 33.8378, "lon": 132.7514, "cityCode": "MYJ", "cityName": "Matsuyama", "serves": ["MYJ"], "source": "planner research (verify)" },
+    { "hubId": "stn-seoul", "kind": "station", "stationKind": "hsr", "name": "Seoul Station", "lat": 37.5547, "lon": 126.9707, "cityCode": "SEL", "cityName": "Seoul", "serves": ["SEL"], "source": "planner research" },
+    { "hubId": "stn-dongdaegu", "kind": "station", "stationKind": "hsr", "name": "Dongdaegu", "lat": 35.8793, "lon": 128.6286, "cityCode": "TAE", "cityName": "Daegu", "serves": ["TAE"], "source": "planner research" },
+    { "hubId": "stn-busan", "kind": "station", "stationKind": "hsr", "name": "Busan", "lat": 35.115, "lon": 129.0418, "cityCode": "PUS", "cityName": "Busan", "serves": ["PUS"], "source": "planner research" },
+    { "hubId": "stn-gwangju-songjeong", "kind": "station", "stationKind": "hsr", "name": "Gwangju Songjeong", "lat": 35.1374, "lon": 126.793, "cityCode": "KWJ", "cityName": "Gwangju", "serves": ["KWJ"], "source": "planner research (verify)" },
+    { "hubId": "stn-taipei", "kind": "station", "stationKind": "hsr", "name": "Taipei Main Station", "lat": 25.0478, "lon": 121.517, "cityCode": "TPE", "cityName": "Taipei", "serves": ["TPE"], "source": "planner research" },
+    { "hubId": "stn-taichung-hsr", "kind": "station", "stationKind": "hsr", "name": "Taichung (THSR)", "lat": 24.1121, "lon": 120.6155, "cityCode": "RMQ", "cityName": "Taichung", "serves": ["RMQ"], "source": "planner research" },
+    { "hubId": "stn-tainan-hsr", "kind": "station", "stationKind": "hsr", "name": "Tainan (THSR)", "lat": 22.925, "lon": 120.2857, "cityCode": "TNN", "cityName": "Tainan", "serves": ["TNN"], "source": "planner research" },
+    { "hubId": "stn-zuoying", "kind": "station", "stationKind": "hsr", "name": "Zuoying (Kaohsiung)", "lat": 22.6873, "lon": 120.3077, "cityCode": "KHH", "cityName": "Kaohsiung", "serves": ["KHH"], "source": "planner research" },
+    { "hubId": "stn-hualien", "kind": "station", "stationKind": "rail", "name": "Hualien", "lat": 23.9933, "lon": 121.6011, "cityCode": "HUN", "cityName": "Hualien", "serves": ["HUN"], "source": "planner research" },
+    { "hubId": "stn-changsha-south", "kind": "station", "stationKind": "hsr", "name": "Changsha South", "lat": 28.1471, "lon": 113.0646, "cityCode": "CSX", "cityName": "Changsha", "serves": ["CSX"], "source": "planner research (verify)" },
+    { "hubId": "stn-wuhan", "kind": "station", "stationKind": "hsr", "name": "Wuhan", "lat": 30.607, "lon": 114.424, "cityCode": "WUH", "cityName": "Wuhan", "serves": ["WUH"], "source": "planner research (verify)" },
+    { "hubId": "stn-nanjing-south", "kind": "station", "stationKind": "hsr", "name": "Nanjing South", "lat": 31.9686, "lon": 118.798, "cityCode": "NKG", "cityName": "Nanjing", "serves": ["NKG"], "source": "planner research (verify)" },
+    { "hubId": "stn-kunming-south", "kind": "station", "stationKind": "hsr", "name": "Kunming South", "lat": 24.87, "lon": 102.87, "cityCode": "KMG", "cityName": "Kunming", "serves": ["KMG"], "source": "planner research (verify)" },
+    { "hubId": "stn-dali", "kind": "station", "stationKind": "hsr", "name": "Dali", "lat": 25.59, "lon": 100.23, "cityCode": "DLU", "cityName": "Dali", "serves": ["DLU"], "source": "planner research (verify)" },
+    { "hubId": "stn-lijiang", "kind": "station", "stationKind": "hsr", "name": "Lijiang", "lat": 26.88, "lon": 100.23, "cityCode": "LJG", "cityName": "Lijiang", "serves": ["LJG"], "source": "planner research (verify)" },
+    { "hubId": "stn-chengdu-east", "kind": "station", "stationKind": "hsr", "name": "Chengdu East", "lat": 30.629, "lon": 104.141, "cityCode": "CTU", "cityName": "Chengdu", "serves": ["CTU"], "source": "planner research (verify)" },
+    { "hubId": "stn-guilin-north", "kind": "station", "stationKind": "hsr", "name": "Guilin North", "lat": 25.326, "lon": 110.307, "cityCode": "KWL", "cityName": "Guilin", "serves": ["KWL"], "source": "planner research (verify)" },
+    { "hubId": "stn-qingdao-north", "kind": "station", "stationKind": "hsr", "name": "Qingdao North", "lat": 36.169, "lon": 120.374, "cityCode": "TAO", "cityName": "Qingdao", "serves": ["TAO"], "source": "planner research (verify)" },
+    { "hubId": "stn-xiamen-north", "kind": "station", "stationKind": "hsr", "name": "Xiamen North", "lat": 24.6366, "lon": 118.074, "cityCode": "XMN", "cityName": "Xiamen", "serves": ["XMN"], "source": "planner research (verify)" },
+    { "hubId": "stn-tianjin", "kind": "station", "stationKind": "hsr", "name": "Tianjin", "lat": 39.1356, "lon": 117.21, "cityCode": "TSN", "cityName": "Tianjin", "serves": ["TSN"], "source": "planner research (verify)" },
+    { "hubId": "stn-harbin-west", "kind": "station", "stationKind": "hsr", "name": "Harbin West", "lat": 45.713, "lon": 126.564, "cityCode": "HRB", "cityName": "Harbin", "serves": ["HRB"], "source": "planner research (verify)" },
+    { "hubId": "stn-dunhuang", "kind": "station", "stationKind": "rail", "name": "Dunhuang", "lat": 40.16, "lon": 94.74, "cityCode": "DNH", "cityName": "Dunhuang", "serves": ["DNH"], "source": "planner research (verify)" },
+    { "hubId": "stn-zhangye-west", "kind": "station", "stationKind": "hsr", "name": "Zhangye West", "lat": 38.92, "lon": 100.43, "cityCode": "YZY", "cityName": "Zhangye", "serves": ["YZY"], "source": "planner research (verify)" },
+    { "hubId": "stn-huangshan-north", "kind": "station", "stationKind": "hsr", "name": "Huangshan North", "lat": 29.84, "lon": 118.37, "cityCode": "TXN", "cityName": "Huangshan", "serves": ["TXN"], "source": "planner research (verify)" },
+    { "hubId": "stn-krung-thep-aphiwat", "kind": "station", "stationKind": "rail", "name": "Krung Thep Aphiwat Central", "lat": 13.804, "lon": 100.54, "cityCode": "BKK", "cityName": "Bangkok", "serves": ["BKK"], "source": "planner research (verify)" },
+    { "hubId": "stn-chiang-mai", "kind": "station", "stationKind": "rail", "name": "Chiang Mai", "lat": 18.7848, "lon": 99.0172, "cityCode": "CNX", "cityName": "Chiang Mai", "serves": ["CNX"], "source": "planner research (verify)" },
+    { "hubId": "stn-hanoi", "kind": "station", "stationKind": "rail", "name": "Hanoi", "lat": 21.0245, "lon": 105.8412, "cityCode": "HAN", "cityName": "Hanoi", "serves": ["HAN"], "source": "planner research" },
+    { "hubId": "stn-hue", "kind": "station", "stationKind": "rail", "name": "Hue", "lat": 16.4565, "lon": 107.5772, "cityCode": "HUI", "cityName": "Hue", "serves": ["HUI"], "source": "planner research" },
+    { "hubId": "stn-da-nang", "kind": "station", "stationKind": "rail", "name": "Da Nang", "lat": 16.0717, "lon": 108.209, "cityCode": "DAD", "cityName": "Da Nang", "serves": ["DAD"], "source": "planner research (verify)" },
+    { "hubId": "stn-nha-trang", "kind": "station", "stationKind": "rail", "name": "Nha Trang", "lat": 12.2488, "lon": 109.184, "cityCode": "CXR", "cityName": "Nha Trang", "serves": ["CXR"], "source": "planner research (verify)" },
+    { "hubId": "stn-kl-sentral", "kind": "station", "stationKind": "rail", "name": "KL Sentral", "lat": 3.134, "lon": 101.686, "cityCode": "KUL", "cityName": "Kuala Lumpur", "serves": ["KUL"], "source": "planner research" },
+    { "hubId": "stn-ipoh", "kind": "station", "stationKind": "rail", "name": "Ipoh", "lat": 4.5968, "lon": 101.073, "cityCode": "IPH", "cityName": "Ipoh", "serves": ["IPH"], "source": "planner research" },
+    { "hubId": "stn-butterworth", "kind": "station", "stationKind": "rail", "name": "Butterworth (for Penang)", "lat": 5.394, "lon": 100.367, "cityCode": "PEN", "cityName": "Penang (George Town)", "serves": ["PEN"], "source": "planner research" },
+    { "hubId": "stn-halim", "kind": "station", "stationKind": "hsr", "name": "Halim (Whoosh high-speed)", "lat": -6.26, "lon": 106.885, "cityCode": "JKT", "cityName": "Jakarta", "serves": ["JKT"], "source": "planner research (verify)" },
+    { "hubId": "stn-gambir", "kind": "station", "stationKind": "rail", "name": "Gambir", "lat": -6.1767, "lon": 106.8306, "cityCode": "JKT", "cityName": "Jakarta", "serves": ["JKT"], "source": "planner research" },
+    { "hubId": "stn-tegalluar", "kind": "station", "stationKind": "hsr", "name": "Tegalluar (Whoosh high-speed)", "lat": -6.979, "lon": 107.695, "cityCode": "BDO", "cityName": "Bandung", "serves": ["BDO"], "source": "planner research (verify)" },
+    { "hubId": "stn-bandung", "kind": "station", "stationKind": "rail", "name": "Bandung", "lat": -6.9144, "lon": 107.6025, "cityCode": "BDO", "cityName": "Bandung", "serves": ["BDO"], "source": "planner research" },
+    { "hubId": "stn-yogyakarta", "kind": "station", "stationKind": "rail", "name": "Yogyakarta Tugu", "lat": -7.7891, "lon": 110.3633, "cityCode": "JOG", "cityName": "Yogyakarta", "serves": ["JOG"], "source": "planner research" }
   ],
   "home": "YYZ",
   "defaults": {
-    "TYO": { "flight": "HND" },
-    "BJS": { "flight": "PEK", "hsr": "stn-beijing-west", "train": "stn-beijing-west" },
-    "SIA": { "hsr": "stn-xian-north", "train": "stn-xian-north" },
-    "CKG": { "hsr": "stn-chongqing-west", "train": "stn-chongqing-west" },
-    "CAN": { "hsr": "stn-guangzhou-south", "train": "stn-guangzhou-south" },
-    "SZX": { "hsr": "stn-shenzhen-north", "train": "stn-futian" },
-    "HKG": { "flight": "HKG", "hsr": "stn-west-kowloon", "train": "stn-west-kowloon" },
-    "HAN": { "flight": "HAN" },
-    "SGN": { "flight": "SGN" },
-    "LBJ": { "flight": "LBJ" },
-    "KOM": { "flight": "LBJ" },
-    "DPS": { "flight": "DPS" },
-    "SHA": { "flight": "PVG", "hsr": "stn-shanghai-hongqiao", "train": "stn-shanghai-hongqiao", "maglev": "stn-longyang-road" }
+    "TYO": {
+      "flight": "HND",
+      "hsr": "stn-tokyo",
+      "train": "stn-tokyo"
+    },
+    "BJS": {
+      "flight": "PEK",
+      "hsr": "stn-beijing-west",
+      "train": "stn-beijing-west"
+    },
+    "SIA": {
+      "hsr": "stn-xian-north",
+      "train": "stn-xian-north",
+      "flight": "XIY"
+    },
+    "CKG": {
+      "hsr": "stn-chongqing-west",
+      "train": "stn-chongqing-west"
+    },
+    "CAN": {
+      "hsr": "stn-guangzhou-south",
+      "train": "stn-guangzhou-south"
+    },
+    "SZX": {
+      "hsr": "stn-shenzhen-north",
+      "train": "stn-futian"
+    },
+    "HKG": {
+      "flight": "HKG",
+      "hsr": "stn-west-kowloon",
+      "train": "stn-west-kowloon"
+    },
+    "HAN": {
+      "flight": "HAN",
+      "train": "stn-hanoi"
+    },
+    "SGN": {
+      "flight": "SGN"
+    },
+    "LBJ": {
+      "flight": "LBJ"
+    },
+    "KOM": {
+      "flight": "LBJ"
+    },
+    "DPS": {
+      "flight": "DPS"
+    },
+    "SHA": {
+      "flight": "PVG",
+      "hsr": "stn-shanghai-hongqiao",
+      "train": "stn-shanghai-hongqiao",
+      "maglev": "stn-longyang-road"
+    },
+    "OSA": {
+      "flight": "KIX",
+      "hsr": "stn-shin-osaka",
+      "train": "stn-shin-osaka"
+    },
+    "UKY": {
+      "hsr": "stn-kyoto",
+      "train": "stn-kyoto"
+    },
+    "HIJ": {
+      "flight": "HIJ",
+      "hsr": "stn-hiroshima",
+      "train": "stn-hiroshima"
+    },
+    "FUK": {
+      "flight": "FUK",
+      "hsr": "stn-hakata",
+      "train": "stn-hakata"
+    },
+    "SEL": {
+      "flight": "ICN",
+      "hsr": "stn-seoul",
+      "train": "stn-seoul"
+    },
+    "PUS": {
+      "flight": "PUS",
+      "hsr": "stn-busan",
+      "train": "stn-busan"
+    },
+    "TPE": {
+      "flight": "TPE",
+      "hsr": "stn-taipei",
+      "train": "stn-taipei"
+    },
+    "CTU": {
+      "flight": "CTU",
+      "hsr": "stn-chengdu-east",
+      "train": "stn-chengdu-east"
+    },
+    "KWL": {
+      "flight": "KWL",
+      "hsr": "stn-guilin-north",
+      "train": "stn-guilin-north"
+    },
+    "BKK": {
+      "flight": "BKK",
+      "train": "stn-krung-thep-aphiwat"
+    },
+    "CNX": {
+      "flight": "CNX",
+      "train": "stn-chiang-mai"
+    },
+    "LPQ": {
+      "flight": "LPQ"
+    },
+    "VTE": {
+      "flight": "VTE"
+    },
+    "DAD": {
+      "flight": "DAD",
+      "train": "stn-da-nang"
+    },
+    "PNH": {
+      "flight": "KTI"
+    },
+    "REP": {
+      "flight": "SAI"
+    },
+    "KUL": {
+      "flight": "KUL",
+      "train": "stn-kl-sentral"
+    },
+    "SIN": {
+      "flight": "SIN"
+    },
+    "JKT": {
+      "flight": "CGK",
+      "hsr": "stn-halim",
+      "train": "stn-gambir"
+    },
+    "JOG": {
+      "flight": "YIA",
+      "train": "stn-yogyakarta"
+    },
+    "MNL": {
+      "flight": "MNL"
+    },
+    "ENI": {
+      "flight": "ENI"
+    },
+    "NGO": {
+      "flight": "NGO",
+      "hsr": "stn-nagoya",
+      "train": "stn-nagoya"
+    },
+    "KMQ": {
+      "flight": "KMQ",
+      "hsr": "stn-kanazawa",
+      "train": "stn-kanazawa"
+    },
+    "OKA": {
+      "flight": "OKA"
+    },
+    "KOJ": {
+      "flight": "KOJ",
+      "hsr": "stn-kagoshima-chuo",
+      "train": "stn-kagoshima-chuo"
+    },
+    "NGS": {
+      "flight": "NGS",
+      "hsr": "stn-nagasaki",
+      "train": "stn-nagasaki"
+    },
+    "SDJ": {
+      "flight": "SDJ",
+      "hsr": "stn-sendai",
+      "train": "stn-sendai"
+    },
+    "HKD": {
+      "flight": "HKD",
+      "hsr": "stn-shin-hakodate-hokuto",
+      "train": "stn-shin-hakodate-hokuto"
+    },
+    "TAK": {
+      "flight": "TAK",
+      "train": "stn-takamatsu"
+    },
+    "MYJ": {
+      "flight": "MYJ",
+      "train": "stn-matsuyama"
+    },
+    "CJU": {
+      "flight": "CJU"
+    },
+    "TAE": {
+      "flight": "TAE",
+      "hsr": "stn-dongdaegu",
+      "train": "stn-dongdaegu"
+    },
+    "KWJ": {
+      "flight": "KWJ",
+      "hsr": "stn-gwangju-songjeong",
+      "train": "stn-gwangju-songjeong"
+    },
+    "CSX": {
+      "flight": "CSX",
+      "hsr": "stn-changsha-south",
+      "train": "stn-changsha-south"
+    },
+    "WUH": {
+      "flight": "WUH",
+      "hsr": "stn-wuhan",
+      "train": "stn-wuhan"
+    },
+    "NKG": {
+      "flight": "NKG",
+      "hsr": "stn-nanjing-south",
+      "train": "stn-nanjing-south"
+    },
+    "KMG": {
+      "flight": "KMG",
+      "hsr": "stn-kunming-south",
+      "train": "stn-kunming-south"
+    },
+    "LJG": {
+      "flight": "LJG",
+      "hsr": "stn-lijiang",
+      "train": "stn-lijiang"
+    },
+    "DLU": {
+      "flight": "DLU",
+      "hsr": "stn-dali",
+      "train": "stn-dali"
+    },
+    "HRB": {
+      "flight": "HRB",
+      "hsr": "stn-harbin-west",
+      "train": "stn-harbin-west"
+    },
+    "TAO": {
+      "flight": "TAO",
+      "hsr": "stn-qingdao-north",
+      "train": "stn-qingdao-north"
+    },
+    "XMN": {
+      "flight": "XMN",
+      "hsr": "stn-xiamen-north",
+      "train": "stn-xiamen-north"
+    },
+    "LXA": {
+      "flight": "LXA"
+    },
+    "URC": {
+      "flight": "URC"
+    },
+    "DNH": {
+      "flight": "DNH",
+      "train": "stn-dunhuang"
+    },
+    "TSN": {
+      "flight": "TSN",
+      "hsr": "stn-tianjin",
+      "train": "stn-tianjin"
+    },
+    "SYX": {
+      "flight": "SYX"
+    },
+    "TXN": {
+      "flight": "TXN",
+      "hsr": "stn-huangshan-north",
+      "train": "stn-huangshan-north"
+    },
+    "YZY": {
+      "flight": "YZY",
+      "hsr": "stn-zhangye-west",
+      "train": "stn-zhangye-west"
+    },
+    "KHH": {
+      "flight": "KHH",
+      "hsr": "stn-zuoying",
+      "train": "stn-zuoying"
+    },
+    "RMQ": {
+      "flight": "RMQ",
+      "hsr": "stn-taichung-hsr",
+      "train": "stn-taichung-hsr"
+    },
+    "HUN": {
+      "flight": "HUN",
+      "train": "stn-hualien"
+    },
+    "TNN": {
+      "flight": "TNN",
+      "hsr": "stn-tainan-hsr",
+      "train": "stn-tainan-hsr"
+    },
+    "HUI": {
+      "flight": "HUI",
+      "train": "stn-hue"
+    },
+    "PQC": {
+      "flight": "PQC"
+    },
+    "CXR": {
+      "flight": "CXR",
+      "train": "stn-nha-trang"
+    },
+    "DLI": {
+      "flight": "DLI"
+    },
+    "VCA": {
+      "flight": "VCA"
+    },
+    "KBV": {
+      "flight": "KBV"
+    },
+    "USM": {
+      "flight": "USM"
+    },
+    "CEI": {
+      "flight": "CEI"
+    },
+    "HDY": {
+      "flight": "HDY"
+    },
+    "KOS": {
+      "flight": "KOS"
+    },
+    "PKZ": {
+      "flight": "PKZ"
+    },
+    "PEN": {
+      "flight": "PEN",
+      "train": "stn-butterworth"
+    },
+    "LGK": {
+      "flight": "LGK"
+    },
+    "BKI": {
+      "flight": "BKI"
+    },
+    "KCH": {
+      "flight": "KCH"
+    },
+    "MKZ": {
+      "flight": "MKZ"
+    },
+    "IPH": {
+      "flight": "IPH",
+      "train": "stn-ipoh"
+    },
+    "CEB": {
+      "flight": "CEB"
+    },
+    "PPS": {
+      "flight": "PPS"
+    },
+    "MPH": {
+      "flight": "MPH"
+    },
+    "TAG": {
+      "flight": "TAG"
+    },
+    "USU": {
+      "flight": "USU"
+    },
+    "IAO": {
+      "flight": "IAO"
+    },
+    "LOP": {
+      "flight": "LOP"
+    },
+    "SUB": {
+      "flight": "SUB"
+    },
+    "MLG": {
+      "flight": "MLG"
+    },
+    "UPG": {
+      "flight": "UPG"
+    },
+    "SOQ": {
+      "flight": "SOQ"
+    },
+    "KNO": {
+      "flight": "KNO"
+    },
+    "BDO": {
+      "flight": "BDO",
+      "hsr": "stn-tegalluar",
+      "train": "stn-bandung"
+    },
+    "BWN": {
+      "flight": "BWN"
+    },
+    "ULN": {
+      "flight": "UBN"
+    },
+    "CMB": {
+      "flight": "CMB"
+    },
+    "KTM": {
+      "flight": "KTM"
+    },
+    "MLE": {
+      "flight": "MLE"
+    }
   },
   "links": [
-    { "from": "PVG", "to": "stn-longyang-road", "mode": "maglev", "minutes": 8, "costCad": 10, "note": "About 8 min, capped at 300 km/h", "source": "planner research", "bothWays": true }
+    {
+      "from": "PVG",
+      "to": "stn-longyang-road",
+      "mode": "maglev",
+      "minutes": 8,
+      "costCad": 10,
+      "note": "About 8 min, capped at 300 km/h",
+      "source": "planner research",
+      "bothWays": true
+    }
   ]
 }
