@@ -28,8 +28,8 @@ export function createAuth(config: Config) {
   return {
     externalEnabled: Boolean(jwks),
 
-    async issue(user: { id: string; name: string; email?: string | null; isDemo?: boolean }, expiresIn = "30d") {
-      return new SignJWT({ name: user.name, email: user.email ?? undefined, demo: user.isDemo || undefined })
+    async issue(user: { id: string; name?: string | null; email?: string | null; isDemo?: boolean }, expiresIn = "30d") {
+      return new SignJWT({ name: user.name ?? undefined, email: user.email ?? undefined, demo: user.isDemo || undefined })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuer(APP_ISSUER)
         .setSubject(user.id)

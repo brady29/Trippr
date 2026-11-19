@@ -383,6 +383,20 @@ export interface BookingsResult {
   /** Held legs and chosen hotels: picked but not booked yet. */
   pending: BookingItem[];
   /** Stops still missing a booked hotel or booked transport. */
-  toBook: { stopId: string; stopOrder: number; cityName: string; arrive: string; nights: number; needsStay: boolean; needsTransport: boolean }[];
+  toBook: {
+    stopId: string;
+    stopOrder: number;
+    cityName: string;
+    cityCode: string;
+    countryIso: string;
+    arrive: string;
+    depart: string;
+    nights: number;
+    needsStay: boolean;
+    needsTransport: boolean;
+    /** How the stop is reached, and from where (the previous stop, or home for the first). */
+    arriveMode: string;
+    fromCity: { code: string; name: string; countryIso: string } | null;
+  }[];
   totals: { bookedPerPersonCad: number; pendingPerPersonCad: number; bookedGroupCad: number; bookedCount: number; pendingCount: number };
 }

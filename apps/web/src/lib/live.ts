@@ -11,7 +11,7 @@ export interface Present {
   name: string;
 }
 
-type Change = ({ kind: "route"; routeId: string } | { kind: "trip" } | { kind: "activities" } | { kind: "members" }) & {
+type Change = ({ kind: "route"; routeId: string } | { kind: "trip" } | { kind: "activities" } | { kind: "members" } | { kind: "inbox" }) & {
   by: string;
 };
 
@@ -52,6 +52,9 @@ export function useTripLive(tripId: string | undefined): { present: Present[]; c
         case "members":
           void qc.invalidateQueries({ queryKey: keys.trip(tripId) });
           void qc.invalidateQueries({ queryKey: ["route"] });
+          break;
+        case "inbox":
+          void qc.invalidateQueries({ queryKey: ["inbox", tripId] });
           break;
         case "activities":
           void qc.invalidateQueries({ queryKey: ["library"] });

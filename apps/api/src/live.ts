@@ -5,7 +5,8 @@ export type LiveChange =
   | { kind: "route"; routeId: string }
   | { kind: "trip" }
   | { kind: "activities" }
-  | { kind: "members" };
+  | { kind: "members" }
+  | { kind: "inbox" };
 
 export interface LivePresence {
   id: string;

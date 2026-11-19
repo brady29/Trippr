@@ -21,6 +21,7 @@ const apiEnv = {
   PUBLIC_WEB_URL: `http://localhost:${WEB_PORT}`,
   SEED_OWNER_INVITE: E2E_OWNER_INVITE,
   LOG_LEVEL: "warn",
+  INBOX_LINK_PREVIEWS: "false",
 };
 
 export default defineConfig({

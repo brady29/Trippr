@@ -1,11 +1,12 @@
 "use client";
 
 import type { BookingItem, BookingsResult, LegBooking, StayBooking } from "@trippr/contracts";
-import { dayDate, shortDate } from "@trippr/rules";
+import { dayDate, hotelLinks, shortDate, travelLinks, type LinkMode } from "@trippr/rules";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { BookingLinks } from "@/components/booking-links";
 import { ModeIcon } from "@/components/icons";
 import { MapsLink } from "@/components/maps-link";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
@@ -225,6 +226,20 @@ function Bookings({ tripId }: { tripId: string }) {
                         {t.needsTransport ? <span className="rounded-full border border-dashed border-ink-faint px-1.5 text-[10px] text-ink-soft">transport</span> : null}
                         {t.needsStay ? <span className="rounded-full border border-dashed border-ink-faint px-1.5 text-[10px] text-ink-soft">hotel</span> : null}
                       </span>
+                      {t.needsTransport && t.fromCity ? (
+                        <BookingLinks
+                          className="w-full"
+                          label={`From ${t.fromCity.name}:`}
+                          links={travelLinks(t.arriveMode as LinkMode, t.fromCity, { code: t.cityCode, name: t.cityName, countryIso: t.countryIso }, t.arrive, b.trip.travellers)}
+                        />
+                      ) : null}
+                      {t.needsStay ? (
+                        <BookingLinks
+                          className="w-full"
+                          label="Hotels:"
+                          links={hotelLinks({ code: t.cityCode, name: t.cityName, countryIso: t.countryIso }, t.arrive, t.depart, b.trip.travellers)}
+                        />
+                      ) : null}
                     </li>
                   ))}
                 </ul>

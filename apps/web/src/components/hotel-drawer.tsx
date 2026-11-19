@@ -1,9 +1,12 @@
 "use client";
 
-import { AREA_VIBES, type Area, type AreaVibe, type Hotel, type PriceBasis, type StayStatus, type StopView } from "@trippr/contracts";
-import { dayDate } from "@trippr/rules";
+import { AREA_VIBES, type Area, type AreaVibe, type Hotel, type PriceBasis, type RouteView, type StayStatus, type StopView } from "@trippr/contracts";
+import { dayDate, hotelLinks } from "@trippr/rules";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useAreas, useCreateArea, useCreateHotel, useDeleteHotel, useHotels, useRouteWrite, useVoteOn } from "@/lib/explorer";
+import { keys } from "@/lib/queries";
+import { BookingLinks } from "./booking-links";
 import { ThumbDownIcon, ThumbUpIcon, XIcon } from "./icons";
 import { MapsLink } from "./maps-link";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
@@ -149,6 +152,7 @@ export function HotelDrawer({
   const remove = useDeleteHotel();
   const panel = useRef<HTMLDivElement>(null);
   const stayFor = (h: Hotel) => h.stays.find((s) => s.stopId === stop.id);
+  const travellers = useQueryClient().getQueryData<RouteView>(keys.route(routeId))?.trip.travellers ?? 1;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -183,6 +187,10 @@ export function HotelDrawer({
           </p>
         </div>
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
+          <BookingLinks
+            label={`Search ${stop.city.name} hotels for these dates on`}
+            links={hotelLinks({ code: stop.city.code, name: stop.city.name, countryIso: stop.city.countryIso }, stop.arrive, stop.depart, travellers)}
+          />
           {areas.isPending || hotels.isPending ? <Spinner /> : null}
           {areas.error ? <ErrorNote error={areas.error} /> : null}
           {hotels.error ? <ErrorNote error={hotels.error} /> : null}

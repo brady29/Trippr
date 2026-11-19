@@ -39,6 +39,7 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
       for (const r of rows) refs.set(r.id, r);
     }
 
+    const home = view.trip.homeCity ? await repos.cities.get(view.trip.homeCity) : null;
     const items: BookingItem[] = [];
     const toBook: BookingsResult["toBook"] = [];
     for (const stop of view.stops) {
@@ -90,7 +91,21 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
       const needsStay = stop.nights > 0 && !stop.stays.some((s) => s.status === "booked");
       const needsTransport = !stop.legs.some((l) => l.status === "booked");
       if (needsStay || needsTransport) {
-        toBook.push({ stopId: stop.id, stopOrder: stop.order, cityName: stop.city.name, arrive: stop.arrive, nights: stop.nights, needsStay, needsTransport });
+        const prev = view.stops[view.stops.indexOf(stop) - 1]?.city ?? home;
+        toBook.push({
+          stopId: stop.id,
+          stopOrder: stop.order,
+          cityName: stop.city.name,
+          cityCode: stop.city.code,
+          countryIso: stop.city.countryIso,
+          arrive: stop.arrive,
+          depart: stop.depart,
+          nights: stop.nights,
+          needsStay,
+          needsTransport,
+          arriveMode: stop.arriveMode,
+          fromCity: prev ? { code: prev.code, name: prev.name, countryIso: prev.countryIso } : null,
+        });
       }
     }
 

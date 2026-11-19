@@ -41,6 +41,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^1.11.0
+        version: 1.11.0(zod@3.25.76)
       '@fastify/cors':
         specifier: 10.0.2
         version: 10.0.2
@@ -52,7 +55,7 @@ importers:
         version: link:../../packages/rules
       falkordb:
         specifier: 6.9.3
-        version: 6.9.3
+        version: 6.9.3(@opentelemetry/api@1.10.0)
       fastify:
         specifier: 5.2.1
         version: 5.2.1
@@ -63,8 +66,8 @@ importers:
         specifier: 5.27.0
         version: 5.27.0
       zod:
-        specifier: 3.24.1
-        version: 3.24.1
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       tsup:
         specifier: 8.3.6
@@ -74,7 +77,7 @@ importers:
     dependencies:
       '@clerk/nextjs':
         specifier: 7.10.4
-        version: 7.10.4(next@15.5.29(@playwright/test@1.56.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
+        version: 7.10.4(next@15.5.29(@opentelemetry/api@1.10.0)(@playwright/test@1.56.0)(@types/node@22.13.1)(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
       '@dnd-kit/core':
         specifier: 6.3.1
         version: 6.3.1(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
@@ -104,7 +107,7 @@ importers:
         version: 5.9.0
       next:
         specifier: 15.5.29
-        version: 15.5.29(@playwright/test@1.56.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
+        version: 15.5.29(@opentelemetry/api@1.10.0)(@playwright/test@1.56.0)(@types/node@22.13.1)(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
       react:
         specifier: 19.2.9
         version: 19.2.9
@@ -134,8 +137,8 @@ importers:
         specifier: workspace:*
         version: link:../rules
       zod:
-        specifier: 3.24.1
-        version: 3.24.1
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/rules: {}
 
@@ -144,6 +147,19 @@ packages:
   '@alloc/quick-lru@5.3.0':
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
     engines: {node: '>=10'}
+
+  '@anthropic-ai/sdk@1.11.0':
+    resolution: {integrity: sha512-lW16YCGJ7ItUy92hehGjuMIxvhCeW8pYi4w4jzzfo8UtRbEamagUJAzAEh1VxS6wHfDh6yB+/KE/Rqp2i6elIw==}
+    hasBin: true
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@babel/runtime@7.29.14':
+    resolution: {integrity: sha512-Y5tqevQaUAZhhj82BpYMNC1ssvLQTVAfwKdm8iy8qwmhvC2/CpcAu8OC+QEtjM7pMk7knx83u1Qj8gzkicyelw==}
+    engines: {node: '>=6.9.0'}
 
   '@clerk/backend@3.31.1':
     resolution: {integrity: sha512-SQMI9Z4IZrXCHRXpdhXHvqZ0OZNzyeXSMWEAzOs4xXKyqwsoaWEJKHFEV80gENLcb4dBpuvytta0Ylxp+gH3Rg==}
@@ -1000,6 +1016,10 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@opentelemetry/api@1.10.0':
+    resolution: {integrity: sha512-lMkyes8iHrG+mk6WH7X70MdCLI2RS0FwNBY1PyQ8UemaijE2m5mv5A0Niy3HtbYTFrgkUEQjFMXmSAk2hQDuPQ==}
+    engines: {node: '>=8.0.0'}
+
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
@@ -1841,6 +1861,10 @@ packages:
   json-schema-ref-resolver@3.0.1:
     resolution: {integrity: sha512-w+HwgljXpVwZ3IidoUR1qPZxSOQ+NRQWuVe6a5pe8XbHsNZE4UAwVPUvzZagn7yBKbJtt6UJnRFYbNTRPZI45Q==}
 
+  json-schema-to-ts@3.1.1:
+    resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
+    engines: {node: '>=16'}
+
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
 
@@ -2410,6 +2434,9 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
+  ts-algebra@2.0.0:
+    resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
+
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
@@ -2569,12 +2596,22 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
   '@alloc/quick-lru@5.3.0': {}
+
+  '@anthropic-ai/sdk@1.11.0(zod@3.25.76)':
+    dependencies:
+      '@opentelemetry/api': 1.10.0
+      json-schema-to-ts: 3.1.1
+      standardwebhooks: 1.1.1
+    optionalDependencies:
+      zod: 3.25.76
+
+  '@babel/runtime@7.29.14': {}
 
   '@clerk/backend@3.31.1(react-dom@19.2.9(react@19.2.9))(react@19.2.9)':
     dependencies:
@@ -2584,12 +2621,12 @@ snapshots:
       - react
       - react-dom
 
-  '@clerk/nextjs@7.10.4(next@15.5.29(@playwright/test@1.56.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react-dom@19.2.9(react@19.2.9))(react@19.2.9)':
+  '@clerk/nextjs@7.10.4(next@15.5.29(@opentelemetry/api@1.10.0)(@playwright/test@1.56.0)(@types/node@22.13.1)(react-dom@19.2.9(react@19.2.9))(react@19.2.9))(react-dom@19.2.9(react@19.2.9))(react@19.2.9)':
     dependencies:
       '@clerk/backend': 3.31.1(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
       '@clerk/react': 6.19.1(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
       '@clerk/shared': 4.48.0(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
-      next: 15.5.29(@playwright/test@1.56.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
+      next: 15.5.29(@opentelemetry/api@1.10.0)(@playwright/test@1.56.0)(@types/node@22.13.1)(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
       react: 19.2.9
       react-dom: 19.2.9(react@19.2.9)
       server-only: 0.0.1
@@ -3167,29 +3204,33 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.3
 
+  '@opentelemetry/api@1.10.0': {}
+
   '@pinojs/redact@0.4.0': {}
 
   '@playwright/test@1.56.0':
     dependencies:
       playwright: 1.56.0
 
-  '@redis/bloom@6.3.1(@redis/client@6.3.1)':
+  '@redis/bloom@6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
 
-  '@redis/client@6.3.1': {}
+  '@redis/client@6.3.1(@opentelemetry/api@1.10.0)':
+    optionalDependencies:
+      '@opentelemetry/api': 1.10.0
 
-  '@redis/json@6.3.1(@redis/client@6.3.1)':
+  '@redis/json@6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
 
-  '@redis/search@6.3.1(@redis/client@6.3.1)':
+  '@redis/search@6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
 
-  '@redis/time-series@6.3.1(@redis/client@6.3.1)':
+  '@redis/time-series@6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))':
     dependencies:
-      '@redis/client': 6.3.1
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
 
   '@rollup/rollup-android-arm-eabi@4.68.0':
     optional: true
@@ -3822,14 +3863,14 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  falkordb@6.9.3:
+  falkordb@6.9.3(@opentelemetry/api@1.10.0):
     dependencies:
       '@js-temporal/polyfill': 0.5.1
-      '@redis/client': 6.3.1
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
       cluster-key-slot: 1.1.2
       generic-pool: 3.9.0
       lodash: 4.18.1
-      redis: 6.3.1
+      redis: 6.3.1(@opentelemetry/api@1.10.0)
     transitivePeerDependencies:
       - '@node-rs/xxhash'
       - '@opentelemetry/api'
@@ -4013,6 +4054,11 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  json-schema-to-ts@3.1.1:
+    dependencies:
+      '@babel/runtime': 7.29.14
+      ts-algebra: 2.0.0
+
   json-schema-traverse@0.4.1: {}
 
   json-schema-traverse@1.0.0: {}
@@ -4188,7 +4234,7 @@ snapshots:
       neo4j-driver-core: 5.27.0
       rxjs: 7.8.2
 
-  next@15.5.29(@playwright/test@1.56.0)(react-dom@19.2.9(react@19.2.9))(react@19.2.9):
+  next@15.5.29(@opentelemetry/api@1.10.0)(@playwright/test@1.56.0)(@types/node@22.13.1)(react-dom@19.2.9(react@19.2.9))(react@19.2.9):
     dependencies:
       '@next/env': 15.5.29
       '@swc/helpers': 0.5.15
@@ -4206,8 +4252,9 @@ snapshots:
       '@next/swc-linux-x64-musl': 15.5.29
       '@next/swc-win32-arm64-msvc': 15.5.29
       '@next/swc-win32-x64-msvc': 15.5.29
+      '@opentelemetry/api': 1.10.0
       '@playwright/test': 1.56.0
-      sharp: 0.35.5
+      sharp: 0.35.5(@types/node@22.13.1)
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/node'
@@ -4341,13 +4388,13 @@ snapshots:
 
   real-require@0.2.0: {}
 
-  redis@6.3.1:
+  redis@6.3.1(@opentelemetry/api@1.10.0):
     dependencies:
-      '@redis/bloom': 6.3.1(@redis/client@6.3.1)
-      '@redis/client': 6.3.1
-      '@redis/json': 6.3.1(@redis/client@6.3.1)
-      '@redis/search': 6.3.1(@redis/client@6.3.1)
-      '@redis/time-series': 6.3.1(@redis/client@6.3.1)
+      '@redis/bloom': 6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))
+      '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
+      '@redis/json': 6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))
+      '@redis/search': 6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))
+      '@redis/time-series': 6.3.1(@redis/client@6.3.1(@opentelemetry/api@1.10.0))
     transitivePeerDependencies:
       - '@node-rs/xxhash'
       - '@opentelemetry/api'
@@ -4428,7 +4475,7 @@ snapshots:
 
   set-cookie-parser@3.2.2: {}
 
-  sharp@0.35.5:
+  sharp@0.35.5(@types/node@22.13.1):
     dependencies:
       '@img/colour': 1.1.0
       detect-libc: 2.1.2
@@ -4459,6 +4506,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.5
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
+      '@types/node': 22.13.1
     optional: true
 
   shebang-command@2.0.0:
@@ -4571,6 +4619,8 @@ snapshots:
       punycode: 2.3.1
 
   tree-kill@1.2.2: {}
+
+  ts-algebra@2.0.0: {}
 
   ts-api-utils@2.5.0(typescript@5.7.3):
     dependencies:
@@ -4733,4 +4783,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@3.24.1: {}
+  zod@3.25.76: {}

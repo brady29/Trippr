@@ -48,6 +48,19 @@ const envSchema = z.object({
   /** Fixed token for the one-time owner invite; random when unset. */
   SEED_OWNER_INVITE: optional(z.string()),
 
+  /** Claude reads inbox emails when set; otherwise only links are recognised. */
+  ANTHROPIC_API_KEY: optional(z.string()),
+  INBOX_MODEL: z.string().default("claude-opus-5-5"),
+  /**
+   * The inbound email service's base address, e.g. "abc123@inbound.postmarkapp.com".
+   * Each trip gets "abc123+<trip token>@inbound.postmarkapp.com".
+   */
+  INBOX_EMAIL_ADDRESS: optional(z.string().email()),
+  /** Shared secret the inbound email webhook must present. */
+  INBOX_WEBHOOK_SECRET: optional(z.string().min(16)),
+  /** Look up titles and captions of TikTok and YouTube links (off in tests). */
+  INBOX_LINK_PREVIEWS: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
+
   /** Comma-separated origins allowed by CORS. */
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   /** Base URL of the web app, used to build invite links. */

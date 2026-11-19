@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { buildApp } from "../src/app";
+import type { InboxReader } from "../src/services/inbox/reader";
 import { loadConfig } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
 import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
@@ -25,7 +26,7 @@ export interface Harness {
  * (or the Neo4j database when DB_DIALECT=neo4j), migrated and seeded with
  * the real trip, then deleted afterwards.
  */
-export async function startHarness(): Promise<Harness> {
+export async function startHarness(options: { env?: Record<string, string>; inboxReader?: InboxReader } = {}): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
   const config = loadConfig({
     ...process.env,
@@ -35,6 +36,9 @@ export async function startHarness(): Promise<Harness> {
     AUTH_DEV_LOGIN: "true",
     DEMO_TRIP_ID: "asia-2027",
     LOG_LEVEL: "warn",
+    INBOX_LINK_PREVIEWS: "false",
+    ANTHROPIC_API_KEY: "",
+    ...options.env,
   });
   const db = await createGraphClient(config);
   if (db.dialect === "neo4j") await db.dropAll();
@@ -42,7 +46,7 @@ export async function startHarness(): Promise<Harness> {
   const ownerInvite = `owner-${randomBytes(8).toString("hex")}`;
   const seed = await seedDatabase(db, { seedDir: resolve(ROOT, "seed"), ownerInviteToken: ownerInvite });
   const explorer = await migrateGraphExplorer(db, { seedDir: SEED_DIR });
-  const app = await buildApp({ config, db, logger: false });
+  const app = await buildApp({ config, db, logger: false, ...(options.inboxReader ? { inboxReader: options.inboxReader } : {}) });
   return {
     app,
     db,
