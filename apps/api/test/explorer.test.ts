@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Area, GraphJSON, Hotel, Hub, LegPrivate, RouteView } from "@trippr/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { migrateGraphExplorer } from "../src/db/explorer-migration";
@@ -46,7 +48,8 @@ afterAll(async () => {
 
 describe("migration", () => {
   it("adds hubs, areas and one idea leg per stop where a hub exists", async () => {
-    expect(h.explorer).toMatchObject({ ran: true, hubs: 22, areas: 20 });
+    const seedFile = (f: string) => JSON.parse(readFileSync(join(SEED_DIR, f), "utf8"));
+    expect(h.explorer).toMatchObject({ ran: true, hubs: seedFile("hubs.json").hubs.length, areas: seedFile("areas.json").areas.length });
     const main = (await owner.api.get<RouteView>(`/routes/${MAIN}`)).body;
     const tyo = stopIn(main, "TYO");
     expect(tyo.legs).toEqual([

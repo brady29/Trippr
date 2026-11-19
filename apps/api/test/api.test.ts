@@ -1,8 +1,10 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CompareResult, LibraryActivity, PathResult, RouteView, StopLibrary, TripDetail } from "@trippr/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config";
 import { createGraphClient } from "../src/db";
-import { client, signIn, startHarness, type Harness } from "./harness";
+import { client, SEED_DIR, signIn, startHarness, type Harness } from "./harness";
 
 let h: Harness;
 let owner: Awaited<ReturnType<typeof signIn>>;
@@ -71,8 +73,10 @@ describe("health and errors", () => {
 
 describe("seed", () => {
   it("loads both real routes, the reference data and an owner invite", () => {
-    expect(h.seed.routesSeeded).toEqual([MAIN, SHANGHAI]);
-    expect(h.seed.counts).toMatchObject({ countries: 14, activities: 41 });
+    const seedFile = (f: string) => JSON.parse(readFileSync(join(SEED_DIR, f), "utf8"));
+    expect(h.seed.routesSeeded.slice(0, 2)).toEqual([MAIN, SHANGHAI]);
+    expect(h.seed.routesSeeded).toHaveLength(seedFile("trip.json").routes.length);
+    expect(h.seed.counts).toMatchObject({ countries: seedFile("countries.json").length, activities: seedFile("activities.json").length });
     expect(h.seed.ownerInvite?.token).toBe(h.ownerInvite);
   });
 
@@ -121,11 +125,14 @@ describe("invites and roles", () => {
     expect(res.status).toBe(200);
     expect(res.body.role).toBe("viewer");
     expect(res.body.members.map((m) => m.role).sort()).toEqual(["editor", "owner", "viewer"]);
-    expect(res.body.routes.map((r) => [r.name, r.totalNights, r.returnDate, r.isCurrent])).toEqual([
+    const real = res.body.routes.filter((r) => r.id === MAIN || r.id === SHANGHAI);
+    expect(real.map((r) => [r.name, r.totalNights, r.returnDate, r.isCurrent])).toEqual([
       ["Main", 40, "2027-06-19", true],
       ["With Shanghai", 36, "2027-06-15", false],
     ]);
-    expect(res.body.routes[0]!.checksLevel).toBe("warn");
+    expect(res.body.routes[0]!.id).toBe(MAIN);
+    expect(res.body.routes.filter((r) => r.isCurrent)).toHaveLength(1);
+    expect(real[0]!.checksLevel).toBe("warn");
   });
 
   it("lets the owner change roles and remove members, members leave, and keeps one owner", async () => {
