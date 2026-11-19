@@ -24,6 +24,12 @@ export function setTokenGetter(getter: TokenGetter) {
   tokenGetter = getter;
 }
 
+/** The Authorization header for the current user, for requests made outside api(). */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const token = await tokenGetter();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const token = await tokenGetter();
   const headers = new Headers(init.headers);

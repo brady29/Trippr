@@ -61,6 +61,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
     const { id } = ctx.parse(idParams, req.params);
     await guards.trip(user, id, "owner");
     await repos.trips.patch(id, ctx.parse(patchTripBody, req.body));
+    ctx.notify(id, { kind: "trip" }, user.id);
     return repos.trips.get(id);
   });
 
@@ -74,6 +75,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
     const member = await repos.access.tripRole(id, userId);
     if (!member?.role) throw notFound("Member");
     await repos.trips.setMemberRole(id, userId, role);
+    ctx.notify(id, { kind: "members" }, user.id);
     return repos.trips.members(id);
   });
 
@@ -93,6 +95,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
       throw badRequest("A trip needs an owner. Make someone else an owner first.");
     }
     await repos.trips.removeMember(id, userId);
+    ctx.notify(id, { kind: "members" }, user.id);
     return leaving ? [] : repos.trips.members(id);
   });
 
@@ -130,6 +133,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
     // Owner invites are single-use; group invites stay valid until they expire.
     if (invite.role === "owner") await repos.trips.deleteInvite(token);
     const role = hasRole(current?.role, invite.role) ? current!.role! : invite.role;
+    ctx.notify(invite.trip.id, { kind: "members" }, user.id);
     return { tripId: invite.trip.id, role };
   });
 
@@ -150,6 +154,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
     } else {
       routeId = await repos.routes.create(id, body.name ?? "New route", body.tags ?? []);
     }
+    ctx.notify(id, { kind: "trip" }, user.id);
     reply.status(201);
     return routeView(routeId, role);
   });

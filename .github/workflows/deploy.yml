@@ -51,7 +51,7 @@ jobs:
             --image "$IMAGE" \
             --region "$REGION" \
             --allow-unauthenticated \
-            --min-instances 0 --max-instances 2 \
+            --min-instances 0 --max-instances 1 --timeout 3600 \
             --memory 512Mi \
             --network default --subnet default --vpc-egress private-ranges-only \
             --set-env-vars "^@^NODE_ENV=production@DB_DIALECT=${{ vars.DB_DIALECT || 'falkordb' }}@DB_AUTO_MIGRATE=true@DB_AUTO_SEED=true@PUBLIC_WEB_URL=${{ vars.PUBLIC_WEB_URL }}@WEB_ORIGIN=${{ vars.WEB_ORIGIN }}@DEMO_TRIP_ID=${{ vars.DEMO_TRIP_ID }}@AUTH_JWKS_URL=${{ vars.AUTH_JWKS_URL }}@AUTH_ISSUER=${{ vars.AUTH_ISSUER }}" \
