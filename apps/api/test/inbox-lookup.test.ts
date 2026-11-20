@@ -119,6 +119,9 @@ describe("inbox link lookup", () => {
     expect(geocoded.at(-1)).toMatchObject({ countryIso: "JP" });
     expect(geocoded.at(-1)!.near).toBeDefined();
 
+    // teamLab Planets is already a seeded idea in Tokyo: no second copy, the existing one is filled in.
+    const all = (await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.filter((a) => a.title === "teamLab Planets");
+    expect(all).toHaveLength(1);
     const added = await activityTitled("teamLab Planets");
     expect(added).toMatchObject({
       url: tiktok,
@@ -133,6 +136,42 @@ describe("inbox link lookup", () => {
 
     const list = (await owner.api.get<InboxResult>(`/trips/${TRIP}/inbox`)).body;
     expect(list.lookup).toBe(true);
+  });
+
+  it("fills in an idea that already exists without moving a pin someone placed by hand", async () => {
+    const mine = (await owner.api.post<LibraryActivity>("/activities", { tripId: TRIP, cityCode: "TYO", title: "Hand placed gallery", website: "https://my-own-note.example.com/" }))
+      .body;
+    await owner.api.patch(`/activities/${mine.id}/place`, { lat: 35.7, lon: 139.75 });
+
+    nextRead = { items: [idea("Hand placed gallery", "https://www.tiktok.com/@a/video/8")] };
+    answers.set(
+      "Hand placed gallery",
+      answer({
+        placeName: "Hand Placed Gallery",
+        address: "Roppongi, Tokyo",
+        website: "https://hand-placed-gallery.jp/",
+        ticketUrl: "https://hand-placed-gallery.jp/tickets",
+        eventDate: "2027-05-12",
+        seenUrls: ["https://hand-placed-gallery.jp/", "https://hand-placed-gallery.jp/tickets"],
+      }),
+    );
+    points.set("Hand Placed Gallery, Roppongi, Tokyo", { lat: 35.6605, lon: 139.7292, address: "Hand Placed Gallery, Roppongi, Tokyo, Japan", osmId: null });
+
+    const [item] = await paste("https://www.tiktok.com/@a/video/8");
+    expect(item).toMatchObject({ status: "applied", lookup: "done", suggestion: { activityId: mine.id } });
+    expect(item!.note).toContain("already in");
+    expect(await activity(mine.id)).toMatchObject({
+      // What people entered stays; only empty fields are filled.
+      website: "https://my-own-note.example.com/",
+      ticketUrl: "https://hand-placed-gallery.jp/tickets",
+      url: "https://www.tiktok.com/@a/video/8",
+      when: { on: "2027-05-12" },
+      // The hand-placed pin doesn't move.
+      lat: 35.7,
+      lon: 139.75,
+      placeStatus: "manual",
+    });
+    expect((await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.filter((a) => a.title === "Hand placed gallery")).toHaveLength(1);
   });
 
   it("adds the idea but leaves the pin for a person when the lookup is only fairly sure", async () => {

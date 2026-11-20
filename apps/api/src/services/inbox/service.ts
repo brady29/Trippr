@@ -5,6 +5,7 @@ import {
   type InboxItem,
   type InboxLookupState,
   type InboxSource,
+  type FoundPlace,
   type InboxSuggestion,
   type LegSuggestion,
   type LibraryActivity,
@@ -320,12 +321,69 @@ export function createInbox(ctx: AppContext) {
     return `Added to ${stopLabel(stop)} as ${s.status}.${dates}`;
   }
 
+  /**
+   * Gives an existing activity what the lookup found, without overwriting
+   * anything people entered: empty links (and the source link) are filled, the
+   * date is set when there is none, and the pin is set unless someone placed
+   * it by hand, or it already has one and the new find isn't confident.
+   * Returns a short note about the pin.
+   */
+  async function enrichActivity(
+    call: Call,
+    tripId: string,
+    actorId: string,
+    activityId: string,
+    place: FoundPlace | null | undefined,
+    sourceUrl: string | null,
+  ): Promise<string> {
+    if (!place && !sourceUrl) return "";
+    const activity = await repos.activities.get(tripId, actorId, activityId);
+    if (!activity) return "";
+    const patch: Record<string, unknown> = {};
+    if (!activity.url && sourceUrl) patch.url = sourceUrl;
+    if (!activity.website && place?.website) patch.website = place.website;
+    if (!activity.ticketUrl && place?.ticketUrl) patch.ticketUrl = place.ticketUrl;
+    if (!activity.reserveUrl && place?.reserveUrl) patch.reserveUrl = place.reserveUrl;
+    if (!activity.when && place?.eventDate) patch.when = { on: place.eventDate };
+    let changed = false;
+    let pinNote = "";
+    try {
+      if (Object.keys(patch).length) {
+        await call("PATCH", `/activities/${activity.id}`, patch);
+        changed = true;
+      }
+      const hasPin = activity.lat != null && activity.lon != null;
+      const better = !hasPin || place?.placeStatus === "placed";
+      if (place && (place.placeStatus || place.mapsUrl) && activity.placeStatus !== "manual" && better) {
+        await ctx.places.pinFound(activity, {
+          point: place.lat != null && place.lon != null ? { lat: place.lat, lon: place.lon } : null,
+          address: place.address ?? null,
+          status: place.placeStatus ?? null,
+          mapsUrl: activity.mapsUrl ? null : (place.mapsUrl ?? null),
+        });
+        changed = true;
+        if (place.placeStatus === "check") pinNote = " Check the pin on the map.";
+        if (place.placeStatus === "not_found") pinNote = " Couldn't find it on the map.";
+      }
+    } catch (e) {
+      if (!(e instanceof AppError)) throw e;
+      ctx.log.warn({ err: e }, "couldn't update the activity after a lookup");
+    }
+    if (changed) ctx.notify(tripId, { kind: "activities" }, actorId);
+    return pinNote;
+  }
+
   async function addActivity(call: Call, tripId: string, actorId: string, s: ActivitySuggestion): Promise<{ note: string; activityId: string }> {
     const code = s.cityCode!;
     const existing = await call<{ id: string; title: string; url?: string | null }[]>("GET", `/cities/${code}/activities?tripId=${encodeURIComponent(tripId)}`);
     const city = await repos.cities.get(code);
     const dup = existing.find((a) => (s.url && a.url === s.url) || norm(a.title) === norm(s.title));
-    if (dup) return { note: `${dup.title} is already in ${city?.name ?? code}'s ideas.`, activityId: dup.id };
+    if (dup) {
+      // Already an idea: it still gets the links and pin the lookup found, where it has none.
+      const pinNote = s.place ? await enrichActivity(call, tripId, actorId, dup.id, s.place, s.url) : "";
+      const filled = s.place ? " Added the links that were missing." : "";
+      return { note: `${dup.title} is already in ${city?.name ?? code}'s ideas.${filled}${pinNote}`, activityId: dup.id };
+    }
     const place = s.place ?? null;
     const created = await call<{ id: string; placeStatus?: LibraryActivity["placeStatus"] }>("POST", "/activities", {
       tripId,
@@ -640,30 +698,8 @@ export function createInbox(ctx: AppContext) {
 
     const place = updated.kind === "activity" ? updated.place : null;
     if (outcome.state === "done" && updated.kind === "activity" && updated.activityId && place && item.status === "applied") {
-      const activity = await repos.activities.get(item.tripId, actor.id, updated.activityId);
-      if (activity) {
-        const call = await actingAs(actor);
-        const patch: Record<string, unknown> = {};
-        if (!activity.website && place.website) patch.website = place.website;
-        if (!activity.ticketUrl && place.ticketUrl) patch.ticketUrl = place.ticketUrl;
-        if (!activity.reserveUrl && place.reserveUrl) patch.reserveUrl = place.reserveUrl;
-        if (!activity.when && place.eventDate) patch.when = { on: place.eventDate };
-        try {
-          if (Object.keys(patch).length) await call("PATCH", `/activities/${activity.id}`, patch);
-          if (place.placeStatus || place.mapsUrl) {
-            await ctx.places.pinFound(activity, {
-              point: place.lat != null && place.lon != null ? { lat: place.lat, lon: place.lon } : null,
-              address: place.address ?? null,
-              status: place.placeStatus ?? null,
-              mapsUrl: place.mapsUrl ?? null,
-            });
-            ctx.notify(item.tripId, { kind: "activities" }, actor.id);
-          }
-        } catch (e) {
-          if (!(e instanceof AppError)) throw e;
-          ctx.log.warn({ err: e }, "couldn't update the activity after a lookup");
-        }
-      }
+      const call = await actingAs(actor);
+      await enrichActivity(call, item.tripId, actor.id, updated.activityId, place, updated.url);
     }
     ctx.notify(item.tripId, { kind: "inbox" }, actor.id);
     return (await repos.inbox.get(itemId))!;
