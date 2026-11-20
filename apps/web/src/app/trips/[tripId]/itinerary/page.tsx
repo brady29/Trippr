@@ -86,6 +86,7 @@ function ItemRow({
             ))}
           </Select>
           <input
+            key={item.startTime ?? "none"}
             type="time"
             aria-label={`Start time for ${item.title}`}
             className="h-8 rounded-lg border border-line bg-card px-2 text-xs"
