@@ -33,3 +33,6 @@ CREATE INDEX FOR (n:Trip) ON (n.inboxToken);
 
 // Geocoder answers, shared across trips.
 GRAPH.CONSTRAINT CREATE UNIQUE NODE GeocodeCache PROPERTIES 1 key;
+
+// Calendar feeds: one private link per member per trip, stored only as a token hash.
+GRAPH.CONSTRAINT CREATE UNIQUE NODE CalendarFeed PROPERTIES 1 tokenHash;

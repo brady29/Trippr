@@ -95,6 +95,7 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
       throw badRequest("A trip needs an owner. Make someone else an owner first.");
     }
     await repos.trips.removeMember(id, userId);
+    await repos.calendar.remove(userId, id);
     ctx.notify(id, { kind: "members" }, user.id);
     return leaving ? [] : repos.trips.members(id);
   });

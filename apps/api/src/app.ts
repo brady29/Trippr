@@ -14,6 +14,7 @@ import { explorerRoutes } from "./routes/explorer";
 import { liveRoutes } from "./routes/live";
 import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
+import { calendarRoutes } from "./routes/calendar";
 import { inboxRoutes } from "./routes/inbox";
 import { createInbox, type Inbox } from "./services/inbox/service";
 import { createNominatim, noGeocoder, type Geocoder } from "./services/places/geocoder";
@@ -176,6 +177,7 @@ export async function buildApp({
     bookingsRoutes(scope, ctx);
     inboxRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
+    calendarRoutes(scope, ctx);
   });
 
   return app;

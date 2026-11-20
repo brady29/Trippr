@@ -75,6 +75,8 @@ const envSchema = z.object({
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   /** Base URL of the web app, used to build invite links. */
   PUBLIC_WEB_URL: z.string().default("http://localhost:3000"),
+  /** Public base URL of this API, for calendar feed links; defaults to the address each request came in on. */
+  PUBLIC_API_URL: optional(z.string().url()),
 });
 
 export type Config = z.infer<typeof envSchema>;

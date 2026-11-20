@@ -28,3 +28,6 @@ CREATE INDEX trip_inbox_token IF NOT EXISTS FOR (n:Trip) ON (n.inboxToken);
 
 // Geocoder answers, shared across trips.
 CREATE CONSTRAINT geocode_cache_key IF NOT EXISTS FOR (n:GeocodeCache) REQUIRE n.key IS UNIQUE;
+
+// Calendar feeds: one private link per member per trip, stored only as a token hash.
+CREATE CONSTRAINT calendar_feed_token_hash IF NOT EXISTS FOR (n:CalendarFeed) REQUIRE n.tokenHash IS UNIQUE;
