@@ -141,3 +141,26 @@ test("itinerary lists the route day by day and puts an activity on a day", async
   await expect(ckgDay).toContainText("Chongqing");
   await expect(page.getByTestId("unscheduled").filter({ hasText: "Chongqing hotpot" })).toHaveCount(0);
 });
+
+test("Map tab lists pinned places and shows the assistant's focus", async ({ page }) => {
+  await page.goto("/trips/asia-2027/map?route=route-main");
+  await expect(page.getByTestId("map-region")).toBeVisible();
+  const list = page.getByTestId("map-list");
+  await expect(list).toBeVisible();
+  await expect(list.locator('[data-type="stop"]').first()).toBeVisible();
+  // The Chongqing activity pinned by hand earlier in this run is the only placed one there.
+  const pinned = list.locator('[data-testid="map-list-item"][data-type="activity"][data-city="CKG"]').first();
+  await expect(pinned).toBeVisible();
+  await expect(page.getByTestId("map-unplaced")).toContainText("Not on the map yet:");
+  await pinned.click();
+  await expect(page.getByTestId("map-card").getByTestId("place-links").locator('[data-kind="google-maps"]')).toBeVisible();
+
+  const nodeId = await pinned.getAttribute("data-node-id");
+  expect(nodeId).toMatch(/^act:/);
+  await page.goto(`/trips/asia-2027/map?route=route-main&focus=${encodeURIComponent(`${nodeId},act:not-a-real-id`)}`);
+  await expect(page.getByTestId("map-focus-bar")).toContainText("Showing 1 place from the assistant");
+  await expect(page.locator(`[data-testid="map-list-item"][data-node-id="${nodeId}"]`)).toHaveAttribute("data-focused", "true");
+  await page.getByTestId("map-focus-bar").getByRole("button", { name: "Show everything" }).click();
+  await expect(page.getByTestId("map-focus-bar")).toHaveCount(0);
+  await expect(page).not.toHaveURL(/focus=/);
+});

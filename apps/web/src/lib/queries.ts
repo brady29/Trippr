@@ -385,6 +385,7 @@ function invalidateActivityViews(qc: QueryClient) {
   void qc.invalidateQueries({ queryKey: ["library"] });
   void qc.invalidateQueries({ queryKey: ["trip-activities"] });
   void qc.invalidateQueries({ queryKey: ["route"] });
+  void qc.invalidateQueries({ queryKey: ["graph"] });
 }
 
 export function useUpdateActivity() {
