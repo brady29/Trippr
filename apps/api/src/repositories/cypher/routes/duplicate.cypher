@@ -13,4 +13,4 @@ WITH s, st
 UNWIND st.plans AS plan
 MATCH (a:Activity {id: plan.activityId})
 CREATE (s)-[pl:PLANS]->(a)
-SET pl.day = plan.day
+SET pl.day = plan.day, pl.startTime = plan.startTime, pl.durationMin = plan.durationMin

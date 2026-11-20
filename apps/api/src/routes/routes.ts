@@ -159,8 +159,15 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
     const { role, routeId, tripId } = await guards.stop(user, id, "editor");
     const activity = await guards.activity(user, activityId, "viewer");
     if (activity.tripId !== tripId) throw notFound("Activity");
-    const { day } = ctx.parse(planBody, req.body);
-    if (!(await repos.routes.plan(id, activityId, day ?? null))) {
+    const body = ctx.parse(planBody, req.body);
+    const raw = (req.body ?? {}) as Record<string, unknown>;
+    // Absent fields keep their stored value; null clears them.
+    const when = {
+      ...("day" in raw ? { day: body.day ?? null } : {}),
+      ...("startTime" in raw ? { startTime: body.startTime ?? null } : {}),
+      ...("durationMin" in raw ? { durationMin: body.durationMin ?? null } : {}),
+    };
+    if (!(await repos.routes.plan(id, activityId, when))) {
       throw badRequest("That activity is in a different city from this stop");
     }
     ctx.notify(tripId, { kind: "route", routeId }, user.id);

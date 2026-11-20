@@ -28,7 +28,7 @@ export interface StoredStop {
   notes: string | null;
   stayCadPerNight: number | null;
   arriveCostCad: number | null;
-  city: { code: string; name: string; lat: number; lon: number };
+  city: { code: string; name: string; lat: number; lon: number; tz?: string | null };
   country: Country & { color?: string | null };
   planned: ActivityRef[];
   /** Includes bookingRef and seat; route-view strips them before anything is sent. */
@@ -78,9 +78,9 @@ export interface StoredRoute {
 
 type RawStop = {
   stop: Record<string, unknown>;
-  city: { code: string; name: string; lat: number; lon: number };
+  city: { code: string; name: string; lat: number; lon: number; tz?: string | null };
   country: { iso: string; name: string; visaRule: unknown; color?: string | null };
-  planned: { id: string | null; title: string; when: unknown; costCad: unknown; day: unknown }[];
+  planned: { id: string | null; title: string; when: unknown; costCad: unknown; day: unknown; startTime?: string | null; durationMin?: unknown }[];
 };
 
 type RawMeta = {
@@ -183,7 +183,7 @@ export function routesRepository(db: GraphClient) {
             notes: str(s.stop.notes),
             stayCadPerNight: optNum(s.stop.stayCadPerNight),
             arriveCostCad: optNum(s.stop.arriveCostCad),
-            city: { code: s.city.code, name: s.city.name, lat: num(s.city.lat), lon: num(s.city.lon) },
+            city: { code: s.city.code, name: s.city.name, lat: num(s.city.lat), lon: num(s.city.lon), tz: s.city.tz ?? null },
             country: {
               iso: s.country.iso,
               name: s.country.name,
@@ -198,6 +198,8 @@ export function routesRepository(db: GraphClient) {
                 when: parseJson<When>(p.when),
                 costCad: optNum(p.costCad),
                 day: optNum(p.day),
+                startTime: p.startTime ?? null,
+                durationMin: optNum(p.durationMin),
               }))
               .sort((a, b) => a.title.localeCompare(b.title)),
             legs: (legsByStop.get(String(s.stop.id)) ?? []).sort((a, b) => a.seq - b.seq),
@@ -281,7 +283,7 @@ export function routesRepository(db: GraphClient) {
           notes: s.notes,
           stayCadPerNight: s.stayCadPerNight,
           arriveCostCad: s.arriveCostCad,
-          plans: s.planned.map((p) => ({ activityId: p.id, day: p.day ?? null })),
+          plans: s.planned.map((p) => ({ activityId: p.id, day: p.day ?? null, startTime: p.startTime ?? null, durationMin: p.durationMin ?? null })),
         })),
       });
       // Legs belong to one route's timeline, so they are copied with new ids; stays are re-linked.
@@ -444,8 +446,18 @@ export function routesRepository(db: GraphClient) {
     deleteStop: (stopId: string, version: number) => guarded("stops/delete", { stopId, version }),
 
     /** Returns false when the activity is not in the stop's city. */
-    async plan(stopId: string, activityId: string, day: number | null) {
-      const rows = await db.query(q("stops/plan"), { stopId, activityId, day });
+    /** Plan an activity at a stop; fields left undefined keep their stored value. */
+    async plan(stopId: string, activityId: string, when: { day?: number | null; startTime?: string | null; durationMin?: number | null } = {}) {
+      const rows = await db.query(q("stops/plan"), {
+        stopId,
+        activityId,
+        setDay: when.day !== undefined,
+        day: when.day ?? null,
+        setTime: when.startTime !== undefined,
+        startTime: when.startTime ?? null,
+        setDuration: when.durationMin !== undefined,
+        durationMin: when.durationMin ?? null,
+      });
       return rows.length > 0;
     },
 

@@ -158,6 +158,13 @@ export const placeBody = z.union([
 export const planBody = z.object({
   /** Optional 1-based day within the stop. */
   day: z.number().int().min(1).max(120).nullish(),
+  /** Local start time at the stop, "HH:MM" (24-hour). */
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use a 24-hour time like 09:30")
+    .nullish(),
+  /** How long it takes, in minutes. */
+  durationMin: z.number().int().min(15).max(720).nullish(),
 });
 
 export const voteBody = z.object({
@@ -197,6 +204,7 @@ export type PatchStopBody = z.infer<typeof patchStopBody>;
 export type CreateActivityBody = z.input<typeof createActivityBody>;
 export type PatchActivityBody = z.input<typeof patchActivityBody>;
 export type PlaceBody = z.infer<typeof placeBody>;
+export type PlanBody = z.input<typeof planBody>;
 export type VoteBody = z.infer<typeof voteBody>;
 export type CommentBody = z.infer<typeof commentBody>;
 export type PathQuery = z.input<typeof pathQuery>;

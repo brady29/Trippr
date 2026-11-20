@@ -126,3 +126,18 @@ test("pin an activity by hand and see its map links", async ({ page }) => {
   await expect(item.getByTestId("place-links").locator('[data-kind="amap"]')).toHaveAttribute("href", /position=106\.5418%2C29\.5536/);
   await expect(item.getByTestId("place-links").locator('[data-kind="apple-maps"]')).toBeVisible();
 });
+
+test("itinerary lists the route day by day and puts an activity on a day", async ({ page }) => {
+  await page.goto("/trips/asia-2027/itinerary?route=route-main");
+  const days = page.getByTestId("itinerary-day");
+  await expect(days.first()).toBeVisible();
+  expect(await days.count()).toBeGreaterThan(35);
+  await expect(days.first()).toHaveAttribute("data-kind", "travel");
+  // Chongqing hotpot was planned earlier in this run without a day.
+  const tray = page.getByTestId("unscheduled").filter({ hasText: "Chongqing" });
+  const hotpot = tray.getByTestId("itinerary-item").filter({ hasText: "Chongqing hotpot" });
+  await hotpot.getByRole("combobox", { name: "Day for Chongqing hotpot" }).selectOption({ index: 1 });
+  const ckgDay = page.locator('[data-testid="itinerary-day"]').filter({ has: page.getByTestId("itinerary-item").filter({ hasText: "Chongqing hotpot" }) });
+  await expect(ckgDay).toContainText("Chongqing");
+  await expect(page.getByTestId("unscheduled").filter({ hasText: "Chongqing hotpot" })).toHaveCount(0);
+});

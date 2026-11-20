@@ -105,6 +105,8 @@ export interface City {
   lon: number;
   countryIso: string;
   countryName: string;
+  /** IANA time zone, e.g. "Asia/Tokyo". */
+  tz?: string | null;
 }
 
 export interface ActivityRef {
@@ -112,7 +114,11 @@ export interface ActivityRef {
   title: string;
   when?: When | null;
   costCad?: number | null;
+  /** Planned day within the stop, 1 = the arrival day. */
   day?: number | null;
+  /** Local start time at the stop, "HH:MM". */
+  startTime?: string | null;
+  durationMin?: number | null;
 }
 
 export interface Activity extends ActivityRef {

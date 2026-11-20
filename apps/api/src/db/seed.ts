@@ -9,6 +9,8 @@ interface SeedCountry {
   name: string;
   color?: string;
   visaRule?: unknown;
+  /** IANA time zone used by every city in the country unless the city says otherwise. */
+  tz?: string;
 }
 interface SeedCity {
   code: string;
@@ -17,6 +19,8 @@ interface SeedCity {
   lat: number;
   lon: number;
   kind?: string;
+  /** Only for countries with more than one time zone. */
+  tz?: string;
 }
 interface SeedActivity {
   /** What to search on Google Maps to find this place. */
@@ -102,10 +106,10 @@ export async function seedDatabase(db: GraphClient, options: SeedOptions): Promi
   const trip = readJson<SeedTrip>(dir, "trip.json");
 
   await db.query(q("country"), {
-    countries: countries.map((c) => ({ iso: c.iso, name: c.name, color: c.color ?? null, visaRule: json(c.visaRule) })),
+    countries: countries.map((c) => ({ iso: c.iso, name: c.name, color: c.color ?? null, visaRule: json(c.visaRule), tz: c.tz ?? null })),
   });
   await db.query(q("city"), {
-    cities: cities.map((c) => ({ ...c, kind: c.kind ?? "city" })),
+    cities: cities.map((c) => ({ ...c, kind: c.kind ?? "city", tz: c.tz ?? null })),
   });
   const edges = links.flatMap((l) => {
     const edge = {

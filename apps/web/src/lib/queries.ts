@@ -12,6 +12,7 @@ import type {
   PathResult,
   PlaceBody,
   PlaceLookupResult,
+  PlanBody,
   RouteView,
   StopLibrary,
   StopView,
@@ -310,6 +311,34 @@ export function usePlanToggle(routeId: string) {
       invalidateTrip(qc, view);
       void qc.invalidateQueries({ queryKey: keys.tripActivities(view.route.tripId) });
     },
+  });
+}
+
+/** Put a planned activity on a day of its stop, with an optional start time and length. */
+export function usePlanDay(routeId: string) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: ({ stopId, activityId, body }: { stopId: string; activityId: string; body: PlanBody }) =>
+      api<RouteView>(`/stops/${stopId}/plans/${activityId}`, { method: "PUT", body }),
+    onMutate: async ({ stopId, activityId, body }) => {
+      await qc.cancelQueries({ queryKey: keys.route(routeId) });
+      const previous = qc.getQueryData<RouteView>(keys.route(routeId));
+      if (previous) {
+        qc.setQueryData<RouteView>(keys.route(routeId), {
+          ...previous,
+          stops: previous.stops.map((s) =>
+            s.id !== stopId ? s : { ...s, planned: s.planned.map((p) => (p.id === activityId ? { ...p, ...body } : p)) },
+          ),
+        });
+      }
+      return { previous };
+    },
+    onError: (error, _v, context) => {
+      if (context?.previous) qc.setQueryData(keys.route(routeId), context.previous);
+      toast(error instanceof Error ? error.message : "That didn't save", "error");
+    },
+    onSuccess: (view) => qc.setQueryData(keys.route(routeId), view),
   });
 }
 

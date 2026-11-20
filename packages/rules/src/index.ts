@@ -9,3 +9,4 @@ export * from "./stays";
 export * from "./travel";
 export * from "./booking-links";
 export * from "./places";
+export * from "./itinerary";
