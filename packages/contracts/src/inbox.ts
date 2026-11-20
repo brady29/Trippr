@@ -14,6 +14,32 @@ export type InboxStatus = (typeof INBOX_STATUSES)[number];
 
 export type InboxSource = "email" | "paste";
 
+/**
+ * The place lookup for an item: still running, finished, gave up (a person
+ * can retry), or not needed (tickets, lookup turned off).
+ */
+export const INBOX_LOOKUP_STATES = ["pending", "done", "failed", "skipped"] as const;
+export type InboxLookupState = (typeof INBOX_LOOKUP_STATES)[number];
+
+/** What the place lookup found. Coordinates come from the geocoder, never from the model. */
+export interface FoundPlace {
+  /** The place's name as the lookup found it. */
+  placeName?: string | null;
+  address?: string | null;
+  website?: string | null;
+  ticketUrl?: string | null;
+  reserveUrl?: string | null;
+  /** A Google Maps link from the message, kept as is. */
+  mapsUrl?: string | null;
+  /** For one-off events: the date, YYYY-MM-DD. */
+  eventDate?: string | null;
+  lat?: number | null;
+  lon?: number | null;
+  /** placed: confident and near the city; check: a person should look at the pin; not_found: no point found. */
+  placeStatus?: "placed" | "check" | "not_found" | null;
+  confidence?: "high" | "medium" | "low" | null;
+}
+
 /** A ticket read from a confirmation. Times are local with an offset, like "2027-05-19T08:05+08:00". */
 export interface LegSuggestion {
   kind: "leg";
@@ -50,6 +76,8 @@ export interface StaySuggestion {
   perNightCad: number | null;
   url: string | null;
   bookingRef: string | null;
+  /** Filled in by the place lookup. */
+  place?: FoundPlace | null;
 }
 
 export interface ActivitySuggestion {
@@ -61,6 +89,10 @@ export interface ActivitySuggestion {
   costCad: number | null;
   note: string | null;
   thumbnailUrl: string | null;
+  /** Filled in by the place lookup. */
+  place?: FoundPlace | null;
+  /** The activity it became, once added. */
+  activityId?: string | null;
 }
 
 export type InboxSuggestion = LegSuggestion | StaySuggestion | ActivitySuggestion;
@@ -87,6 +119,8 @@ export interface InboxItem {
   note: string | null;
   appliedBy: string | null;
   appliedAt: string | null;
+  /** Finding the place behind a link; "skipped" on items from before the lookup existed. */
+  lookup: InboxLookupState;
 }
 
 export interface InboxResult {
@@ -95,6 +129,8 @@ export interface InboxResult {
   address: string | null;
   /** Whether Claude reads the items (otherwise only links are recognised). */
   reader: "claude" | "basic";
+  /** Whether links are looked up to find the place behind them. */
+  lookup?: boolean;
   canSeePrivate: boolean;
 }
 

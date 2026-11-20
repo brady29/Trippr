@@ -52,6 +52,11 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: optional(z.string()),
   INBOX_MODEL: z.string().default("claude-opus-5-5"),
   /**
+   * Find the place behind each inbox link with Claude's web search and web fetch:
+   * website, tickets, reservations and a pin. Defaults to on when ANTHROPIC_API_KEY is set.
+   */
+  INBOX_LOOKUP: optional(z.enum(["on", "off"])),
+  /**
    * The inbound email service's base address, e.g. "abc123@inbound.postmarkapp.com".
    * Each trip gets "abc123+<trip token>@inbound.postmarkapp.com".
    */

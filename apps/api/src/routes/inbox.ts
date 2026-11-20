@@ -81,6 +81,7 @@ export function inboxRoutes(app: FastifyInstance, ctx: AppContext) {
       items: items.map((i) => redact(i, canSeePrivate)),
       address: config.INBOX_EMAIL_ADDRESS ? addressFor(await ensureToken(id)) : null,
       reader: ctx.inboxReader.name,
+      lookup: ctx.placeLookup != null,
       canSeePrivate,
     };
   });
@@ -131,6 +132,13 @@ export function inboxRoutes(app: FastifyInstance, ctx: AppContext) {
   app.post("/inbox/:id/dismiss", async (req): Promise<InboxItem> => {
     const { user, item } = await itemFor(req);
     return ctx.inbox.dismiss(item.id, user.id);
+  });
+
+  /** Look for the place behind an idea or hotel again, e.g. after "Couldn't find the place". */
+  app.post("/inbox/:id/lookup", async (req): Promise<InboxItem> => {
+    const { user, item } = await itemFor(req);
+    const updated = await ctx.inbox.lookupAgain(item.id, { id: user.id, name: user.name ?? null });
+    return redact(updated, !user.isDemo);
   });
 
   /**

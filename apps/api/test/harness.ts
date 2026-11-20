@@ -6,6 +6,7 @@ import { buildApp } from "../src/app";
 import type { Geocoder } from "../src/services/places/geocoder";
 import type { InboxReader } from "../src/services/inbox/reader";
 import type { AssistantModel } from "../src/services/assistant/model";
+import type { PlaceLookup } from "../src/services/inbox/lookup";
 import { loadConfig } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
 import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
@@ -32,6 +33,8 @@ export async function startHarness(
   options: {
     env?: Record<string, string>;
     inboxReader?: InboxReader;
+    /** Used only when the test also sets INBOX_LOOKUP=on. */
+    placeLookup?: PlaceLookup;
     geocoder?: Geocoder;
     resolveShortLink?: (url: string) => Promise<string | null>;
     /** The trip assistant is off unless a (scripted) model is passed. */
@@ -50,6 +53,7 @@ export async function startHarness(
     INBOX_LINK_PREVIEWS: "false",
     GEOCODER: "none",
     ANTHROPIC_API_KEY: "",
+    INBOX_LOOKUP: "off",
     ...options.env,
   });
   const db = await createGraphClient(config);
@@ -63,6 +67,7 @@ export async function startHarness(
     db,
     logger: false,
     ...(options.inboxReader ? { inboxReader: options.inboxReader } : {}),
+    ...(options.placeLookup ? { placeLookup: options.placeLookup } : {}),
     ...(options.geocoder ? { geocoder: options.geocoder } : {}),
     ...(options.resolveShortLink ? { resolveShortLink: options.resolveShortLink } : {}),
     ...(options.assistantModel ? { assistantModel: options.assistantModel } : {}),
