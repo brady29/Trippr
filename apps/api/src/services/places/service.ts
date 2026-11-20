@@ -87,6 +87,33 @@ export function createPlaces({ repos, geocoder, resolveShortLink = followShortMa
       return "not_found";
     },
 
+    /** A point for some text near a city (cached), without touching any activity. */
+    find(text: string, city: City): Promise<GeoResult | null> {
+      return geocode(text, city);
+    },
+
+    /**
+     * Put a pin the inbox lookup found (from the geocoder, never from the model).
+     * "check" keeps the point but asks a person to look; "not_found" and null
+     * leave no point (null: the geocoder is off). A shared Google Maps link is
+     * kept either way. A pin someone placed by hand is never replaced.
+     */
+    async pinFound(
+      activity: Pick<LibraryActivity, "id" | "placeStatus">,
+      found: { point: LatLon | null; address: string | null; status: "placed" | "check" | "not_found" | null; mapsUrl?: string | null },
+    ): Promise<boolean> {
+      if (activity.placeStatus === "manual") return false;
+      const pinned = found.point != null && (found.status === "placed" || found.status === "check");
+      await repos.activities.setPlace(activity.id, {
+        point: pinned ? found.point : null,
+        address: pinned ? found.address : null,
+        status: pinned ? found.status! : found.status === null ? "unplaced" : "not_found",
+        source: pinned ? "osm" : null,
+        ...(found.mapsUrl ? { mapsUrl: found.mapsUrl } : {}),
+      });
+      return true;
+    },
+
     /** Put the pin where a person says: coordinates, a map link, or nowhere. */
     async place(activity: LibraryActivity, body: PlaceBody): Promise<void> {
       if ("clear" in body) {

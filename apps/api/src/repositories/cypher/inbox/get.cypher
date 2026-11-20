@@ -2,4 +2,5 @@ MATCH (t:Trip)-[:HAS_INBOX_ITEM]->(i:InboxItem {id: $id})
 RETURN i.id AS id, t.id AS tripId, i.messageId AS messageId, i.source AS source, i.sender AS sender,
        i.senderName AS senderName, i.subject AS subject, i.receivedAt AS receivedAt, i.kind AS kind,
        i.status AS status, i.summary AS summary, i.suggestionJson AS suggestionJson, i.stopId AS stopId,
-       i.stopLabel AS stopLabel, i.note AS note, i.appliedBy AS appliedBy, i.appliedAt AS appliedAt
+       i.stopLabel AS stopLabel, i.note AS note, i.appliedBy AS appliedBy, i.appliedAt AS appliedAt,
+       i.lookup AS lookup

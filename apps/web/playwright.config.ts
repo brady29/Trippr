@@ -22,6 +22,7 @@ const apiEnv = {
   SEED_OWNER_INVITE: E2E_OWNER_INVITE,
   LOG_LEVEL: "warn",
   INBOX_LINK_PREVIEWS: "false",
+  INBOX_LOOKUP: "off",
   GEOCODER: "none",
   // Never call Claude from end-to-end runs; the Ask panel shows its "off" state.
   ASSISTANT_ENABLED: "false",

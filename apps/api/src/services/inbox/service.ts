@@ -3,20 +3,25 @@ import {
   type AcceptBody,
   type ActivitySuggestion,
   type InboxItem,
+  type InboxLookupState,
   type InboxSource,
+  type FoundPlace,
   type InboxSuggestion,
   type LegSuggestion,
+  type LibraryActivity,
   type Role,
   type RouteView,
   type StaySuggestion,
   type StopView,
 } from "@trippr/contracts";
+import { classifyLink, urlsIn } from "@trippr/rules";
 import type { AppContext } from "../../app";
 import { AppError, badRequest } from "../../errors";
 import { nowIso } from "../../ids";
 import type { StoredRoute } from "../../repositories";
 import { buildRouteView } from "../route-view";
 import { findLinks, htmlToText, previewLinks, type LinkPreview } from "./links";
+import { findPlace, LOOKUP_BUDGET_MS, MAX_LOOKUPS_PER_MESSAGE, type FindOutcome, type LookupCity, type LookupInput } from "./lookup";
 import { MAX_BODY_CHARS, type ExtractedItem, type ReaderContext } from "./reader";
 
 export interface Sender {
@@ -79,6 +84,13 @@ export const stopLabel = (s: StopView) => `${s.city.name} (stop ${s.order + 1})`
  * validation, role checks, version locking and live updates apply as when
  * someone adds the ticket by hand.
  */
+interface Found {
+  id: string;
+  suggestion: InboxSuggestion;
+  waiting: string | null;
+  lookup: boolean;
+}
+
 export function createInbox(ctx: AppContext) {
   const { repos, config } = ctx;
 
@@ -180,7 +192,7 @@ export function createInbox(ctx: AppContext) {
   /** Calls the API as `actor` with a short-lived token. */
   async function actingAs(actor: { id: string; name: string | null }) {
     const token = await ctx.auth.issue({ id: actor.id, name: actor.name }, "5m");
-    return async <T = unknown>(method: "GET" | "POST" | "PUT", url: string, payload?: object): Promise<T> => {
+    return async <T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: object): Promise<T> => {
       const res = await ctx.inject({ method, url, ...(payload ? { payload } : {}), headers: { authorization: `Bearer ${token}` } });
       let body: { error?: { message?: string } } | undefined;
       try {
@@ -284,11 +296,14 @@ export function createInbox(ctx: AppContext) {
       const areaName = s.areaName ?? "Booked hotels";
       let area = areas.find((a) => norm(a.name) === norm(areaName));
       if (!area) area = await call("POST", "/areas", { tripId, cityCode: city, name: areaName });
+      // A pin from the place lookup only when it was confident; otherwise the hotel waits for one.
+      const pinned = s.place?.placeStatus === "placed" && s.place.lat != null && s.place.lon != null;
       hotel = await call("POST", "/hotels", {
         tripId,
         areaId: area!.id,
         name: s.hotelName,
-        url: s.url,
+        url: s.url ?? s.place?.website ?? null,
+        ...(pinned ? { lat: s.place!.lat, lon: s.place!.lon } : {}),
         priceCadPerNight: s.perNightCad,
         priceBasis: "room",
         sleeps: 2,
@@ -306,22 +321,100 @@ export function createInbox(ctx: AppContext) {
     return `Added to ${stopLabel(stop)} as ${s.status}.${dates}`;
   }
 
-  async function addActivity(call: Call, tripId: string, s: ActivitySuggestion): Promise<string> {
+  /**
+   * Gives an existing activity what the lookup found, without overwriting
+   * anything people entered: empty links (and the source link) are filled, the
+   * date is set when there is none, and the pin is set unless someone placed
+   * it by hand, or it already has one and the new find isn't confident.
+   * Returns a short note about the pin.
+   */
+  async function enrichActivity(
+    call: Call,
+    tripId: string,
+    actorId: string,
+    activityId: string,
+    place: FoundPlace | null | undefined,
+    sourceUrl: string | null,
+  ): Promise<string> {
+    if (!place && !sourceUrl) return "";
+    const activity = await repos.activities.get(tripId, actorId, activityId);
+    if (!activity) return "";
+    const patch: Record<string, unknown> = {};
+    if (!activity.url && sourceUrl) patch.url = sourceUrl;
+    if (!activity.website && place?.website) patch.website = place.website;
+    if (!activity.ticketUrl && place?.ticketUrl) patch.ticketUrl = place.ticketUrl;
+    if (!activity.reserveUrl && place?.reserveUrl) patch.reserveUrl = place.reserveUrl;
+    if (!activity.when && place?.eventDate) patch.when = { on: place.eventDate };
+    let changed = false;
+    let pinNote = "";
+    try {
+      if (Object.keys(patch).length) {
+        await call("PATCH", `/activities/${activity.id}`, patch);
+        changed = true;
+      }
+      const hasPin = activity.lat != null && activity.lon != null;
+      const better = !hasPin || place?.placeStatus === "placed";
+      if (place && (place.placeStatus || place.mapsUrl) && activity.placeStatus !== "manual" && better) {
+        await ctx.places.pinFound(activity, {
+          point: place.lat != null && place.lon != null ? { lat: place.lat, lon: place.lon } : null,
+          address: place.address ?? null,
+          status: place.placeStatus ?? null,
+          mapsUrl: activity.mapsUrl ? null : (place.mapsUrl ?? null),
+        });
+        changed = true;
+        if (place.placeStatus === "check") pinNote = " Check the pin on the map.";
+        if (place.placeStatus === "not_found") pinNote = " Couldn't find it on the map.";
+      }
+    } catch (e) {
+      if (!(e instanceof AppError)) throw e;
+      ctx.log.warn({ err: e }, "couldn't update the activity after a lookup");
+    }
+    if (changed) ctx.notify(tripId, { kind: "activities" }, actorId);
+    return pinNote;
+  }
+
+  async function addActivity(call: Call, tripId: string, actorId: string, s: ActivitySuggestion): Promise<{ note: string; activityId: string }> {
     const code = s.cityCode!;
     const existing = await call<{ id: string; title: string; url?: string | null }[]>("GET", `/cities/${code}/activities?tripId=${encodeURIComponent(tripId)}`);
     const city = await repos.cities.get(code);
     const dup = existing.find((a) => (s.url && a.url === s.url) || norm(a.title) === norm(s.title));
-    if (dup) return `${dup.title} is already in ${city?.name ?? code}'s ideas.`;
-    const created = await call<{ id: string }>("POST", "/activities", {
+    if (dup) {
+      // Already an idea: it still gets the links and pin the lookup found, where it has none.
+      const pinNote = s.place ? await enrichActivity(call, tripId, actorId, dup.id, s.place, s.url) : "";
+      const filled = s.place ? " Added the links that were missing." : "";
+      return { note: `${dup.title} is already in ${city?.name ?? code}'s ideas.${filled}${pinNote}`, activityId: dup.id };
+    }
+    const place = s.place ?? null;
+    const created = await call<{ id: string; placeStatus?: LibraryActivity["placeStatus"] }>("POST", "/activities", {
       tripId,
       cityCode: code,
       title: s.title,
       tags: s.tags,
       url: s.url,
       costCad: s.costCad,
+      // What the place lookup found; absent when it didn't run.
+      ...(place?.website ? { website: place.website } : {}),
+      ...(place?.ticketUrl ? { ticketUrl: place.ticketUrl } : {}),
+      ...(place?.reserveUrl ? { reserveUrl: place.reserveUrl } : {}),
+      ...(place?.eventDate ? { when: { on: place.eventDate } } : {}),
     });
     if (s.note) await call("POST", `/activities/${created.id}/comments`, { text: `From the inbox: ${s.note}`.slice(0, 280) });
-    return `Added to ${city?.name ?? code}'s ideas.`;
+    let pinNote = "";
+    if (place && (place.placeStatus || place.mapsUrl)) {
+      await ctx.places.pinFound(
+        { id: created.id, placeStatus: created.placeStatus },
+        {
+          point: place.lat != null && place.lon != null ? { lat: place.lat, lon: place.lon } : null,
+          address: place.address ?? null,
+          status: place.placeStatus ?? null,
+          mapsUrl: place.mapsUrl ?? null,
+        },
+      );
+      ctx.notify(tripId, { kind: "activities" }, actorId);
+      if (place.placeStatus === "check") pinNote = " Check the pin on the map.";
+      if (place.placeStatus === "not_found") pinNote = " Couldn't find it on the map.";
+    }
+    return { note: `Added to ${city?.name ?? code}'s ideas.${pinNote}`, activityId: created.id };
   }
 
   /** Adds an item's suggestion to the trip as `actor`. Failures are recorded on the item, not thrown. */
@@ -351,7 +444,9 @@ export function createInbox(ctx: AppContext) {
       let note: string;
       if (suggestion.kind === "activity") {
         if (!suggestion.cityCode) throw new ApplyError("Pick the city this is in first.");
-        note = await addActivity(call, item.tripId, suggestion);
+        const added = await addActivity(call, item.tripId, actor.id, suggestion);
+        suggestion = { ...suggestion, activityId: added.activityId };
+        note = added.note;
       } else {
         if (!stored || !target) throw new ApplyError("Pick a stop on the current route first.");
         note =
@@ -366,6 +461,77 @@ export function createInbox(ctx: AppContext) {
     }
     ctx.notify(item.tripId, { kind: "inbox" }, actor.id);
     return (await repos.inbox.get(itemId))!;
+  }
+
+  /** Ideas and hotels get a place lookup; tickets and transport pages don't. */
+  function needsLookup(s: InboxSuggestion): boolean {
+    if (s.kind === "leg") return false;
+    if (s.kind === "activity" && s.url && classifyLink(s.url) === "transport") return false;
+    return true;
+  }
+
+  function lookupInput(s: ActivitySuggestion | StaySuggestion, rctx: ReaderContext, view: RouteView | null, previews: LinkPreview[], message: string): LookupInput {
+    const byCode = new Map(rctx.cities.map((c) => [c.code, c]));
+    const asCity = (code: string | null | undefined): LookupCity | null => {
+      const c = code ? byCode.get(code) : undefined;
+      return c ? { code: c.code, name: c.name, countryName: c.countryName } : null;
+    };
+    const routeCities = [...new Set(view?.stops.map((st) => st.city.code) ?? [])].map(asCity).filter((c): c is LookupCity => c !== null);
+    const url = s.url;
+    const preview = url ? previews.find((p) => p.url === url) : undefined;
+    return {
+      kind: s.kind,
+      title: s.kind === "activity" ? s.title : [s.hotelName, s.areaName].filter(Boolean).join(", "),
+      city: asCity(s.cityCode),
+      routeCities,
+      link: url ? { url, kind: classifyLink(url), title: preview?.title ?? null, author: preview?.author ?? null } : null,
+      note: s.kind === "activity" ? s.note : null,
+      message,
+    };
+  }
+
+  /** The suggestion with what the lookup found; an idea without a city takes the lookup's. */
+  function withPlace(s: InboxSuggestion, result: FindOutcome): InboxSuggestion {
+    if (s.kind === "leg") return s;
+    const cityCode = s.cityCode ?? result.cityCode;
+    return { ...s, cityCode, place: result.place };
+  }
+
+  /**
+   * Runs the lookups for one message side by side, within the per-message
+   * budget. A lookup that errors or runs out of time is "failed" and keeps
+   * whatever it had; a person can retry it from the inbox.
+   */
+  async function lookUp(
+    entries: { suggestion: InboxSuggestion; input: LookupInput }[],
+    messageUrls: string[],
+    knownCities: Set<string>,
+  ): Promise<Map<InboxSuggestion, { state: InboxLookupState; result: FindOutcome }>> {
+    const out = new Map<InboxSuggestion, { state: InboxLookupState; result: FindOutcome }>();
+    const lookup = ctx.placeLookup;
+    if (!lookup || !entries.length) return out;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LOOKUP_BUDGET_MS);
+    const outOfTime = new Promise<null>((resolve) => controller.signal.addEventListener("abort", () => resolve(null), { once: true }));
+    try {
+      await Promise.all(
+        entries.map(async ({ suggestion, input }) => {
+          let result: FindOutcome | null = null;
+          try {
+            result = await Promise.race([
+              findPlace({ lookup, places: ctx.places, repos }, input, { messageUrls, knownCities, signal: controller.signal }),
+              outOfTime,
+            ]);
+          } catch (e) {
+            ctx.log.warn({ err: e }, "inbox place lookup failed");
+          }
+          out.set(suggestion, result ? { state: result.state, result } : { state: "failed", result: { state: "failed", place: null, cityCode: null } });
+        }),
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+    return out;
   }
 
   /** Reads one message and stores what it found; trusted editors' finds are added straight away. */
@@ -410,12 +576,19 @@ export function createInbox(ctx: AppContext) {
     const truncated = text.length > MAX_BODY_CHARS ? " Only the first part of this long message was read." : "";
     const ids: string[] = [];
     const auto = msg.trusted && msg.sender != null && hasRole(msg.sender.role, "editor");
+    const noteFor = (waiting: string | null) => {
+      const note = waiting ?? (auto ? null : msg.sender ? "Waiting for an editor to accept it." : `Sent by ${msg.from ?? "someone"}, who isn't on this trip.`);
+      return note ? `${note}${truncated}` : truncated.trim() || null;
+    };
+    const created: Found[] = [];
+    let lookups = 0;
     for (const ex of found) {
       const suggestion = toSuggestion(ex, known, previews);
       if (!suggestion) continue;
       const target = matchStop(view, suggestion);
       const waiting = waitingNote(suggestion, target, cityName);
-      const note = waiting ?? (auto ? null : msg.sender ? "Waiting for an editor to accept it." : `Sent by ${msg.from ?? "someone"}, who isn't on this trip.`);
+      const lookup = ctx.placeLookup && needsLookup(suggestion) && lookups < MAX_LOOKUPS_PER_MESSAGE;
+      if (lookup) lookups++;
       const id = await repos.inbox.create({
         ...base,
         kind: suggestion.kind,
@@ -424,10 +597,43 @@ export function createInbox(ctx: AppContext) {
         suggestion,
         stopId: target?.id ?? null,
         stopLabel: target ? stopLabel(target) : null,
-        note: note ? `${note}${truncated}` : truncated.trim() || null,
+        note: noteFor(waiting),
+        lookup: lookup ? "pending" : "skipped",
       });
       ids.push(id);
-      if (auto && !waiting) await apply(id, { id: msg.sender!.id, name: msg.sender!.name });
+      created.push({ id, suggestion, waiting, lookup: Boolean(lookup) });
+    }
+
+    // Find the places behind the links before anything is added, so the activity
+    // is created with its links and pin. Everyone watching sees "Finding the place…" meanwhile.
+    if (lookups) {
+      ctx.notify(msg.tripId, { kind: "inbox" }, msg.sender?.id ?? "inbox");
+      const context = { message: [msg.subject, text].filter(Boolean).join("\n"), messageUrls: [...urlsIn(text), ...previews.map((p) => p.url)] };
+      const outcomes = await lookUp(
+        created.flatMap((c) =>
+          c.lookup && c.suggestion.kind !== "leg" ? [{ suggestion: c.suggestion, input: lookupInput(c.suggestion, rctx, view, previews, context.message) }] : [],
+        ),
+        context.messageUrls,
+        known,
+      );
+      for (const c of created) {
+        const outcome = outcomes.get(c.suggestion);
+        if (!outcome) continue;
+        c.suggestion = withPlace(c.suggestion, outcome.result);
+        const target = matchStop(view, c.suggestion);
+        c.waiting = waitingNote(c.suggestion, target, cityName);
+        await repos.inbox.update(c.id, {
+          status: "pending",
+          note: noteFor(c.waiting),
+          stopId: target?.id ?? null,
+          stopLabel: target ? stopLabel(target) : null,
+          suggestion: c.suggestion,
+          lookup: outcome.state,
+        });
+      }
+    }
+    if (auto) {
+      for (const c of created) if (!c.waiting) await apply(c.id, { id: msg.sender!.id, name: msg.sender!.name });
     }
     if (!ids.length) {
       ids.push(
@@ -460,7 +666,46 @@ export function createInbox(ctx: AppContext) {
     return (await repos.inbox.get(itemId))!;
   }
 
-  return { receive, apply, dismiss };
+  /**
+   * Runs the place lookup again for one item ("Couldn't find the place" → Try again).
+   * An idea that was already added gets the links it is missing and, unless a
+   * person placed it by hand, the new pin.
+   */
+  async function lookupAgain(itemId: string, actor: { id: string; name: string | null }): Promise<InboxItem> {
+    const item = await repos.inbox.get(itemId);
+    if (!item) throw badRequest("That inbox item is gone");
+    if (!ctx.placeLookup) throw new AppError(503, "unavailable", "Finding places is turned off on this server");
+    const suggestion = item.suggestion;
+    if (!suggestion || suggestion.kind === "leg") throw badRequest("There is no place to find for this one");
+    const keep = { status: item.status, note: item.note, stopId: item.stopId, stopLabel: item.stopLabel, appliedBy: item.appliedBy, appliedAt: item.appliedAt };
+    await repos.inbox.update(itemId, { ...keep, suggestion, lookup: "pending" });
+    ctx.notify(item.tripId, { kind: "inbox" }, actor.id);
+
+    const stored = await currentRoute(item.tripId);
+    const view = stored ? buildRouteView(stored, "owner") : null;
+    const rctx = await readerContext(item.tripId, view);
+    const message = [item.subject, item.summary].filter(Boolean).join("\n");
+    const messageUrls = suggestion.url ? [suggestion.url] : [];
+    const outcomes = await lookUp(
+      [{ suggestion, input: lookupInput(suggestion, rctx, view, [], message) }],
+      messageUrls,
+      new Set(rctx.cities.map((c) => c.code)),
+    );
+    const outcome = outcomes.get(suggestion) ?? { state: "failed" as const, result: { state: "failed" as const, place: null, cityCode: null } };
+    // A failed retry keeps what an earlier lookup found.
+    const updated = outcome.state === "done" ? withPlace(suggestion, outcome.result) : suggestion;
+    await repos.inbox.update(itemId, { ...keep, suggestion: updated, lookup: outcome.state });
+
+    const place = updated.kind === "activity" ? updated.place : null;
+    if (outcome.state === "done" && updated.kind === "activity" && updated.activityId && place && item.status === "applied") {
+      const call = await actingAs(actor);
+      await enrichActivity(call, item.tripId, actor.id, updated.activityId, place, updated.url);
+    }
+    ctx.notify(item.tripId, { kind: "inbox" }, actor.id);
+    return (await repos.inbox.get(itemId))!;
+  }
+
+  return { receive, apply, dismiss, lookupAgain };
 }
 
 export type Inbox = ReturnType<typeof createInbox>;

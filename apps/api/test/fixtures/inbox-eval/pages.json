@@ -1,0 +1,84 @@
+[
+  {
+    "id": "listicle-tokyo-ramen",
+    "category": "listicle",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "ramen list for tokyo",
+      "text": "Saving this for Tokyo: Ichiran Shibuya, AFURI Ebisu, Fuunji in Shinjuku, Nakiryu in Otsuka and Ramen Hayashida.\nhttps://www.timeout.com/tokyo/restaurants/best-ramen-in-tokyo"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Ichiran Shibuya", "cityCode": "TYO", "lookup": { "placeName": "Ichiran", "minConfidence": "medium" } },
+      { "kind": "activity", "title": "AFURI Ebisu", "cityCode": "TYO", "lookup": { "placeName": "AFURI", "websiteHost": "afuri.com", "minConfidence": "medium" } },
+      { "kind": "activity", "title": "Fuunji", "cityCode": "TYO", "lookup": { "placeName": "Fuunji", "minConfidence": "medium" } },
+      { "kind": "activity", "title": "Nakiryu", "cityCode": "TYO", "lookup": { "placeName": "Nakiryu", "minConfidence": "medium" } },
+      { "kind": "activity", "title": "Ramen Hayashida", "cityCode": "TYO", "lookup": { "placeName": "Hayashida", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "blog-chengdu-panda",
+    "category": "listicle",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "pandas",
+      "text": "If we add Chengdu, the panda base is a must, go at opening time when they're eating.\nhttps://www.example-travel-blog.com/chengdu-panda-base-guide/"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Chengdu Research Base of Giant Panda Breeding", "cityCode": "CTU", "lookup": { "placeName": "Panda", "websiteHost": "panda.org.cn", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "listicle-hanoi-seven",
+    "category": "listicle",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": "Hanoi food",
+      "text": "Hanoi eats from this article: Bun Cha Huong Lien, Pho Gia Truyen, Cafe Giang (egg coffee), Banh Mi 25, Cha Ca Thang Long, Bun Bo Nam Bo, Xoi Yen.\nhttps://www.example-food-site.com/hanoi-street-food"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Bun Cha Huong Lien", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Pho Gia Truyen", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Cafe Giang", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Banh Mi 25", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Cha Ca Thang Long", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Bun Bo Nam Bo", "cityCode": "HAN" },
+      { "kind": "activity", "title": "Xoi Yen", "cityCode": "HAN" }
+    ]
+  },
+  {
+    "id": "klook-skytree",
+    "category": "ticket",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "Skytree tickets",
+      "text": "Skip-the-line Skytree tickets are cheaper here https://www.klook.com/en-CA/activity/1234-tokyo-skytree-ticket-tokyo/"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Tokyo Skytree", "cityCode": "TYO", "lookup": { "placeName": "Skytree", "ticketHost": "klook.com", "websiteHost": "tokyo-skytree.jp", "minConfidence": "high" } }
+    ]
+  },
+  {
+    "id": "tabelog-sushi",
+    "category": "restaurant",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "sushi dinner",
+      "text": "Can we try to book this for one night in Tokyo? Sushi Dai at Toyosu market https://tabelog.com/en/tokyo/A1313/A131303/13001234/"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Sushi Dai", "cityCode": "TYO", "lookup": { "placeName": "Sushi Dai", "reserveHost": "tabelog.com", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "official-site-ghibli",
+    "category": "website",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": "Ghibli Museum",
+      "text": "Tickets sell out a month ahead, set a reminder https://www.ghibli-museum.jp/en/"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Ghibli Museum", "cityCode": "TYO", "lookup": { "placeName": "Ghibli Museum", "websiteHost": "ghibli-museum.jp", "minConfidence": "high" } }
+    ]
+  }
+]

@@ -22,6 +22,7 @@ import { createInbox, type Inbox } from "./services/inbox/service";
 import { createNominatim, noGeocoder, type Geocoder } from "./services/places/geocoder";
 import { createPlaces, type Places } from "./services/places/service";
 import { basicReader, createClaudeReader, type InboxReader } from "./services/inbox/reader";
+import { createClaudeLookup, type PlaceLookup } from "./services/inbox/lookup";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { tripRoutes } from "./routes/trips";
@@ -49,6 +50,8 @@ export interface AppContext {
   /** Reads inbox messages (Claude when configured, otherwise links only). */
   inboxReader: InboxReader;
   inbox: Inbox;
+  /** Finds the place behind an inbox link (Claude with web search); null when INBOX_LOOKUP is off or there is no key. */
+  placeLookup: PlaceLookup | null;
   /** Finds and sets activity pins. */
   places: Places;
   log: FastifyBaseLogger;
@@ -65,6 +68,8 @@ export interface BuildOptions {
   logger?: boolean | object;
   /** Overrides the inbox reader (tests). */
   inboxReader?: InboxReader;
+  /** Overrides the inbox place lookup (tests); still only used when INBOX_LOOKUP is on. */
+  placeLookup?: PlaceLookup;
   /** Receives unexpected (500) errors, e.g. to report them to Sentry. */
   onError?: (error: unknown, context: { method: string; route: string }) => void;
   /** Overrides the geocoder and short-link resolver (tests). */
@@ -79,6 +84,7 @@ export async function buildApp({
   db,
   logger = true,
   inboxReader,
+  placeLookup,
   onError,
   geocoder,
   resolveShortLink,
@@ -121,8 +127,14 @@ export async function buildApp({
 
   const reader =
     inboxReader ?? (config.ANTHROPIC_API_KEY ? createClaudeReader({ apiKey: config.ANTHROPIC_API_KEY, model: config.INBOX_MODEL }) : basicReader);
+  // On by default when Claude is set up; INBOX_LOOKUP=off turns it off.
+  const lookupOn = config.INBOX_LOOKUP ? config.INBOX_LOOKUP === "on" : Boolean(config.ANTHROPIC_API_KEY);
+  const lookup = !lookupOn
+    ? null
+    : (placeLookup ?? (config.ANTHROPIC_API_KEY ? createClaudeLookup({ apiKey: config.ANTHROPIC_API_KEY, model: config.INBOX_MODEL }) : null));
   const ctx: AppContext = {
     inboxReader: reader,
+    placeLookup: lookup,
     inbox: undefined as unknown as Inbox,
     places: createPlaces({
       repos,

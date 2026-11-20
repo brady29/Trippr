@@ -1,4 +1,4 @@
-import type { InboxItem, InboxKind, InboxSource, InboxStatus, InboxSuggestion, Role } from "@trippr/contracts";
+import { INBOX_LOOKUP_STATES, type InboxItem, type InboxKind, type InboxLookupState, type InboxSource, type InboxStatus, type InboxSuggestion, type Role } from "@trippr/contracts";
 import type { GraphClient } from "../db/graph";
 import { newId, nowIso } from "../ids";
 import { cypher } from "./queries";
@@ -33,6 +33,7 @@ const toItem = (r: Row): InboxItem => ({
   note: str(r.note),
   appliedBy: str(r.appliedBy),
   appliedAt: str(r.appliedAt),
+  lookup: (INBOX_LOOKUP_STATES as readonly unknown[]).includes(r.lookup) ? (r.lookup as InboxLookupState) : "skipped",
 });
 
 export interface NewInboxItem {
@@ -49,6 +50,8 @@ export interface NewInboxItem {
   stopId: string | null;
   stopLabel: string | null;
   note: string | null;
+  /** Defaults to "skipped". */
+  lookup?: InboxLookupState;
 }
 
 export interface InboxUpdate {
@@ -59,6 +62,8 @@ export interface InboxUpdate {
   suggestion: InboxSuggestion | null;
   appliedBy?: string | null;
   appliedAt?: string | null;
+  /** Left as it is when absent. */
+  lookup?: InboxLookupState;
 }
 
 /** Inbox items hang off their trip; the trip also holds the secret part of its inbox address. */
@@ -73,6 +78,7 @@ export function inboxRepository(db: GraphClient) {
         id,
         suggestionJson: item.suggestion ? JSON.stringify(item.suggestion) : null,
         receivedAt: nowIso(),
+        lookup: item.lookup ?? "skipped",
       });
       return id;
     },
@@ -93,6 +99,7 @@ export function inboxRepository(db: GraphClient) {
         suggestionJson: patch.suggestion ? JSON.stringify(patch.suggestion) : null,
         appliedBy: patch.appliedBy ?? null,
         appliedAt: patch.appliedAt ?? null,
+        lookup: patch.lookup ?? null,
       });
     },
     async getToken(tripId: string): Promise<string | null> {
