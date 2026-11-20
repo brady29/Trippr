@@ -163,4 +163,18 @@ test("Map tab lists pinned places and shows the assistant's focus", async ({ pag
   await page.getByTestId("map-focus-bar").getByRole("button", { name: "Show everything" }).click();
   await expect(page.getByTestId("map-focus-bar")).toHaveCount(0);
   await expect(page).not.toHaveURL(/focus=/);
+
+test("itinerary makes a private calendar link to subscribe to", async ({ page, request }) => {
+  await page.goto("/trips/asia-2027/itinerary");
+  await page.getByRole("button", { name: "Add to calendar" }).click();
+  const panel = page.getByTestId("calendar-panel");
+  await expect(panel.getByRole("checkbox", { name: /Include booking references/ })).not.toBeChecked();
+  await panel.getByRole("button", { name: "Make my calendar link" }).click();
+  const link = panel.getByTestId("calendar-link");
+  await expect(link).toHaveText(/^webcal:\/\/.+\/cal\/[A-Za-z0-9_-]{43}\.ics$/);
+  await expect(panel.getByRole("link", { name: "Google Calendar" })).toHaveAttribute("href", /^https:\/\/calendar\.google\.com\/calendar\/r\?cid=webcal/);
+  await expect(panel.getByRole("link", { name: "Apple Calendar" })).toHaveAttribute("href", /^webcal:\/\//);
+  const feed = await request.get(`${E2E_API_URL}${new URL((await link.textContent())!.replace(/^webcal:/, "http:")).pathname}`);
+  expect(feed.status()).toBe(200);
+  expect(await feed.text()).toContain("BEGIN:VEVENT");
 });

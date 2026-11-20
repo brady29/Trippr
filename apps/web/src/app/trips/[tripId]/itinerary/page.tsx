@@ -5,12 +5,13 @@ import { hasRole } from "@trippr/contracts";
 import { buildItinerary, dayDate, type DayKind, type ItineraryDay, type ItineraryItem, type ItineraryLeg, type ItineraryStop } from "@trippr/rules";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
-import { ModeIcon } from "@/components/icons";
+import { Suspense, useMemo, useState } from "react";
+import { CalendarFeedPanel } from "@/components/calendar-feed";
+import { CalendarIcon, ModeIcon } from "@/components/icons";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
-import { ErrorNote, Select, Spinner } from "@/components/ui";
+import { Button, ErrorNote, Select, Spinner } from "@/components/ui";
 import { usePlanDay, useRoute, useTrip } from "@/lib/queries";
 
 const KIND_LABEL: Record<DayKind, string> = { travel: "Travel day", full: "Full", light: "Light", free: "Free day" };
@@ -200,6 +201,7 @@ function Itinerary({ tripId }: { tripId: string }) {
   const route = useRoute(routeId);
   const plan = usePlanDay(routeId);
   const canEdit = hasRole(trip.data?.role, "editor");
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
@@ -255,8 +257,13 @@ function Itinerary({ tripId }: { tripId: string }) {
               Edit this route
             </Link>
           ) : null}
-          {canEdit ? <span className="ml-auto text-xs text-ink-faint">Drag activities between the days of their stop.</span> : null}
+          <Button size="sm" className="ml-auto" onClick={() => setCalendarOpen((o) => !o)} aria-expanded={calendarOpen}>
+            <CalendarIcon className="h-3.5 w-3.5" />
+            Add to calendar
+          </Button>
         </div>
+        {canEdit ? <p className="text-xs text-ink-faint">Drag activities between the days of their stop.</p> : null}
+        {calendarOpen ? <CalendarFeedPanel tripId={tripId} onClose={() => setCalendarOpen(false)} /> : null}
         {trip.isPending || route.isPending ? <Spinner /> : null}
         {route.error ? <ErrorNote error={route.error} /> : null}
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
