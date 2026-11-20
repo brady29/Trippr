@@ -8,3 +8,4 @@ export * from "./budget";
 export * from "./stays";
 export * from "./travel";
 export * from "./booking-links";
+export * from "./places";

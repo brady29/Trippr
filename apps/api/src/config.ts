@@ -66,6 +66,11 @@ const envSchema = z.object({
   /** Release name sent with errors (the deploy sets the commit SHA). */
   SENTRY_RELEASE: optional(z.string()),
 
+  /** Finds pins for activities: OpenStreetMap's Nominatim, or none (tests, offline). */
+  GEOCODER: z.enum(["nominatim", "none"]).default("nominatim"),
+  /** Nominatim's usage policy asks for a User-Agent that names the app. */
+  GEOCODER_USER_AGENT: z.string().default("Trippr (https://github.com/brady29/Trippr)"),
+
   /** Comma-separated origins allowed by CORS. */
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   /** Base URL of the web app, used to build invite links. */

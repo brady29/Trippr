@@ -12,6 +12,7 @@ import type {
   TripRef,
 } from "@trippr/contracts";
 import type { ArriveMode as ArriveModeName, VisaRule, When } from "@trippr/rules";
+import { activityFields, type ActivityNode } from "./activities";
 import type { GraphClient } from "../db/graph";
 import { newId, nowIso } from "../ids";
 import { cypher } from "./queries";
@@ -227,7 +228,8 @@ export function routesRepository(db: GraphClient) {
         stopId: string;
         cityCode: string;
         cityName: string;
-        activity: { id: string; title: string; when: unknown; url: string | null; costCad: unknown; mapsQuery?: string | null };
+        countryIso: string | null;
+        activity: ActivityNode;
         planned: boolean;
         votes: number;
         myVote: number;
@@ -238,15 +240,11 @@ export function routesRepository(db: GraphClient) {
       for (const r of rows) {
         const entry = byStop.get(r.stopId) ?? { cityCode: r.cityCode, activities: [] };
         entry.activities.push({
-          id: r.activity.id,
-          title: r.activity.title,
-          when: parseJson<When>(r.activity.when),
-          url: r.activity.url ?? null,
-          mapsQuery: r.activity.mapsQuery ?? null,
-          costCad: optNum(r.activity.costCad),
+          ...activityFields(r.activity),
           tags: [...(r.tags ?? [])].sort(),
           cityCode: r.cityCode,
           cityName: r.cityName,
+          countryIso: r.countryIso ?? null,
           votes: num(r.votes),
           myVote: Math.sign(num(r.myVote)) as -1 | 0 | 1,
           commentCount: num(r.commentCount),

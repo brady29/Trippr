@@ -118,6 +118,9 @@ export const versionQuery = z.object({ version: z.coerce.number().int().nonnegat
 
 // --- activities, votes, comments --------------------------------------------
 
+/** An http(s) link; other schemes (javascript:, data:) are refused. */
+export const webLink = z.string().trim().url().max(500).refine((u) => /^https?:\/\//i.test(u), { message: "Links must start with http:// or https://" });
+
 export const createActivityBody = z.object({
   tripId: id,
   cityCode,
@@ -126,6 +129,9 @@ export const createActivityBody = z.object({
   when: whenSchema.nullish(),
   url: z.string().trim().url().max(500).nullish(),
   costCad: z.number().min(0).max(100_000).nullish(),
+  website: webLink.nullish(),
+  ticketUrl: webLink.nullish(),
+  reserveUrl: webLink.nullish(),
 });
 
 export const patchActivityBody = z.object({
@@ -134,7 +140,20 @@ export const patchActivityBody = z.object({
   when: whenSchema.nullish(),
   url: z.string().trim().url().max(500).nullish(),
   costCad: z.number().min(0).max(100_000).nullish(),
+  website: webLink.nullish(),
+  ticketUrl: webLink.nullish(),
+  reserveUrl: webLink.nullish(),
 });
+
+/**
+ * Put an activity's pin somewhere by hand: coordinates, or a Google Maps or
+ * Apple Maps link (short share links are followed). clear removes the pin.
+ */
+export const placeBody = z.union([
+  z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }).strict(),
+  z.object({ link: z.string().trim().min(3).max(2000) }).strict(),
+  z.object({ clear: z.literal(true) }).strict(),
+]);
 
 export const planBody = z.object({
   /** Optional 1-based day within the stop. */
@@ -177,6 +196,7 @@ export type ReorderBody = z.infer<typeof reorderBody>;
 export type PatchStopBody = z.infer<typeof patchStopBody>;
 export type CreateActivityBody = z.input<typeof createActivityBody>;
 export type PatchActivityBody = z.input<typeof patchActivityBody>;
+export type PlaceBody = z.infer<typeof placeBody>;
 export type VoteBody = z.infer<typeof voteBody>;
 export type CommentBody = z.infer<typeof commentBody>;
 export type PathQuery = z.input<typeof pathQuery>;

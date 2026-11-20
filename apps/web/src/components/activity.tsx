@@ -12,7 +12,8 @@ import {
   useVote,
 } from "@/lib/queries";
 import { ChatIcon, StarIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
-import { MapsLink } from "./maps-link";
+import { PLACE_STATUS_LABEL, PlaceEditor } from "./place-editor";
+import { PlaceLinks } from "./place-links";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
 
 function Comments({ activityId, canComment }: { activityId: string; canComment: boolean }) {
@@ -75,6 +76,8 @@ export function ActivityItem({
   const remove = useDeleteActivity();
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const status = activity.placeStatus ?? "unplaced";
   const cast = (value: -1 | 1) => vote.mutate({ activityId: activity.id, value: activity.myVote === value ? 0 : value });
   if (editing) {
     return (
@@ -115,7 +118,13 @@ export function ActivityItem({
             {activity.tags.map((t) => (
               <Tag key={t}>{t}</Tag>
             ))}
+            {canEdit && (status === "check" || status === "not_found") ? (
+              <button onClick={() => setPlacing(true)} className="font-medium text-stamp hover:underline">
+                {status === "check" ? "Check the pin" : "Not found on the map"}
+              </button>
+            ) : null}
           </div>
+          <PlaceLinks activity={activity} className="mt-1.5 text-xs" />
           {footer}
         </div>
         <div className="flex shrink-0 flex-col items-center gap-0.5">
@@ -151,10 +160,18 @@ export function ActivityItem({
           <ChatIcon className="h-3.5 w-3.5" />
           {activity.commentCount} comment{activity.commentCount === 1 ? "" : "s"}
         </button>
-        <MapsLink query={activity.mapsQuery} name={activity.title} near={activity.cityName} />
         {canEdit ? (
           <>
-            <button onClick={() => setEditing(true)} className="ml-auto text-sky hover:underline" aria-label={`Edit ${activity.title}`}>
+            <button
+              onClick={() => setPlacing((p) => !p)}
+              className="ml-auto text-sky hover:underline"
+              aria-expanded={placing}
+              aria-label={`Pin ${activity.title} on the map`}
+              title={PLACE_STATUS_LABEL[status]}
+            >
+              {activity.lat != null ? "Pin" : "Find on map"}
+            </button>
+            <button onClick={() => setEditing(true)} className="text-sky hover:underline" aria-label={`Edit ${activity.title}`}>
               Edit
             </button>
             <button
@@ -172,6 +189,7 @@ export function ActivityItem({
           </>
         ) : null}
       </div>
+      {placing && canEdit ? <PlaceEditor activity={activity} onClose={() => setPlacing(false)} /> : null}
       {showComments ? <Comments activityId={activity.id} canComment={canVote} /> : null}
     </li>
   );
@@ -212,6 +230,10 @@ export function ActivityForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
   const [url, setUrl] = useState(initial?.url ?? "");
+  const [website, setWebsite] = useState(initial?.website ?? "");
+  const [ticketUrl, setTicketUrl] = useState(initial?.ticketUrl ?? "");
+  const [reserveUrl, setReserveUrl] = useState(initial?.reserveUrl ?? "");
+  const [moreLinks, setMoreLinks] = useState(Boolean(initial?.website || initial?.ticketUrl || initial?.reserveUrl));
   const [cost, setCost] = useState(initial?.costCad != null ? String(initial.costCad) : "");
   const [kind, setKind] = useState<WhenKind>(whenKind(w));
   const [on, setOn] = useState(w && "on" in w ? w.on : "");
@@ -235,6 +257,9 @@ export function ActivityForm({
     when: when(),
     url: url.trim() || null,
     costCad: cost ? Number(cost) : null,
+    website: website.trim() || null,
+    ticketUrl: ticketUrl.trim() || null,
+    reserveUrl: reserveUrl.trim() || null,
   });
 
   return (
@@ -252,6 +277,9 @@ export function ActivityForm({
             setTitle("");
             setTags("");
             setUrl("");
+            setWebsite("");
+            setTicketUrl("");
+            setReserveUrl("");
             setCost("");
             setKind("none");
             onDone?.();
@@ -267,7 +295,18 @@ export function ActivityForm({
         <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags: food, tech" aria-label="Tags" />
         <Input type="number" min={0} step="1" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Cost (CAD)" aria-label="Cost in CAD" />
       </div>
-      <Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" aria-label="Link" />
+      <Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Where you saw it: a video or article (optional)" aria-label="Link" />
+      {moreLinks ? (
+        <div className="space-y-2">
+          <Input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Official website" aria-label="Website" />
+          <Input type="url" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="Ticket page" aria-label="Ticket page" />
+          <Input type="url" value={reserveUrl} onChange={(e) => setReserveUrl(e.target.value)} placeholder="Reservation page" aria-label="Reservation page" />
+        </div>
+      ) : (
+        <button type="button" onClick={() => setMoreLinks(true)} className="text-xs text-sky hover:underline">
+          Add website, tickets or reservations
+        </button>
+      )}
       <div>
         <Label htmlFor={`when-${cityCode}`}>Fixed date</Label>
         <Select id={`when-${cityCode}`} value={kind} onChange={(e) => setKind(e.target.value as WhenKind)} className="w-full">

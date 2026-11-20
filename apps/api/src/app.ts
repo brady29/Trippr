@@ -16,6 +16,8 @@ import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
 import { inboxRoutes } from "./routes/inbox";
 import { createInbox, type Inbox } from "./services/inbox/service";
+import { createNominatim, noGeocoder, type Geocoder } from "./services/places/geocoder";
+import { createPlaces, type Places } from "./services/places/service";
 import { basicReader, createClaudeReader, type InboxReader } from "./services/inbox/reader";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
@@ -40,6 +42,8 @@ export interface AppContext {
   /** Reads inbox messages (Claude when configured, otherwise links only). */
   inboxReader: InboxReader;
   inbox: Inbox;
+  /** Finds and sets activity pins. */
+  places: Places;
   log: FastifyBaseLogger;
   /** Calls this API in-process, e.g. to apply an inbox item as the person who sent it. */
   inject(opts: InjectOptions): Promise<{ statusCode: number; json(): unknown; body: string }>;
@@ -56,9 +60,20 @@ export interface BuildOptions {
   inboxReader?: InboxReader;
   /** Receives unexpected (500) errors, e.g. to report them to Sentry. */
   onError?: (error: unknown, context: { method: string; route: string }) => void;
+  /** Overrides the geocoder and short-link resolver (tests). */
+  geocoder?: Geocoder;
+  resolveShortLink?: (url: string) => Promise<string | null>;
 }
 
-export async function buildApp({ config, db, logger = true, inboxReader, onError }: BuildOptions): Promise<FastifyInstance> {
+export async function buildApp({
+  config,
+  db,
+  logger = true,
+  inboxReader,
+  onError,
+  geocoder,
+  resolveShortLink,
+}: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
     logger: logger === true ? { level: config.LOG_LEVEL } : logger,
@@ -99,6 +114,11 @@ export async function buildApp({ config, db, logger = true, inboxReader, onError
   const ctx: AppContext = {
     inboxReader: reader,
     inbox: undefined as unknown as Inbox,
+    places: createPlaces({
+      repos,
+      geocoder: geocoder ?? (config.GEOCODER === "nominatim" ? createNominatim({ userAgent: config.GEOCODER_USER_AGENT }) : noGeocoder),
+      resolveShortLink,
+    }),
     log: app.log,
     inject: (opts) => app.inject(opts),
     config,

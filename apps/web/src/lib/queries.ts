@@ -10,6 +10,8 @@ import type {
   PatchActivityBody,
   PatchStopBody,
   PathResult,
+  PlaceBody,
+  PlaceLookupResult,
   RouteView,
   StopLibrary,
   StopView,
@@ -361,6 +363,24 @@ export function useUpdateActivity() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: PatchActivityBody }) =>
       api<LibraryActivity>(`/activities/${id}`, { method: "PATCH", body }),
+    onSuccess: () => invalidateActivityViews(qc),
+  });
+}
+
+/** "Find on map": look the activity up on OpenStreetMap by name and city. */
+export function useLookupPlace() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<PlaceLookupResult>(`/activities/${id}/lookup`, { method: "POST" }),
+    onSuccess: () => invalidateActivityViews(qc),
+  });
+}
+
+/** Put a pin somewhere by hand, from coordinates or a map link, or clear it. */
+export function useSetPlace() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: PlaceBody }) => api<LibraryActivity>(`/activities/${id}/place`, { method: "PATCH", body }),
     onSuccess: () => invalidateActivityViews(qc),
   });
 }

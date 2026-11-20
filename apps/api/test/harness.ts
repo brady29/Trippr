@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { buildApp } from "../src/app";
+import type { Geocoder } from "../src/services/places/geocoder";
 import type { InboxReader } from "../src/services/inbox/reader";
 import { loadConfig } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
@@ -26,7 +27,14 @@ export interface Harness {
  * (or the Neo4j database when DB_DIALECT=neo4j), migrated and seeded with
  * the real trip, then deleted afterwards.
  */
-export async function startHarness(options: { env?: Record<string, string>; inboxReader?: InboxReader } = {}): Promise<Harness> {
+export async function startHarness(
+  options: {
+    env?: Record<string, string>;
+    inboxReader?: InboxReader;
+    geocoder?: Geocoder;
+    resolveShortLink?: (url: string) => Promise<string | null>;
+  } = {},
+): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
   const config = loadConfig({
     ...process.env,
@@ -37,6 +45,7 @@ export async function startHarness(options: { env?: Record<string, string>; inbo
     DEMO_TRIP_ID: "asia-2027",
     LOG_LEVEL: "warn",
     INBOX_LINK_PREVIEWS: "false",
+    GEOCODER: "none",
     ANTHROPIC_API_KEY: "",
     ...options.env,
   });
@@ -46,7 +55,14 @@ export async function startHarness(options: { env?: Record<string, string>; inbo
   const ownerInvite = `owner-${randomBytes(8).toString("hex")}`;
   const seed = await seedDatabase(db, { seedDir: resolve(ROOT, "seed"), ownerInviteToken: ownerInvite });
   const explorer = await migrateGraphExplorer(db, { seedDir: SEED_DIR });
-  const app = await buildApp({ config, db, logger: false, ...(options.inboxReader ? { inboxReader: options.inboxReader } : {}) });
+  const app = await buildApp({
+    config,
+    db,
+    logger: false,
+    ...(options.inboxReader ? { inboxReader: options.inboxReader } : {}),
+    ...(options.geocoder ? { geocoder: options.geocoder } : {}),
+    ...(options.resolveShortLink ? { resolveShortLink: options.resolveShortLink } : {}),
+  });
   return {
     app,
     db,

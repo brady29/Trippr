@@ -3,14 +3,16 @@ import {
   commentBody,
   createActivityBody,
   patchActivityBody,
+  placeBody,
   tripQuery,
   voteBody,
   type LibraryActivity,
+  type PlaceLookupResult,
 } from "@trippr/contracts";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../app";
-import { notFound } from "../errors";
+import { AppError, notFound } from "../errors";
 
 const idParams = z.object({ id: z.string().min(1) });
 
@@ -60,7 +62,36 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
       ...("when" in raw ? { when: body.when ?? null } : {}),
       ...("url" in raw ? { url: body.url ?? null } : {}),
       ...("costCad" in raw ? { costCad: body.costCad ?? null } : {}),
+      ...("website" in raw ? { website: body.website ?? null } : {}),
+      ...("ticketUrl" in raw ? { ticketUrl: body.ticketUrl ?? null } : {}),
+      ...("reserveUrl" in raw ? { reserveUrl: body.reserveUrl ?? null } : {}),
     });
+    ctx.notify(tripId, { kind: "activities" }, user.id);
+    return repos.activities.get(tripId, user.id, id);
+  });
+
+  /** Find the activity's pin from its name and city (OpenStreetMap). */
+  app.post("/activities/:id/lookup", async (req): Promise<PlaceLookupResult> => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    const { tripId } = await guards.activity(user, id, "editor");
+    if (!ctx.places.enabled) throw new AppError(503, "unavailable", "Finding places is turned off on this server");
+    const activity = await repos.activities.get(tripId, user.id, id);
+    if (!activity) throw notFound("Activity");
+    const outcome = await ctx.places.lookup(activity);
+    if (outcome !== "skipped") ctx.notify(tripId, { kind: "activities" }, user.id);
+    return { activity: (await repos.activities.get(tripId, user.id, id))!, outcome };
+  });
+
+  /** Put the pin somewhere by hand: { lat, lon }, { link } (Google or Apple Maps) or { clear: true }. */
+  app.patch("/activities/:id/place", async (req) => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    const { tripId } = await guards.activity(user, id, "editor");
+    const body = ctx.parse(placeBody, req.body);
+    const activity = await repos.activities.get(tripId, user.id, id);
+    if (!activity) throw notFound("Activity");
+    await ctx.places.place(activity, body);
     ctx.notify(tripId, { kind: "activities" }, user.id);
     return repos.activities.get(tripId, user.id, id);
   });

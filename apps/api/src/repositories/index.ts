@@ -4,6 +4,7 @@ import { citiesRepository } from "./cities";
 import { explorerRepository } from "./explorer";
 import { graphRepository } from "./graph";
 import { inboxRepository } from "./inbox";
+import { placesRepository } from "./places";
 import { routesRepository } from "./routes";
 import { tripsRepository } from "./trips";
 import { accessRepository, usersRepository } from "./users";
@@ -20,6 +21,7 @@ export function createRepositories(db: GraphClient) {
     explorer: explorerRepository(db),
     graph: graphRepository(db),
     inbox: inboxRepository(db),
+    places: placesRepository(db),
   };
 }
 

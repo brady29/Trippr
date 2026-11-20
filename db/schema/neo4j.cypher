@@ -25,3 +25,6 @@ CREATE INDEX area_name IF NOT EXISTS FOR (n:Area) ON (n.name);
 // Trip inbox: confirmations and links sent to the trip address.
 CREATE CONSTRAINT inbox_item_id IF NOT EXISTS FOR (n:InboxItem) REQUIRE n.id IS UNIQUE;
 CREATE INDEX trip_inbox_token IF NOT EXISTS FOR (n:Trip) ON (n.inboxToken);
+
+// Geocoder answers, shared across trips.
+CREATE CONSTRAINT geocode_cache_key IF NOT EXISTS FOR (n:GeocodeCache) REQUIRE n.key IS UNIQUE;

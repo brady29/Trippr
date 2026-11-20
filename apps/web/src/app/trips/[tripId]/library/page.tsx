@@ -1,15 +1,73 @@
 "use client";
 
-import { hasRole } from "@trippr/contracts";
+import { hasRole, type LibraryActivity } from "@trippr/contracts";
 import { isFixedDate } from "@trippr/rules";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ActivityItem, NewActivityForm } from "@/components/activity";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { TripNav } from "@/components/trip-nav";
-import { ErrorNote, Select, Spinner, Tag } from "@/components/ui";
-import { useTrip, useTripActivities } from "@/lib/queries";
+import { Button, ErrorNote, Select, Spinner, Tag } from "@/components/ui";
+import { useLookupPlace, useTrip, useTripActivities } from "@/lib/queries";
+
+/**
+ * "Find places": looks up every activity that has no pin yet, one at a time
+ * (the server keeps to OpenStreetMap's one-request-a-second limit).
+ */
+function FindPlaces({ activities }: { activities: LibraryActivity[] }) {
+  const lookup = useLookupPlace();
+  const [progress, setProgress] = useState<{ done: number; total: number; found: number } | null>(null);
+  const stop = useRef(false);
+  const todo = activities.filter((a) => (a.placeStatus ?? "unplaced") === "unplaced");
+  const running = progress !== null && progress.done < progress.total;
+
+  const run = async () => {
+    stop.current = false;
+    const list = [...todo];
+    let found = 0;
+    setProgress({ done: 0, total: list.length, found });
+    for (let i = 0; i < list.length; i++) {
+      if (stop.current) break;
+      try {
+        const r = await lookup.mutateAsync(list[i]!.id);
+        if (r.outcome === "placed" || r.outcome === "check") found++;
+      } catch {
+        // Keep going; the activity stays unplaced.
+      }
+      setProgress({ done: i + 1, total: list.length, found });
+    }
+    setProgress((p) => (p ? { ...p, total: p.done } : p));
+  };
+
+  if (!todo.length && !progress) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-card p-3 text-sm" data-testid="find-places">
+      {running ? (
+        <>
+          <Spinner label="Finding places" />
+          <span>
+            {progress.done} of {progress.total}, {progress.found} found
+          </span>
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => (stop.current = true)}>
+            Stop
+          </Button>
+        </>
+      ) : progress ? (
+        <span>
+          Found {progress.found} of {progress.total}. {todo.length ? `${todo.length} still not on the map.` : "Everything has been looked up."}
+        </span>
+      ) : (
+        <>
+          <span>{todo.length} not on the map yet.</span>
+          <Button size="sm" className="ml-auto" onClick={() => void run()}>
+            Find places
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
 
 function Library({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId);
@@ -28,6 +86,8 @@ function Library({ tripId }: { tripId: string }) {
     (a) => (!city || a.cityCode === city) && (!tag || a.tags.includes(tag)) && (!fixedOnly || isFixedDate(a.when)),
   );
   const canEdit = hasRole(trip.data?.role, "editor");
+  const isOwner = trip.data?.role === "owner";
+  const pinned = all.filter((a) => a.lat != null).length;
 
   return (
     <>
@@ -39,11 +99,13 @@ function Library({ tripId }: { tripId: string }) {
             <BoardStat label="Ideas" value={all.length} />
             <BoardStat label="Cities" value={cities.length} />
             <BoardStat label="Planned somewhere" value={all.filter((a) => a.plannedIn.length).length} />
+            <BoardStat label="On the map" value={pinned} />
           </>
         }
       />
       <main className="mx-auto grid grid-cols-1 max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_320px]">
         <section className="space-y-3">
+          {isOwner ? <FindPlaces activities={shown} /> : null}
           <div className="flex flex-wrap items-center gap-2">
             <Select value={city} onChange={(e) => setCity(e.target.value)} aria-label="Filter by city">
               <option value="">All cities</option>

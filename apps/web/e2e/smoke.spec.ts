@@ -111,3 +111,18 @@ test("Inbox turns a pasted link into an activity idea", async ({ page }) => {
   await expect(item).toHaveAttribute("data-status", "applied");
   await expect(item).toContainText("Tokyo (stop 1)");
 });
+
+test("pin an activity by hand and see its map links", async ({ page }) => {
+  await page.goto("/trips/asia-2027/library");
+  await page.getByRole("combobox", { name: "Filter by city" }).selectOption("CKG");
+  const item = page.getByTestId("activity-item").first();
+  await expect(item.getByTestId("place-links").locator('[data-kind="google-maps"]')).toBeVisible();
+  await item.getByRole("button", { name: /on the map$/ }).click();
+  const editor = item.getByTestId("place-editor");
+  await editor.getByRole("textbox", { name: /Pin location/ }).fill("29.5536, 106.5418");
+  await editor.getByRole("button", { name: "Set pin" }).click();
+  await expect(editor.getByTestId("place-status")).toHaveText("Pinned by hand");
+  // China stops also open in Apple Maps and, once pinned, Amap.
+  await expect(item.getByTestId("place-links").locator('[data-kind="amap"]')).toHaveAttribute("href", /position=106\.5418%2C29\.5536/);
+  await expect(item.getByTestId("place-links").locator('[data-kind="apple-maps"]')).toBeVisible();
+});

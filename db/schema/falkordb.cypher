@@ -30,3 +30,6 @@ CREATE INDEX FOR (n:Area) ON (n.name);
 // Trip inbox: confirmations and links sent to the trip address.
 GRAPH.CONSTRAINT CREATE UNIQUE NODE InboxItem PROPERTIES 1 id;
 CREATE INDEX FOR (n:Trip) ON (n.inboxToken);
+
+// Geocoder answers, shared across trips.
+GRAPH.CONSTRAINT CREATE UNIQUE NODE GeocodeCache PROPERTIES 1 key;

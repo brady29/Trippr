@@ -1,4 +1,4 @@
-import type { ArriveMode, Budget, Check, CheckLevel, EventCheck, VisaRule, VisaSummary, When } from "@trippr/rules";
+import type { ArriveMode, Budget, Check, CheckLevel, EventCheck, PlaceStatus, VisaRule, VisaSummary, When } from "@trippr/rules";
 import type { Leg, StopStay } from "./explorer";
 import type { Role } from "./schemas";
 
@@ -118,10 +118,23 @@ export interface ActivityRef {
 export interface Activity extends ActivityRef {
   /** Text to search on Google Maps for this place, when it differs from the title. */
   mapsQuery?: string | null;
+  /** Where the idea came from: a video, an article, a booking page. */
   url?: string | null;
   tags: string[];
   cityCode: string;
   cityName: string;
+  countryIso?: string | null;
+  /** The place's own site, its ticket page and its reservation page. */
+  website?: string | null;
+  ticketUrl?: string | null;
+  reserveUrl?: string | null;
+  /** A Google Maps link someone shared for this place. */
+  mapsUrl?: string | null;
+  /** The pin, once the lookup or a person has placed it (OpenStreetMap or by hand). */
+  lat?: number | null;
+  lon?: number | null;
+  address?: string | null;
+  placeStatus?: PlaceStatus;
   votes: number;
   myVote: -1 | 0 | 1;
   commentCount: number;
@@ -130,6 +143,12 @@ export interface Activity extends ActivityRef {
 export interface LibraryActivity extends Activity {
   /** Routes in this trip whose stops plan this activity. */
   plannedIn: { routeId: string; routeName: string; stopId: string }[];
+}
+
+/** What "Find on map" did. */
+export interface PlaceLookupResult {
+  activity: LibraryActivity;
+  outcome: "placed" | "check" | "not_found" | "skipped";
 }
 
 export interface StopActivity extends Activity {
