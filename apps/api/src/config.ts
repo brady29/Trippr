@@ -61,6 +61,12 @@ const envSchema = z.object({
   /** Look up titles and captions of TikTok and YouTube links (off in tests). */
   INBOX_LINK_PREVIEWS: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
 
+  /** Trip assistant kill switch. Unset: on when ANTHROPIC_API_KEY is set. */
+  ASSISTANT_ENABLED: optional(z.enum(["true", "false", "1", "0"]).transform((v) => v === "true" || v === "1")),
+  ASSISTANT_MODEL: z.string().default("claude-opus-5-5"),
+  /** Questions each member can ask per day (UTC), across trips. */
+  ASSISTANT_DAILY_LIMIT: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(30)),
+
   /** Sentry project DSN; errors are only reported when it is set. */
   SENTRY_DSN: optional(z.string().url()),
   /** Release name sent with errors (the deploy sets the commit SHA). */

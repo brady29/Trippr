@@ -5,6 +5,7 @@ import type { FastifyInstance, InjectOptions } from "fastify";
 import { buildApp } from "../src/app";
 import type { Geocoder } from "../src/services/places/geocoder";
 import type { InboxReader } from "../src/services/inbox/reader";
+import type { AssistantModel } from "../src/services/assistant/model";
 import { loadConfig } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
 import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
@@ -33,6 +34,8 @@ export async function startHarness(
     inboxReader?: InboxReader;
     geocoder?: Geocoder;
     resolveShortLink?: (url: string) => Promise<string | null>;
+    /** The trip assistant is off unless a (scripted) model is passed. */
+    assistantModel?: AssistantModel;
   } = {},
 ): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
@@ -62,6 +65,7 @@ export async function startHarness(
     ...(options.inboxReader ? { inboxReader: options.inboxReader } : {}),
     ...(options.geocoder ? { geocoder: options.geocoder } : {}),
     ...(options.resolveShortLink ? { resolveShortLink: options.resolveShortLink } : {}),
+    ...(options.assistantModel ? { assistantModel: options.assistantModel } : {}),
   });
   return {
     app,

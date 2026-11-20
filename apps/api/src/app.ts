@@ -9,6 +9,7 @@ import { LiveHub, type LiveChange } from "./live";
 import { createRepositories, type Repositories } from "./repositories";
 import { preloadQueries } from "./repositories/queries";
 import { activityRoutes } from "./routes/activities";
+import { assistantRoutes } from "./routes/assistant";
 import { authRoutes } from "./routes/auth";
 import { explorerRoutes } from "./routes/explorer";
 import { liveRoutes } from "./routes/live";
@@ -16,6 +17,7 @@ import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
 import { calendarRoutes } from "./routes/calendar";
 import { inboxRoutes } from "./routes/inbox";
+import type { AssistantModel } from "./services/assistant/model";
 import { createInbox, type Inbox } from "./services/inbox/service";
 import { createNominatim, noGeocoder, type Geocoder } from "./services/places/geocoder";
 import { createPlaces, type Places } from "./services/places/service";
@@ -28,6 +30,10 @@ import { createGuards, type Guards } from "./services/guards";
 declare module "fastify" {
   interface FastifyRequest {
     authUser?: AuthUser;
+  }
+  interface FastifyContextConfig {
+    /** What the read-only demo account sees when it calls this (non-GET) route. */
+    demoMessage?: string;
   }
 }
 
@@ -64,6 +70,8 @@ export interface BuildOptions {
   /** Overrides the geocoder and short-link resolver (tests). */
   geocoder?: Geocoder;
   resolveShortLink?: (url: string) => Promise<string | null>;
+  /** Overrides the trip assistant's model (tests use a scripted fake). */
+  assistantModel?: AssistantModel;
 }
 
 export async function buildApp({
@@ -74,6 +82,7 @@ export async function buildApp({
   onError,
   geocoder,
   resolveShortLink,
+  assistantModel,
 }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
@@ -106,7 +115,7 @@ export async function buildApp({
     req.authUser = user;
     // The demo account can look at everything it is invited to and change nothing.
     if (user.isDemo && req.method !== "GET" && req.method !== "HEAD") {
-      throw forbidden("The demo account is read-only");
+      throw forbidden(req.routeOptions.config.demoMessage ?? "The demo account is read-only");
     }
   });
 
@@ -178,6 +187,7 @@ export async function buildApp({
     inboxRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
     calendarRoutes(scope, ctx);
+    assistantRoutes(scope, ctx, { model: assistantModel });
   });
 
   return app;

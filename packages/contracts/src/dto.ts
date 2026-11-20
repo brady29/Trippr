@@ -15,6 +15,7 @@ export type ErrorCode =
   | "version_conflict"
   | "invite_expired"
   | "unavailable"
+  | "rate_limited"
   | "internal";
 
 export interface Me {

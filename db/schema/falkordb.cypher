@@ -36,3 +36,6 @@ GRAPH.CONSTRAINT CREATE UNIQUE NODE GeocodeCache PROPERTIES 1 key;
 
 // Calendar feeds: one private link per member per trip, stored only as a token hash.
 GRAPH.CONSTRAINT CREATE UNIQUE NODE CalendarFeed PROPERTIES 1 tokenHash;
+
+// Trip assistant: one thread per member per trip ((:User)-[:ASKED]->(:AssistantThread)).
+GRAPH.CONSTRAINT CREATE UNIQUE NODE AssistantThread PROPERTIES 1 id;

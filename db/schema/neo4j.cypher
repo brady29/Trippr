@@ -31,3 +31,6 @@ CREATE CONSTRAINT geocode_cache_key IF NOT EXISTS FOR (n:GeocodeCache) REQUIRE n
 
 // Calendar feeds: one private link per member per trip, stored only as a token hash.
 CREATE CONSTRAINT calendar_feed_token_hash IF NOT EXISTS FOR (n:CalendarFeed) REQUIRE n.tokenHash IS UNIQUE;
+
+// Trip assistant: one thread per member per trip ((:User)-[:ASKED]->(:AssistantThread)).
+CREATE CONSTRAINT assistant_thread_id IF NOT EXISTS FOR (n:AssistantThread) REQUIRE n.id IS UNIQUE;

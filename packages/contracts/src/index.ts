@@ -4,3 +4,4 @@ export * from "./explorer";
 export * from "./maps";
 export * from "./inbox";
 export * from "./calendar";
+export * from "./assistant";
