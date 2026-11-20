@@ -23,7 +23,7 @@
     "db:export": "tsx scripts/export.ts"
   },
   "devDependencies": {
-    "@eslint/js": "9.19.0",
+    "@eslint/js": "9.39.5",
     "@trippr/api": "workspace:*",
     "@types/node": "22.13.1",
     "eslint": "9.19.0",
