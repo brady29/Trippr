@@ -1,6 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { useCallback, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useTripLive } from "@/lib/live";
 import { NavLink } from "./shell";
@@ -12,6 +14,30 @@ const initials = (name: string) =>
     .slice(0, 2)
     .map((w) => w[0]!.toUpperCase())
     .join("");
+
+// The Ask panel (and its streaming code) loads only when someone opens it.
+const AssistantPanel = dynamic(() => import("./assistant-panel"), { ssr: false });
+
+/** Opens the trip assistant; stays in view at the end of the scrolling nav on phones. */
+function AskButton({ tripId }: { tripId: string }) {
+  const { status } = useAuth();
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  if (status !== "signedIn") return null;
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        data-testid="ask-button"
+        className="sticky right-0 ml-1 shrink-0 rounded-md bg-amber px-2.5 py-1 font-medium text-board shadow-[-12px_0_12px_var(--color-board)] hover:bg-amber-soft"
+      >
+        Ask
+      </button>
+      {open ? <AssistantPanel tripId={tripId} onClose={close} /> : null}
+    </>
+  );
+}
 
 /** Who else has this trip open right now. */
 function Presence({ tripId }: { tripId: string }) {
@@ -86,6 +112,7 @@ export function TripNav({ tripId, tripName }: { tripId: string; tripName?: strin
         Paths
       </NavLink>
       <Presence tripId={tripId} />
+      <AskButton tripId={tripId} />
     </>
   );
 }

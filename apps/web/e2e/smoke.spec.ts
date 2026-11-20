@@ -179,3 +179,15 @@ test("itinerary makes a private calendar link to subscribe to", async ({ page, r
   expect(feed.status()).toBe(200);
   expect(await feed.text()).toContain("BEGIN:VEVENT");
 });
+
+test("Ask opens the trip assistant panel, which says when asking is off @phone", async ({ page }) => {
+  await page.goto("/trips/asia-2027/bookings");
+  await page.getByTestId("ask-button").click();
+  const panel = page.getByTestId("assistant-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByTestId("assistant-off")).toContainText("turned off");
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+});
