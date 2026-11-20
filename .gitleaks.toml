@@ -1,0 +1,15 @@
+# Secret scan settings for CI. Extends gitleaks' default rules and skips
+# files that only hold local development or test values.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local development and test values"
+paths = [
+  '''^\.env\.example$''',
+  '''^apps/api/test/''',
+  '''^apps/web/e2e/''',
+  '''^apps/web/playwright\.config\.ts$''',
+  '''^docker-compose\.yml$''',
+  '''^\.github/workflows/ci\.yml$''',
+]

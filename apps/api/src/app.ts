@@ -54,9 +54,11 @@ export interface BuildOptions {
   logger?: boolean | object;
   /** Overrides the inbox reader (tests). */
   inboxReader?: InboxReader;
+  /** Receives unexpected (500) errors, e.g. to report them to Sentry. */
+  onError?: (error: unknown, context: { method: string; route: string }) => void;
 }
 
-export async function buildApp({ config, db, logger = true, inboxReader }: BuildOptions): Promise<FastifyInstance> {
+export async function buildApp({ config, db, logger = true, inboxReader, onError }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
     logger: logger === true ? { level: config.LOG_LEVEL } : logger,
@@ -135,6 +137,7 @@ export async function buildApp({ config, db, logger = true, inboxReader }: Build
       return reply.status(status).send({ error: { code: "bad_request", message: error.message } });
     }
     req.log.error({ err: error }, "unhandled error");
+    onError?.(error, { method: req.method, route: req.routeOptions.url ?? "unknown" });
     return reply.status(500).send({ error: { code: "internal", message: "Something went wrong" } });
   });
 

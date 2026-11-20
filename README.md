@@ -23,9 +23,13 @@ Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 tra
 | 7 | Compare two routes: shared and unique stops, nights per country, activities gained or lost | `/trips/:id/compare` |
 | 8 | Votes and short comments | Everywhere an activity appears |
 | 9 | *Stretch:* pathfinding over stored train and flight links, including "is there a train at all?" | `/trips/:id/paths` |
+| 11 | Live updates and presence: friends' edits appear without a refresh, and you can see who else is looking | Everywhere |
 | 13 | *Stretch:* export as text and as a calendar (.ics) | Route editor |
+| 14 | Graph explorer: the trip as a 2D knowledge graph (Cytoscape) and on a 3D globe, with hotels, areas, stations, airports and legs as nodes | `/trips/:id/graph` |
+| 15 | Booked: every ticket and hotel in one list, what's still to book, and search links into Trip.com, Google Flights, 12Go, Booking.com and Klook filled in with the trip's cities, dates and group size | `/trips/:id/bookings` |
+| 16 | Trip inbox: forward a booking confirmation or a TikTok, and Claude adds the ticket, hotel or activity idea to the trip | `/trips/:id/inbox` |
 
-Not built yet: Ask the trip (10), live presence (11), and the full budget layer (12; planned activity cost per route is shown, per-person totals are not).
+Not built yet: Ask the trip (10) and the full budget layer (12; planned activity cost per route is shown, per-person totals are not). Next up is in [docs/places-map-itinerary-assistant-spec.md](docs/places-map-itinerary-assistant-spec.md): places with map pins, a map tab, a day-by-day itinerary with a calendar feed, and a trip assistant.
 
 ## Architecture
 
@@ -44,11 +48,15 @@ flowchart LR
   end
   C[Clerk<br/>sign-in]
   D[(FalkorDB or Neo4j<br/>Cypher)]
+  P[Postmark<br/>inbound email]
+  AI[Claude API<br/>reads the inbox]
   W -- "REST + JWT" --> A
   W -. "session" .-> C
   A -- "verify JWKS" --> C
   A -- "parameterised Cypher<br/>via repository layer" --> D
   S --> A
+  P -- "webhook" --> A
+  A -- "structured output" --> AI
   D -. "pnpm db:export" .-> B
   GH[GitHub Actions] -- "deploy on merge to main" --> A
   GH --> W
@@ -64,12 +72,14 @@ The browser never talks to the database. Every read and write goes through the A
 | Rules | `packages/rules`: pure TypeScript, shared by the API and the browser |
 | Contracts | `packages/contracts`: zod request schemas and response types shared by both apps |
 | Auth | Clerk session tokens verified against JWKS; the API also signs its own tokens for local sign-in and the demo |
+| Inbox | Postmark inbound webhook; Claude (`@anthropic-ai/sdk`, structured output) turns emails and links into legs, stays and activities, applied through the API's own routes as the sender |
+| Errors | Sentry on the web app and API (optional; off unless a DSN is set), with request bodies, tokens and query strings scrubbed |
 | CI/CD | GitHub Actions: lint, typecheck, unit, integration (both databases), e2e, Docker build; deploy on merge to main |
 
 ```
 apps/api            Fastify service: routes, auth, repositories, Cypher files
   src/repositories/cypher/<aggregate>/*.cypher   every query, with optional *.neo4j / *.falkordb overrides
-apps/web            Next.js app: five screens, components, Playwright smoke tests
+apps/web            Next.js app: screens, components, Playwright smoke tests
 packages/rules      dates, China entries, fixed-date checks (+ Vitest)
 packages/contracts  zod schemas and DTOs
 db/schema           one migration file per database
@@ -132,7 +142,7 @@ RETURN ... ORDER BY total LIMIT 1
 ## Trade-offs
 
 - **Why a graph.** The core questions are traversals: which activities can this route reach, what do two routes share, how do I get from Xi'an to Hong Kong by train. The schema is also a clean demonstration of the "shared node, route-specific edge" pattern.
-- **FalkorDB vs Neo4j.** Both speak Cypher, so one repository layer serves both. FalkorDB runs free in Docker and has built-in weighted shortest paths; AuraDB Free needs no maintenance but pauses after 72 idle hours. The differences are isolated in a few dialect files (`shortestPath` is only allowed in `WITH`/`RETURN` on FalkorDB; constraints use `GRAPH.CONSTRAINT`) and in the adapters (Neo4j integers). **The same 35 integration tests run against both in CI.**
+- **FalkorDB vs Neo4j.** Both speak Cypher, so one repository layer serves both. FalkorDB runs free in Docker and has built-in weighted shortest paths; AuraDB Free needs no maintenance but pauses after 72 idle hours. The differences are isolated in a few dialect files (`shortestPath` is only allowed in `WITH`/`RETURN` on FalkorDB; constraints use `GRAPH.CONSTRAINT`) and in the adapters (Neo4j integers). **The same 84 integration tests run against both in CI.**
 - **A FalkorDB bug caught by tests.** FalkorDB 4.4 assigned relationship properties to the wrong edges when `MERGE` ran inside `UNWIND` (modes and minutes were shuffled between edges). The integration suite has a regression test, and Compose and CI pin 4.22.1, which fixes it.
 - **Computed dates.** Dates come from `rules.ts`, not the database, so reordering is a single write and the rules are unit-tested in isolation. The browser runs the same module, so optimistic edits show the right dates instantly.
 - **Optimistic locking.** Every structural write sends the route's `version`; the Cypher only matches when it is unchanged and bumps it. A mismatch returns 409, and the client rolls back and refetches, so two friends editing at once never overwrite each other silently. Edits to one route are queued so each reads the version the last one returned.
@@ -173,8 +183,8 @@ To use Neo4j instead: `docker compose --profile neo4j up -d neo4j`, set `DB_DIAL
 | Area | Command | What it covers |
 |---|---|---|
 | Rules | `pnpm test` | Dates across month ends, China entries split by Hong Kong, an event on the arrival day, a 31-day entry flagged, reorders, policy end date |
-| API | `pnpm test:integration` | 35 tests against a throwaway graph seeded with the real trip: roles and invites, reorder and 409s, add/edit/remove stops, duplicate, shared library, votes and comments, compare, pathfinding, export. Set `DB_DIALECT=neo4j` to run them on Neo4j |
-| UI | `pnpm test:e2e` | Playwright: add a stop, reorder, duplicate a route, compare, plan an activity from the library, phone-width layout |
+| API | `pnpm test:integration` | 84 tests against a throwaway graph seeded with the real trip: roles and invites, reorder and 409s, add/edit/remove stops, duplicate, shared library, votes and comments, compare, pathfinding, export, the graph explorer, bookings and the inbox (with a fake reader). Set `DB_DIALECT=neo4j` to run them on Neo4j |
+| UI | `pnpm test:e2e` | Playwright: add a stop, reorder, duplicate a route, compare, plan an activity from the library, the graph explorer, booking links, the inbox, phone-width layout |
 
 CI runs all of these on every pull request, plus lint, typecheck and a Docker build of the API.
 
@@ -200,11 +210,11 @@ Production settings:
 | Question | What the code does now |
 |---|---|
 | Production database | Both work; FalkorDB is the default. Pick one when deploying (`DB_DIALECT`). |
-| Clerk or Auth.js | Clerk. The API verifies Clerk tokens via JWKS and the web app uses Clerk when its keys are set. **Not yet tested against a real Clerk instance.** |
+| Clerk or Auth.js | Clerk. The API verifies Clerk tokens via JWKS and the web app uses Clerk when its keys are set. Live in production. |
 | Separate API or route handlers | Separate Fastify API, as in the spec. |
 | Accounts for friends | Everyone signs in; an invite link adds them with a role. |
 | Library per trip or global | Per trip (`(Activity)-[:FOR]->(Trip)`), so strangers' trips never leak into yours. |
-| Live presence | Not in version one. |
+| Live presence | Built: server-sent events from the API, one Cloud Run instance. |
 | Budget layer | Partial: planned activity cost per route in CAD. |
 | Domain | Not chosen. |
 
@@ -215,3 +225,11 @@ Production settings:
 3. Add an activity in Chongqing and show it appearing in every route through Chongqing.
 4. Move Chongqing earlier: the dates shift and the China entry counter updates.
 5. Ask "is there a train from Xi'an to Hong Kong?" on the Paths page.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for how to report a problem. CI scans every push for committed secrets.
+
+## License
+
+[MIT](LICENSE) © 2026 Brady Walintschek. The bundled IBM Plex fonts are under the SIL Open Font License ([apps/web/src/app/fonts/OFL.txt](apps/web/src/app/fonts/OFL.txt)).

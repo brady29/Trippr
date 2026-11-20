@@ -61,6 +61,11 @@ const envSchema = z.object({
   /** Look up titles and captions of TikTok and YouTube links (off in tests). */
   INBOX_LINK_PREVIEWS: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
 
+  /** Sentry project DSN; errors are only reported when it is set. */
+  SENTRY_DSN: optional(z.string().url()),
+  /** Release name sent with errors (the deploy sets the commit SHA). */
+  SENTRY_RELEASE: optional(z.string()),
+
   /** Comma-separated origins allowed by CORS. */
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   /** Base URL of the web app, used to build invite links. */
