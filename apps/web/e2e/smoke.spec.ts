@@ -163,6 +163,7 @@ test("Map tab lists pinned places and shows the assistant's focus", async ({ pag
   await page.getByTestId("map-focus-bar").getByRole("button", { name: "Show everything" }).click();
   await expect(page.getByTestId("map-focus-bar")).toHaveCount(0);
   await expect(page).not.toHaveURL(/focus=/);
+});
 
 test("itinerary makes a private calendar link to subscribe to", async ({ page, request }) => {
   await page.goto("/trips/asia-2027/itinerary");
