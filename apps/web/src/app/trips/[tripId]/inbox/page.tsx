@@ -1,10 +1,11 @@
 "use client";
 
-import { hasRole, type InboxItem, type InboxResult, type InboxSuggestion, type StopView } from "@trippr/contracts";
+import { hasRole, type City, type InboxItem, type InboxResult, type InboxSuggestion, type StopView } from "@trippr/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { MapsLink } from "@/components/maps-link";
+import { PlaceLinks } from "@/components/place-links";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
@@ -44,7 +45,59 @@ function useInboxRefresh(tripId: string) {
   };
 }
 
-function Details({ s, canSeePrivate }: { s: InboxSuggestion; canSeePrivate: boolean }) {
+/** The links the place lookup found for an idea, as the activity will show them. */
+function FoundLinks({ s, cities }: { s: Extract<InboxSuggestion, { kind: "activity" }>; cities: Map<string, City> }) {
+  const p = s.place;
+  if (!p) return null;
+  const city = s.cityCode ? cities.get(s.cityCode) : undefined;
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <PlaceLinks
+        activity={{
+          title: p.placeName || s.title,
+          cityName: city?.name ?? s.cityCode ?? "",
+          countryIso: city?.countryIso ?? null,
+          address: p.address,
+          lat: p.lat,
+          lon: p.lon,
+          url: s.url,
+          website: p.website,
+          ticketUrl: p.ticketUrl,
+          reserveUrl: p.reserveUrl,
+          mapsUrl: p.mapsUrl,
+        }}
+      />
+      {p.placeStatus === "check" ? <span className="rounded-full bg-warn/15 px-2 py-0.5 text-[10px] font-semibold text-warn">Check the pin</span> : null}
+      {p.placeStatus === "not_found" ? <span className="text-ink-faint">Not on the map yet</span> : null}
+    </div>
+  );
+}
+
+/** "Finding the place…" while the lookup runs; "Couldn't find the place" with a retry when it gave up. */
+function LookupState({ item, tripId }: { item: InboxItem; tripId: string }) {
+  const refresh = useInboxRefresh(tripId);
+  const toast = useToast();
+  const retry = useMutation({
+    mutationFn: () => api<InboxItem>(`/inbox/${item.id}/lookup`, { method: "POST" }),
+    onSuccess: (updated) => {
+      refresh();
+      toast(updated.lookup === "done" ? "Found it" : "Still couldn't find the place", updated.lookup === "done" ? "ok" : "error");
+    },
+    onError: (e) => toast(e instanceof Error ? e.message : "That didn't work", "error"),
+  });
+  if (item.lookup === "pending" || retry.isPending) return <Spinner label="Finding the place…" />;
+  if (item.lookup !== "failed" || item.status === "dismissed") return null;
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-xs text-ink-soft" data-testid="inbox-lookup-failed">
+      <span>Couldn&apos;t find the place.</span>
+      <button onClick={() => retry.mutate()} className="font-medium text-sky hover:underline">
+        Try again
+      </button>
+    </p>
+  );
+}
+
+function Details({ s, canSeePrivate, cities }: { s: InboxSuggestion; canSeePrivate: boolean; cities: Map<string, City> }) {
   const bits: (string | null)[] = [];
   if (s.kind === "leg") {
     bits.push(
@@ -78,7 +131,7 @@ function Details({ s, canSeePrivate }: { s: InboxSuggestion; canSeePrivate: bool
           ) : null}
           <div className="min-w-0 space-y-0.5">
             {s.note ? <p className="text-ink-soft">{s.note}</p> : null}
-            {s.url ? (
+            {s.url && !s.place ? (
               <a href={s.url} target="_blank" rel="noopener noreferrer" className="block truncate text-sky hover:underline">
                 {s.url}
               </a>
@@ -86,7 +139,13 @@ function Details({ s, canSeePrivate }: { s: InboxSuggestion; canSeePrivate: bool
           </div>
         </div>
       ) : null}
-      {s.kind === "stay" ? <MapsLink name={s.hotelName} near={s.areaName ?? undefined} className="text-xs" /> : null}
+      {s.kind === "activity" ? <FoundLinks s={s} cities={cities} /> : null}
+      {s.kind === "stay" ? <MapsLink name={s.hotelName} near={s.place?.address ?? s.areaName ?? undefined} className="text-xs" /> : null}
+      {s.kind === "stay" && s.place?.website ? (
+        <a href={s.place.website} target="_blank" rel="noopener noreferrer" className="text-xs text-sky hover:underline">
+          Hotel website
+        </a>
+      ) : null}
     </>
   );
 }
@@ -113,7 +172,8 @@ function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tri
     onSuccess: refresh,
   });
   const open = item.status === "pending" || item.status === "failed";
-  const cities = [...new Map(stops.map((s) => [s.city.code, s.city])).values()];
+  const cityMap = new Map(stops.map((s) => [s.city.code, s.city]));
+  const cities = [...cityMap.values()];
   const status = STATUS[item.status];
 
   return (
@@ -123,7 +183,8 @@ function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tri
         <span className="min-w-0 flex-1 font-semibold">{item.summary}</span>
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${status.style}`}>{status.label}</span>
       </div>
-      {item.suggestion ? <Details s={item.suggestion} canSeePrivate={canSeePrivate} /> : null}
+      {item.suggestion ? <Details s={item.suggestion} canSeePrivate={canSeePrivate} cities={cityMap} /> : null}
+      <LookupState item={item} tripId={tripId} />
       {item.note ? <p className={`text-xs ${item.status === "failed" ? "text-err" : "text-ink-soft"}`}>{item.note}</p> : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-faint">
         <span>{item.source === "email" ? `Emailed by ${item.fromName ?? item.from ?? "someone"}` : `Pasted by ${item.fromName ?? "someone"}`}</span>
@@ -263,7 +324,9 @@ function AddressPanel({ tripId, data, isOwner }: { tripId: string; data: InboxRe
       )}
       <p className="mt-3 border-t border-line pt-2 text-xs text-ink-faint">
         {data.reader === "claude"
-          ? "Claude reads each message for tickets, hotels and places to go."
+          ? data.lookup
+            ? "Claude reads each message for tickets, hotels and places to go, then looks up each place's website, tickets and pin."
+            : "Claude reads each message for tickets, hotels and places to go."
           : "Links are turned into activity ideas. Reading tickets and hotels from confirmations needs Claude to be set up."}
       </p>
     </Panel>

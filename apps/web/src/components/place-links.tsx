@@ -6,8 +6,14 @@ import { PinIcon } from "./icons";
 
 const MAP_KINDS: PlaceLinkKind[] = ["google-maps", "apple-maps", "amap"];
 
+/** The parts of an activity the links are built from (an inbox suggestion has these too). */
+export type PlaceLinksFor = Pick<
+  Activity,
+  "title" | "cityName" | "countryIso" | "mapsQuery" | "address" | "lat" | "lon" | "url" | "website" | "ticketUrl" | "reserveUrl" | "mapsUrl"
+>;
+
 /** Website, tickets, reservations, map apps and the source, for one activity. */
-export function PlaceLinks({ activity, className = "" }: { activity: Activity; className?: string }) {
+export function PlaceLinks({ activity, className = "" }: { activity: PlaceLinksFor; className?: string }) {
   const links = placeLinks({
     title: activity.title,
     cityName: activity.cityName,
