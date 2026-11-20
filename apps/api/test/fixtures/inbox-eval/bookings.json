@@ -1,0 +1,114 @@
+[
+  {
+    "id": "flight-yyz-hnd",
+    "category": "flight",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "Fwd: Your Air Canada booking confirmation - XK7P2Q",
+      "text": "Booking confirmation\nBooking reference: XK7P2Q\n\nPassengers: Traveller One, Traveller Two\n\nFlight AC 1 | Air Canada\nMon 10 May 2027\nDepart 13:30 Toronto Pearson (YYZ) Terminal 1\nArrive 15:55 (+1 day) Tokyo Haneda (HND) Terminal 3\nEconomy, seats 42A 42B\n\nTotal fare for 2 passengers: CAD 3,180.00\n\nManage your booking at aircanada.com. Earn Aeroplan points on your next trip!"
+    },
+    "expected": [
+      {
+        "kind": "leg",
+        "leg": { "mode": "flight", "status": "booked", "number": "AC1", "fromAirport": "YYZ", "toAirport": "HND", "toCityCode": "TYO", "departDate": "2027-05-10", "bookingRef": "XK7P2Q", "pricePerPersonCad": 1590 }
+      }
+    ]
+  },
+  {
+    "id": "flight-connection-hnd-pek",
+    "category": "flight",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "E-ticket receipt: Tokyo to Beijing",
+      "text": "Your e-ticket receipt\nBooking code: 7HQZ3M\nPassenger: Traveller Two\n\nSegment 1: NH 961 Tokyo Haneda (HND) 08:55 Fri 14 May 2027 -> Shanghai Pudong (PVG) 11:20\nSegment 2: MU 5101 Shanghai Hongqiao (SHA) 14:00 Fri 14 May 2027 -> Beijing Capital (PEK) 16:15\n\nFare: JPY 68,400 including taxes."
+    },
+    "expected": [
+      { "kind": "leg", "leg": { "mode": "flight", "number": "NH961", "fromAirport": "HND", "toAirport": "PVG", "departDate": "2027-05-14", "bookingRef": "7HQZ3M" } },
+      { "kind": "leg", "leg": { "mode": "flight", "number": "MU5101", "fromAirport": "SHA", "toAirport": "PEK", "toCityCode": "BJS", "departDate": "2027-05-14", "bookingRef": "7HQZ3M" } }
+    ]
+  },
+  {
+    "id": "train-beijing-xian",
+    "category": "train",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "Trip.com: train ticket issued G87",
+      "text": "Your train ticket has been issued.\nOrder no. 1288123456\nG87 Beijing West -> Xi'an North\nWed 19 May 2027, departs 14:00, arrives 18:24\nPassengers: 6 adults, second class, coach 5 seats 6A-6F\nTicket collection: scan your passport at the gate. E-ticket number E123456789\nTotal: CAD 744.00"
+    },
+    "expected": [
+      { "kind": "leg", "leg": { "mode": "hsr", "status": "booked", "number": "G87", "fromCityCode": "BJS", "toCityCode": "SIA", "departDate": "2027-05-19", "pricePerPersonCad": 124 } }
+    ]
+  },
+  {
+    "id": "train-chongqing-guangzhou",
+    "category": "train",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": "12306 booking: D1842",
+      "text": "Ticket purchase successful. D1842 Chongqing West 08:12 -> Guangzhou South 16:40 on 2027-05-26. 2 passengers, 2nd class. Order E987654321. Fare CNY 728 total."
+    },
+    "expected": [
+      { "kind": "leg", "leg": { "mode": "hsr", "number": "D1842", "fromCityCode": "CKG", "toCityCode": "CAN", "departDate": "2027-05-26", "bookingRef": "E987654321" } }
+    ]
+  },
+  {
+    "id": "boat-hk-macau-held",
+    "category": "train",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "Reservation on hold - TurboJET",
+      "text": "Your seats are held until 23:59 today. Payment is required to confirm.\nTurboJET Hong Kong (Sheung Wan) -> Macau (Outer Harbour)\nThu 3 June 2027 10:00\n6 passengers, economy class. Hold reference TJ55821."
+    },
+    "expected": [
+      { "kind": "leg", "leg": { "mode": "boat", "status": "held", "fromCityCode": "HKG", "departDate": "2027-06-03", "bookingRef": "TJ55821" } }
+    ]
+  },
+  {
+    "id": "hotel-tokyo-booking",
+    "category": "hotel",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "Your booking is confirmed at Hotel Gracery Shinjuku",
+      "text": "Thanks, Traveller! Your booking in Tokyo is confirmed.\nHotel Gracery Shinjuku\n1-19-1 Kabukicho, Shinjuku-ku, Tokyo\nCheck-in: Mon 10 May 2027 (from 14:00)\nCheck-out: Fri 14 May 2027 (until 11:00)\n3 rooms, 4 nights\nTotal price: CAD 2,640\nConfirmation number: 4021.556.889 PIN 1234\nhttps://www.booking.com/hotel/jp/gracery-shinjuku.html"
+    },
+    "expected": [
+      {
+        "kind": "stay",
+        "stay": { "status": "booked", "hotelName": "Hotel Gracery Shinjuku", "cityCode": "TYO", "checkIn": "2027-05-10", "checkOut": "2027-05-14", "rooms": 3, "perNightCad": 220 },
+        "lookup": { "placeName": "Hotel Gracery Shinjuku", "websiteHost": "gracery.com", "minConfidence": "medium" }
+      }
+    ]
+  },
+  {
+    "id": "hotel-chongqing-agoda",
+    "category": "hotel",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": "Agoda booking confirmation 1180044",
+      "text": "Booking ID 1180044 is confirmed.\nThe Westin Chongqing Liberation Square\nCheck in 22 May 2027, check out 26 May 2027\n2 rooms, 4 nights. Total charged CAD 1,520.\nPay at hotel: no. Free cancellation until 15 May 2027."
+    },
+    "expected": [
+      {
+        "kind": "stay",
+        "stay": { "status": "booked", "hotelName": "The Westin Chongqing Liberation Square", "cityCode": "CKG", "checkIn": "2027-05-22", "checkOut": "2027-05-26", "rooms": 2, "perNightCad": 190 },
+        "lookup": { "placeName": "Westin Chongqing", "websiteHost": "marriott.com", "minConfidence": "medium" }
+      }
+    ]
+  },
+  {
+    "id": "hotel-hanoi-chosen",
+    "category": "hotel",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "Hanoi hotel idea",
+      "text": "What about this one for Hanoi? Not booked yet, about $95 a room a night. Old Quarter, rooftop pool.\nhttps://www.agoda.com/la-siesta-premium-hang-be/hotel/hanoi-vn.html"
+    },
+    "expected": [
+      {
+        "kind": "stay",
+        "stay": { "status": "chosen", "hotelName": "La Siesta Premium Hang Be", "cityCode": "HAN", "perNightCad": 95 },
+        "lookup": { "placeName": "La Siesta Premium Hang Be", "minConfidence": "medium" }
+      }
+    ]
+  }
+]

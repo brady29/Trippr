@@ -1,0 +1,120 @@
+[
+  {
+    "id": "tiktok-teamlab",
+    "category": "social",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": null,
+      "text": "we HAVE to do this in tokyo 😍 https://www.tiktok.com/@traveller.example/video/7301234567890123456"
+    },
+    "links": [{ "url": "https://www.tiktok.com/@traveller.example/video/7301234567890123456", "title": "Walking through water at teamLab Planets Toyosu #tokyo #teamlab", "author": "traveller.example" }],
+    "expected": [
+      {
+        "kind": "activity",
+        "title": "teamLab Planets",
+        "cityCode": "TYO",
+        "lookup": { "placeName": "teamLab Planets", "websiteHost": "teamlab.art", "ticketHost": "teamlab.art", "minConfidence": "high" }
+      }
+    ]
+  },
+  {
+    "id": "instagram-shibuya-sky",
+    "category": "social",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": "sunset spot",
+      "text": "Sunset from the rooftop above Shibuya station, book ahead apparently\nhttps://www.instagram.com/reel/C9exampleAbC/"
+    },
+    "expected": [
+      {
+        "kind": "activity",
+        "title": "Shibuya Sky",
+        "cityCode": "TYO",
+        "lookup": { "placeName": "Shibuya Sky", "websiteHost": "shibuya-scramble-square.com", "minConfidence": "medium" }
+      }
+    ]
+  },
+  {
+    "id": "youtube-hongyadong",
+    "category": "social",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": null,
+      "text": "Chongqing at night looks like a movie https://www.youtube.com/shorts/AbCdEfGh123"
+    },
+    "links": [{ "url": "https://www.youtube.com/shorts/AbCdEfGh123", "title": "Hongyadong at night 洪崖洞 Chongqing", "author": "Example Travels" }],
+    "expected": [
+      { "kind": "activity", "title": "Hongyadong", "cityCode": "CKG", "lookup": { "placeName": "Hongyadong", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "xhs-hotpot",
+    "category": "social",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "hotpot!!",
+      "text": "Best hotpot in Chongqing according to everyone, Xiaolongkan on Jiefangbei\nhttp://xhslink.com/a/Ab12Cd34"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Xiaolongkan Hotpot", "cityCode": "CKG", "lookup": { "placeName": "Xiaolongkan", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "douyin-terracotta",
+    "category": "social",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": null,
+      "text": "Terracotta Army in Xi'an, go early to beat the tour groups https://v.douyin.com/iExample1/"
+    },
+    "expected": [
+      {
+        "kind": "activity",
+        "title": "Terracotta Army",
+        "cityCode": "SIA",
+        "lookup": { "placeName": "Terracotta", "minConfidence": "high" }
+      }
+    ]
+  },
+  {
+    "id": "facebook-mutianyu",
+    "category": "social",
+    "message": {
+      "from": "member.three@example.com",
+      "subject": "Great Wall",
+      "text": "Mutianyu section has the toboggan down!! From Beijing it's about 1.5 hours https://www.facebook.com/watch/?v=1234567890"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Mutianyu Great Wall", "cityCode": "BJS", "lookup": { "placeName": "Mutianyu", "minConfidence": "medium" } }
+    ]
+  },
+  {
+    "id": "tiktok-sumo-event",
+    "category": "social",
+    "message": {
+      "from": "member.one@example.com",
+      "subject": "sumo!!",
+      "text": "The May sumo tournament is on while we're in Tokyo, tickets go on sale in April https://www.tiktok.com/@sumo.example/video/7309876543210987654"
+    },
+    "expected": [
+      {
+        "kind": "activity",
+        "title": "Grand Sumo Tournament",
+        "cityCode": "TYO",
+        "lookup": { "placeName": "Ryogoku Kokugikan", "minConfidence": "medium" }
+      }
+    ]
+  },
+  {
+    "id": "instagram-hk-peak",
+    "category": "social",
+    "message": {
+      "from": "member.two@example.com",
+      "subject": null,
+      "text": "Take the tram up to the Peak in Hong Kong for this view https://www.instagram.com/p/CexampleXYZ/"
+    },
+    "expected": [
+      { "kind": "activity", "title": "Victoria Peak", "cityCode": "HKG", "lookup": { "placeName": "Peak", "websiteHost": "thepeak.com.hk", "minConfidence": "medium" } }
+    ]
+  }
+]
