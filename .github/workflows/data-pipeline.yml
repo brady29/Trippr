@@ -1,0 +1,63 @@
+name: Data pipeline
+
+# Monthly (and on demand): extract Overture Places for every Trippr city, stage them into the
+# staged_place schema, run the quality checks, write the run report to this run's summary, and
+# upload raw/, staging/ and reports/ to gs://$DATA_BUCKET. A failed check fails the workflow.
+# See pipelines/README.md and docs/data-platform-spec.md.
+#
+# Skipped until the DATA_BUCKET repository variable exists.
+# Repository variables: DATA_BUCKET (bucket name, no gs://), GCP_WORKLOAD_IDENTITY_PROVIDER and
+#   GCP_SERVICE_ACCOUNT (same as deploy.yml; the service account needs roles/storage.objectAdmin
+#   on the bucket), CITY_RADIUS_DEFAULT_KM (optional, default 25).
+# Repository secrets (optional, only once Foursquare is enabled in pipelines/sources.yaml):
+#   FSQ_PLACES_PATH, HF_TOKEN.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cities:
+        description: "'all' or city codes, e.g. TYO,OSA,CKG"
+        default: all
+  schedule:
+    # 06:00 UTC on the 26th: after Overture's monthly release, which has landed between the 18th and 23rd.
+    - cron: "0 6 26 * *"
+
+concurrency:
+  group: data-pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Extract, stage, check, report, upload
+    if: vars.DATA_BUCKET != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: pipelines
+    env:
+      DATA_BUCKET: ${{ vars.DATA_BUCKET }}
+      CITY_RADIUS_DEFAULT_KM: ${{ vars.CITY_RADIUS_DEFAULT_KM }}
+      FSQ_PLACES_PATH: ${{ secrets.FSQ_PLACES_PATH }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: pipelines/uv.lock
+      - run: uv sync --locked --no-dev
+      - name: Run the pipeline
+        env:
+          CITIES: ${{ inputs.cities || 'all' }}
+        run: uv run --no-sync python -m trippr_data run --cities "$CITIES"

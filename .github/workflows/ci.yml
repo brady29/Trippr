@@ -39,6 +39,26 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
 
+  pipeline:
+    name: Data pipeline (ruff, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: pipelines/uv.lock
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # Offline: the tests stage and check small checked-in fixtures; nothing is downloaded.
+      - run: uv run pytest
+
   integration:
     name: API integration tests (${{ matrix.db }})
     runs-on: ubuntu-latest
