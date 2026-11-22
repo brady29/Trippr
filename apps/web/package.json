@@ -12,26 +12,26 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@clerk/nextjs": "7.10.4",
+    "@clerk/nextjs": "7.10.5",
     "@dnd-kit/core": "6.3.1",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@sentry/browser": "10.78.0",
-    "@tanstack/react-query": "5.90.2",
+    "@tanstack/react-query": "5.108.1",
     "@trippr/contracts": "workspace:^",
     "@trippr/rules": "workspace:^",
-    "cytoscape": "3.34.4",
+    "cytoscape": "3.35.0",
     "cytoscape-fcose": "2.2.0",
-    "maplibre-gl": "5.9.0",
+    "maplibre-gl": "5.24.1",
     "next": "15.5.29",
-    "react": "19.2.9",
-    "react-dom": "19.2.9"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.0",
-    "@tailwindcss/postcss": "4.1.14",
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
-    "tailwindcss": "4.1.14"
+    "@playwright/test": "1.65.1",
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.5"
   }
 }

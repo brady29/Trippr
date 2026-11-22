@@ -18,17 +18,17 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.11.0",
-    "@fastify/cors": "10.0.2",
+    "@fastify/cors": "10.1.0",
     "@sentry/node": "10.78.0",
     "@trippr/contracts": "workspace:^",
     "@trippr/rules": "workspace:^",
     "falkordb": "6.9.3",
-    "fastify": "5.2.1",
-    "jose": "5.9.6",
-    "neo4j-driver": "5.27.0",
+    "fastify": "5.12.8",
+    "jose": "5.10.0",
+    "neo4j-driver": "5.28.3",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "tsup": "8.3.6"
+    "tsup": "8.5.1"
   }
 }
