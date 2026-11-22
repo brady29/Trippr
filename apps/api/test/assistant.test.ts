@@ -140,9 +140,9 @@ describe("trip assistant", () => {
     expect(request.system[1]!.text).toContain(`${MAIN} | `);
     expect(request.system[2]!.text).toContain("Assistant Owner");
     const names = request.tools.map((t) => ("name" in t ? t.name : ""));
-    expect(names).toEqual(["get_route", "get_itinerary", "search_activities", "get_bookings", "find_paths", "near", "compare_routes", "web_search"]);
+    // The owner can edit, so it also gets propose_changes (see assistant-proposals.test.ts).
+    expect(names).toEqual(["get_route", "get_itinerary", "search_activities", "get_bookings", "find_paths", "near", "compare_routes", "propose_changes", "web_search"]);
     expect(request.tools.at(-1)).toEqual({ type: "web_search_20260209", name: "web_search", max_uses: 2 });
-    expect(names).not.toContain("propose_changes");
   });
 
   it("passes web citations through to the answer", async () => {

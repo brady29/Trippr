@@ -498,6 +498,13 @@ export const HISTORY_TURNS = 20;
 /** Messages kept in a stored thread. */
 export const STORED_TURNS = 100;
 
+/** An answer's text plus what became of the changes it suggested, so the model knows on the next question. */
+export function withSuggestions(turn: AssistantTurn): string {
+  if (!turn.proposals?.length) return turn.text;
+  const list = turn.proposals.map((p) => `"${p.summary}" (${p.status})`).join("; ");
+  return `${turn.text}\n\n[Suggested changes: ${list}]`;
+}
+
 /**
  * Earlier questions and answers as plain text, the last `max` messages,
  * starting with a question. Tool calls and thinking from earlier answers are
@@ -511,9 +518,10 @@ export function historyMessages(turns: AssistantTurn[], max = HISTORY_TURNS): An
   const out: Anthropic.Beta.BetaMessageParam[] = [];
   for (const t of recent) {
     const last = out.at(-1);
+    const text = withSuggestions(t);
     // Keep roles alternating: merge two in a row (an answer that failed leaves a lone question).
-    if (last && last.role === t.role) last.content = `${last.content as string}\n\n${t.text}`;
-    else out.push({ role: t.role, content: t.text });
+    if (last && last.role === t.role) last.content = `${last.content as string}\n\n${text}`;
+    else out.push({ role: t.role, content: text });
   }
   // The new question follows, so the history must end with an answer.
   if (out.at(-1)?.role === "user") out.pop();

@@ -1,4 +1,10 @@
-import { assistantAskBody, type AssistantEvent, type AssistantThread } from "@trippr/contracts";
+import {
+  assistantAskBody,
+  PROPOSAL_STALE_MESSAGE,
+  type AssistantEvent,
+  type AssistantProposalResult,
+  type AssistantThread,
+} from "@trippr/contracts";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../app";
@@ -7,9 +13,11 @@ import { createClaudeAssistantModel, type AssistantModel } from "../services/ass
 import { createAssistant } from "../services/assistant/service";
 
 const idParams = z.object({ id: z.string().min(1) });
+const proposalParams = z.object({ id: z.string().min(1), proposalId: z.string().min(1).max(80) });
 const HEARTBEAT_MS = 15_000;
 /** The demo account is read-only; this is what it sees instead of the generic message. */
 const DEMO_MESSAGE = "Asking the assistant is off for the demo account, so public visitors don't run up a bill. Here's an example conversation instead.";
+const DEMO_PROPOSAL_MESSAGE = "The demo account is read-only, so it can't apply suggested changes.";
 
 export function assistantRoutes(app: FastifyInstance, ctx: AppContext, options: { model?: AssistantModel } = {}) {
   const { config, guards } = ctx;
@@ -22,9 +30,39 @@ export function assistantRoutes(app: FastifyInstance, ctx: AppContext, options: 
   app.get("/trips/:id/assistant", async (req): Promise<AssistantThread> => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
-    await guards.trip(user, id, "viewer");
-    return assistant.thread(user, id);
+    const { role } = await guards.trip(user, id, "viewer");
+    return assistant.thread(user, id, role);
   });
+
+  /**
+   * Apply one of my suggested changes: the normal API request(s), made as me.
+   * If the route changed since it was suggested, it becomes stale and this
+   * answers 409 with "The plan changed; ask again."
+   */
+  app.post(
+    "/trips/:id/assistant/proposals/:proposalId/apply",
+    { config: { demoMessage: DEMO_PROPOSAL_MESSAGE } },
+    async (req): Promise<AssistantProposalResult> => {
+      const user = ctx.user(req);
+      const { id, proposalId } = ctx.parse(proposalParams, req.params);
+      await guards.trip(user, id, "editor");
+      const proposal = await assistant.applyProposal(user, id, proposalId);
+      if (proposal.status === "stale") throw new AppError(409, "version_conflict", proposal.note ?? PROPOSAL_STALE_MESSAGE, { proposal });
+      return { proposal };
+    },
+  );
+
+  /** Dismiss one of my suggested changes. */
+  app.post(
+    "/trips/:id/assistant/proposals/:proposalId/dismiss",
+    { config: { demoMessage: DEMO_PROPOSAL_MESSAGE } },
+    async (req): Promise<AssistantProposalResult> => {
+      const user = ctx.user(req);
+      const { id, proposalId } = ctx.parse(proposalParams, req.params);
+      await guards.trip(user, id, "editor");
+      return { proposal: await assistant.dismissProposal(user, id, proposalId) };
+    },
+  );
 
   /** Clears my thread (today's question count stays). */
   app.delete("/trips/:id/assistant", { config: { demoMessage: DEMO_MESSAGE } }, async (req, reply) => {
