@@ -1,14 +1,17 @@
-"""Foursquare Open Source Places, read from a Parquet glob given by the owner.
+"""Foursquare Open Source Places, read from the gated Hugging Face dataset (or another Parquet glob).
 
-As of 2026-11-22 the official copies need an account (Foursquare Places Portal token, or the gated
-Hugging Face dataset), so the source is disabled in sources.yaml and nothing here signs up or
-accepts terms. Once the owner has access, set:
+The dataset is gated: the owner's Hugging Face account has accepted its conditions. Reading it needs
+a Hugging Face token, found in this order:
 
-  FSQ_PLACES_PATH  a Parquet glob, e.g.
-                   hf://datasets/foursquare/fsq-os-places/release/dt=2026-11-17/places/parquet/*.parquet
-                   or a local or s3:// copy
-  HF_TOKEN         a Hugging Face token, only for hf:// paths (never logged or written to _meta.json)
-  FSQ_S3_REGION    optional, for s3:// paths
+  HF_TOKEN         environment variable (CI uses the repository secret of the same name)
+  hf auth login    the token cached by the Hugging Face CLI (~/.cache/huggingface/token), read by
+                   DuckDB's credential chain, so it never passes through this code
+
+Optional:
+  FSQ_PLACES_PATH  a different Parquet glob (a newer release, or a local or s3:// copy)
+  FSQ_S3_REGION    for s3:// paths
+
+The token is never logged or written to _meta.json.
 
 Schema: https://docs.foursquare.com/data-products/docs/places-os-data-schema
 """
@@ -37,8 +40,19 @@ COLUMNS = (
 )
 
 
+# Newest release on the dataset when this was checked (2026-11-22); override with FSQ_PLACES_PATH.
+DEFAULT_PATH = "hf://datasets/foursquare/fsq-os-places/release/dt=2026-11-17/places/parquet/*.parquet"
+HF_TOKEN_CACHE = Path.home() / ".cache" / "huggingface" / "token"
+
+
 class FoursquareNotConfiguredError(RuntimeError):
     pass
+
+
+def has_hf_token() -> bool:
+    """True when a Hugging Face token is available (env var or the CLI's cached login)."""
+    cache = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "token"
+    return bool(os.environ.get(ENV_TOKEN)) or cache.exists() or HF_TOKEN_CACHE.exists()
 
 
 def city_query(path: str, city: City) -> str:
@@ -57,15 +71,19 @@ def extract(
     cities: list[City], *, out: Path, date: str, registry: Registry, path: str | None = None
 ) -> dict[str, Any]:
     entry = registry.require(SOURCE)
-    path = path or os.environ.get(ENV_PATH)
-    if not path:
+    path = path or os.environ.get(ENV_PATH) or DEFAULT_PATH
+    if path.startswith("hf://") and not has_hf_token():
         raise FoursquareNotConfiguredError(
-            f"Set {ENV_PATH} to the FSQ OS Places Parquet glob (see pipelines/README.md, 'Foursquare')."
+            "No Hugging Face token: run `hf auth login` (or set HF_TOKEN) with an account that has "
+            "access to foursquare/fsq-os-places. See pipelines/README.md, 'Foursquare'."
         )
     con = connect(remote=True, s3_region=os.environ.get("FSQ_S3_REGION"))
     token = os.environ.get(ENV_TOKEN)
-    if path.startswith("hf://") and token:
-        run(con, f"CREATE SECRET hf_token (TYPE huggingface, TOKEN {sql_str(token)})")
+    if path.startswith("hf://"):
+        if token:
+            run(con, f"CREATE SECRET hf_token (TYPE huggingface, TOKEN {sql_str(token)})")
+        else:
+            run(con, "CREATE SECRET hf_token (TYPE huggingface, PROVIDER credential_chain)")
     release = release_from_path(path)
     log.info("foursquare release %s: %d cities", release, len(cities))
     job = ExtractRun(

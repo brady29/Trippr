@@ -44,7 +44,7 @@ took about 37 minutes on a home connection for 6.8 million rows (560 MB of raw P
 | `DATA_BUCKET` | `run`, `upload`, `check` | Bucket name (no `gs://`). When set, `run` uploads the run and `check` reads the previous run's counts from `reports/latest.json` there. Needs the `gcloud` CLI |
 | `CITY_RADIUS_DEFAULT_KM` | all | Radius for big cities (default 25). Smaller kinds use 10 km; per-city overrides are in `config/city_radius.csv` |
 | `OVERTURE_RELEASE` | extract | Pin an Overture release instead of the latest from the STAC catalog |
-| `FSQ_PLACES_PATH`, `HF_TOKEN`, `FSQ_S3_REGION` | extract | Where to read Foursquare from (see below) |
+| `HF_TOKEN`, `FSQ_PLACES_PATH`, `FSQ_S3_REGION` | extract | Foursquare token and an optional other location (see below) |
 | `TRIPPR_DATA_OUT` | all | Output root instead of `pipelines/out/` |
 
 ## Layout
@@ -120,22 +120,26 @@ stays empty until OpenStreetMap arrives in PR 2.
 - Licence: per provider, CDLA Permissive 2.0, Apache 2.0 (Foursquare) or CC0 1.0 (AllThePlaces).
   Attribution: "© Overture Maps Foundation, overturemaps.org" plus the Foursquare copyright line.
 
-### Foursquare Open Source Places (disabled)
+### Foursquare Open Source Places
 
-Apache 2.0, but as of 2026-11-22 the official copies need an account: the Foursquare Places Portal
-(account + access token for its Iceberg catalog) or the gated Hugging Face dataset (log in and accept
-its conditions). The old public S3 bucket no longer serves the Parquet files. The pipeline does not sign
-up or accept terms, so the extractor reads whatever Parquet glob the owner provides. To enable it:
+Apache 2.0, read from the gated Hugging Face dataset
+[foursquare/fsq-os-places](https://huggingface.co/datasets/foursquare/fsq-os-places). The owner's
+Hugging Face account has accepted the dataset's conditions. The pipeline reads the newest release it was
+checked against (`dt=2026-11-17`) unless `FSQ_PLACES_PATH` points somewhere else, and only the rows
+inside each city's box (the full release is about 11.6 GB).
 
-1. Get access (Hugging Face: accept the conditions on
-   https://huggingface.co/datasets/foursquare/fsq-os-places and create a read token).
-2. Set `FSQ_PLACES_PATH`, e.g.
-   `hf://datasets/foursquare/fsq-os-places/release/dt=2026-11-17/places/parquet/*.parquet`, and
-   `HF_TOKEN` (locally, and as repository secrets for the workflow).
-3. Set `enabled: true` for `foursquare` in `sources.yaml`, run
-   `uv run python -m trippr_data extract --source foursquare --cities TYO`, and review the unmapped
-   categories in the report against `config/category_map_foursquare.csv` (written from Foursquare's
-   published taxonomy, not yet checked against live data).
+A Hugging Face token is needed, found in this order:
+
+1. `HF_TOKEN` in the environment (the workflow uses the repository secret of the same name).
+2. The login cached by the Hugging Face CLI: run `hf auth login` once and paste a **read** token when it
+   asks (the input is hidden). DuckDB reads it through its credential chain, so the token never passes
+   through the pipeline's code or logs.
+
+Without a token, a scheduled run skips Foursquare with a warning and carries on with Overture; asking
+for it by name (`--source foursquare`) fails instead.
+
+`config/category_map_foursquare.csv` was written from Foursquare's published taxonomy; check the
+unmapped categories in the report after the first real run.
 
 ## Scheduled runs
 

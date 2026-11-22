@@ -104,9 +104,11 @@ def test_stats_add_up(staged_out):
 
 
 def test_disabled_source_is_refused(tmp_path, staged_out):
-    """With the real registry (Foursquare disabled), staging Foursquare raw data is refused."""
+    """When a source is disabled in the registry, staging its raw data is refused."""
+    registry = load_registry()
+    registry.sources["foursquare"].enabled = False
     with pytest.raises(SourceDisabledError):
-        stage(staged_out, FIXTURE_DATE, registry=load_registry(), sources=["foursquare"])
+        stage(staged_out, FIXTURE_DATE, registry=registry, sources=["foursquare"])
 
 
 def test_missing_raw_data_is_an_error(tmp_path, registry):

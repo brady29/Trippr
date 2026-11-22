@@ -41,8 +41,8 @@ sources:
 
   foursquare:
     name: Foursquare Open Source Places
-    # Disabled: the official copies now need an account. See notes.
-    enabled: false
+    # Enabled 2026-11-22: the owner's Hugging Face account has access to the gated dataset.
+    enabled: true
     url: https://docs.foursquare.com/data-products/docs/access-fsq-os-places
     access: >-
       Official routes as of the check date: (1) the Foursquare Places Portal (https://places.foursquare.com/):
@@ -68,8 +68,7 @@ sources:
       - Show places and derived fields in the app with the attribution above
       - Keep raw and staged copies in our own bucket
     notes: >-
-      Not enabled. Access needs an account: either a Foursquare Places Portal account and access token, or
-      a Hugging Face login and acceptance of the dataset's gating conditions (which include letting Foursquare
-      use your organisation's name). The pipeline did not sign up or accept any terms. To enable: the owner
-      gets access, sets FSQ_PLACES_PATH (and HF_TOKEN for hf:// paths) locally or as GitHub secrets, and
-      sets enabled: true here.
+      Read from the gated Hugging Face dataset (release dt=2026-11-17 by default; FSQ_PLACES_PATH overrides).
+      The owner accepted the dataset's gating conditions on their own Hugging Face account; the pipeline
+      reads with a token from HF_TOKEN or the Hugging Face CLI login (`hf auth login`). Without a token,
+      scheduled runs skip this source with a warning.

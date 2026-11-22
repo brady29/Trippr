@@ -9,8 +9,8 @@ name: Data pipeline
 # Repository variables: DATA_BUCKET (bucket name, no gs://), GCP_WORKLOAD_IDENTITY_PROVIDER and
 #   GCP_SERVICE_ACCOUNT (same as deploy.yml; the service account needs roles/storage.objectAdmin
 #   on the bucket), CITY_RADIUS_DEFAULT_KM (optional, default 25).
-# Repository secrets (optional, only once Foursquare is enabled in pipelines/sources.yaml):
-#   FSQ_PLACES_PATH, HF_TOKEN.
+# Repository secrets: HF_TOKEN (a Hugging Face read token for the gated Foursquare dataset; without it
+#   the run skips Foursquare), FSQ_PLACES_PATH (optional, another Foursquare release or copy).
 
 on:
   workflow_dispatch:

@@ -27,12 +27,20 @@ def test_unregistered_source_is_refused():
         load_registry().require("osm")
 
 
-def test_foursquare_is_disabled_until_the_owner_has_access():
+def _with_foursquare_disabled():
     registry = load_registry()
-    assert registry.enabled() == ["overture"]
+    registry.sources["foursquare"].enabled = False
+    return registry
+
+
+def test_both_sources_are_enabled_and_disabled_ones_are_refused():
+    registry = load_registry()
+    assert registry.enabled() == ["overture", "foursquare"]
+    assert registry.require("foursquare").licence == "Apache-2.0"
+    disabled = _with_foursquare_disabled()
     with pytest.raises(SourceDisabledError):
-        registry.require("foursquare")
-    assert registry.require("foursquare", allow_disabled=True).licence == "Apache-2.0"
+        disabled.require("foursquare")
+    assert disabled.require("foursquare", allow_disabled=True).licence == "Apache-2.0"
 
 
 def test_extract_refuses_a_disabled_source(tmp_path):
@@ -40,4 +48,41 @@ def test_extract_refuses_a_disabled_source(tmp_path):
     from trippr_data.extract import foursquare
 
     with pytest.raises(SourceDisabledError):
+        foursquare.extract(
+            load_cities()[:1], out=tmp_path, date="2026-11-18", registry=_with_foursquare_disabled()
+        )
+
+
+def test_foursquare_needs_a_hugging_face_token(tmp_path, monkeypatch):
+    """Without HF_TOKEN or a cached `hf auth login`, extraction stops before any network call."""
+    from trippr_data.cities import load_cities
+    from trippr_data.extract import foursquare
+
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setenv("HF_HOME", str(tmp_path / "no-hf"))
+    monkeypatch.setattr(foursquare, "HF_TOKEN_CACHE", tmp_path / "no-token")
+    with pytest.raises(foursquare.FoursquareNotConfiguredError):
         foursquare.extract(load_cities()[:1], out=tmp_path, date="2026-11-18", registry=load_registry())
+
+
+def test_run_skips_an_unconfigured_foursquare(tmp_path, monkeypatch):
+    """A scheduled run without a token keeps going with the other sources."""
+    from trippr_data import cli
+    from trippr_data.extract import foursquare
+
+    calls = []
+
+    def fake_overture(cities, **kwargs):
+        calls.append("overture")
+        return {"version": "test", "row_count": 0}
+
+    def no_token(cities, **kwargs):
+        raise foursquare.FoursquareNotConfiguredError("no token")
+
+    monkeypatch.setitem(cli.EXTRACTORS, "overture", fake_overture)
+    monkeypatch.setitem(cli.EXTRACTORS, "foursquare", no_token)
+    args = cli.build_parser().parse_args(["--out", str(tmp_path), "extract", "--cities", "TYO"])
+    assert cli._extract(args, load_registry(), tmp_path) == ["overture"]
+    named = cli.build_parser().parse_args(["extract", "--cities", "TYO", "--source", "foursquare"])
+    with pytest.raises(SystemExit):
+        cli._extract(named, load_registry(), tmp_path)

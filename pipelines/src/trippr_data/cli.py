@@ -10,6 +10,7 @@ from pathlib import Path
 from . import checks as checks_mod
 from .cities import load_cities, select_cities
 from .extract import EXTRACTORS
+from .extract.foursquare import FoursquareNotConfiguredError
 from .layout import latest_raw_date, latest_staging_date
 from .registry import Registry, SourceDisabledError, SourceNotRegisteredError, load_registry
 from .report import write_report
@@ -39,15 +40,31 @@ def _date(args: argparse.Namespace, out: Path, kind: str) -> str:
     return found
 
 
-def cmd_extract(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+def _extract(args: argparse.Namespace, registry: Registry, out: Path) -> list[str]:
+    """Extract each chosen source; returns the ones that ran. An enabled source that isn't configured
+    (Foursquare without a Hugging Face token) is skipped with a warning when it wasn't asked for by name."""
     cities = select_cities(load_cities(), args.cities)
     date = args.date or today()
+    named = bool(args.source and args.source != "enabled")
+    done: list[str] = []
     for source in _sources(args.source, registry):
         kwargs = {"release": args.release} if source == "overture" and args.release else {}
-        meta = EXTRACTORS[source](cities, out=out, date=date, registry=registry, **kwargs)
+        try:
+            meta = EXTRACTORS[source](cities, out=out, date=date, registry=registry, **kwargs)
+        except FoursquareNotConfiguredError as err:
+            if named:
+                raise SystemExit(str(err)) from err
+            log.warning("skipping %s: %s", source, err)
+            continue
+        done.append(source)
         log.info(
             "%s %s: %s rows for %d cities", source, meta["version"], f"{meta['row_count']:,}", len(cities)
         )
+    return done
+
+
+def cmd_extract(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    _extract(args, registry, out)
     return 0
 
 
@@ -82,8 +99,10 @@ def cmd_run(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     """extract -> stage -> check -> report -> upload (when DATA_BUCKET is set). Fails if a check fails."""
     date = args.date or today()
     args.date = date
-    cmd_extract(args, registry, out)
-    stage(out, date, registry=registry, sources=_sources(args.source, registry))
+    extracted = _extract(args, registry, out)
+    if not extracted:
+        raise SystemExit("No source was extracted")
+    stage(out, date, registry=registry, sources=extracted)
     passed, _ = checks_mod.check(out, date, registry=registry)
     print(write_report(out, date, registry=registry))
     bucket = data_bucket()
