@@ -1,0 +1,102 @@
+{
+  "checks": {
+    "categories.in_taxonomy": "pass",
+    "coordinates.city_radius": "pass",
+    "coordinates.country_bbox": "pass",
+    "duplicates.source_id": "pass",
+    "licence.present": "pass",
+    "licence.registered": "pass",
+    "null_rates.optional": "info",
+    "null_rates.required": "pass",
+    "row_counts.vs_previous": "info",
+    "schema": "pass"
+  },
+  "stats": {
+    "foursquare": {
+      "by_category": {
+        "cafe": 3,
+        "museum": 1,
+        "park_garden": 1,
+        "restaurant": 1,
+        "temple_shrine": 4
+      },
+      "closed": 1,
+      "country_mismatch": 1,
+      "duplicate_rows": 1,
+      "excluded": 10,
+      "excluded_share": 0.2703,
+      "located": 37,
+      "no_city": 4,
+      "no_name": 0,
+      "other_city": 2,
+      "per_city": {
+        "OSA": {
+          "raw_rows": 16,
+          "staged_rows": 3
+        },
+        "TYO": {
+          "raw_rows": 30,
+          "staged_rows": 7
+        }
+      },
+      "raw_rows": 46,
+      "staged_rows": 10,
+      "unique_rows": 45,
+      "unmapped": 17,
+      "unmapped_share": 0.4595
+    },
+    "overture": {
+      "by_category": {
+        "aquarium_zoo": 8,
+        "arcade_gaming": 3,
+        "bar": 6,
+        "cafe": 9,
+        "castle_palace": 4,
+        "dessert_bakery": 5,
+        "electronics": 3,
+        "gallery": 4,
+        "hike": 8,
+        "historic_site": 9,
+        "market": 4,
+        "monument": 1,
+        "museum": 8,
+        "nature_spot": 1,
+        "nightlife": 4,
+        "onsen_spa": 10,
+        "park_garden": 10,
+        "performance": 4,
+        "restaurant": 14,
+        "shopping": 1,
+        "sport_activity": 2,
+        "sports_venue": 4,
+        "temple_shrine": 8,
+        "theme_park": 4,
+        "tour": 4
+      },
+      "closed": 3,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded": 115,
+      "excluded_share": 0.4275,
+      "located": 269,
+      "no_city": 25,
+      "no_name": 0,
+      "other_city": 3,
+      "per_city": {
+        "OSA": {
+          "raw_rows": 148,
+          "staged_rows": 69
+        },
+        "TYO": {
+          "raw_rows": 152,
+          "staged_rows": 69
+        }
+      },
+      "raw_rows": 300,
+      "staged_rows": 138,
+      "unique_rows": 300,
+      "unmapped": 16,
+      "unmapped_share": 0.0595
+    }
+  }
+}

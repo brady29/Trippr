@@ -1,0 +1,24 @@
+{
+  "source": "overture",
+  "licence": "CDLA-Permissive-2.0 AND Apache-2.0 AND CC0-1.0",
+  "version": "2026-11-18.0",
+  "dataset_path": "s3://overturemaps-us-west-2/release/2026-11-18.0/theme=places/type=place/*",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T00:00:00+00:00",
+  "row_count": 300,
+  "fixture": true,
+  "files": {
+    "OSA.parquet": {
+      "city": "OSA",
+      "rows": 148,
+      "sha256": "2f1b7609fd6b87e869be5640dfb78567ee38b9e5baaf14ee1193491d2cd20caa",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    },
+    "TYO.parquet": {
+      "city": "TYO",
+      "rows": 152,
+      "sha256": "cb89a0227918f29a518849c231f10e9273dc12d06ffefff146e94c0798194b4e",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    }
+  }
+}
