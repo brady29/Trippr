@@ -7,11 +7,15 @@ import {
   hasRefs,
   type ApiError as ApiErrorBody,
   type AssistantEvent,
+  type AssistantProposal,
+  type AssistantProposalResult,
+  type AssistantProposalStatus,
+  type AssistantProposalTarget,
   type AssistantRefLabel,
   type AssistantThread,
   type AssistantTurn,
 } from "@trippr/contracts";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, API_URL, ApiError, authHeaders } from "@/lib/api";
@@ -123,13 +127,136 @@ function ToolLines({ tools }: { tools: string[] }) {
   );
 }
 
-function Answer({ turn, tripId, onNavigate }: { turn: AssistantTurn; tripId: string; onNavigate: () => void }) {
+/** Where to look at an applied suggestion. */
+function targetLink(tripId: string, target: AssistantProposalTarget): { href: string; label: string } {
+  switch (target.kind) {
+    case "route":
+      return { href: `/routes/${target.routeId}`, label: "Open the route" };
+    case "itinerary":
+      return { href: `/trips/${tripId}/itinerary?route=${encodeURIComponent(target.routeId)}`, label: "See the itinerary" };
+    case "map":
+      return { href: mapHref(tripId, target.focus), label: "Show on map" };
+  }
+}
+
+const STATUS_LABEL: Record<AssistantProposalStatus, string> = {
+  open: "Suggested",
+  applied: "Applied",
+  dismissed: "Dismissed",
+  stale: "Out of date",
+  failed: "Couldn't apply",
+};
+const STATUS_STYLE: Record<AssistantProposalStatus, string> = {
+  open: "bg-amber/20 text-ink",
+  applied: "bg-ok/15 text-ok",
+  dismissed: "bg-paper-2 text-ink-faint",
+  stale: "bg-stamp/10 text-stamp",
+  failed: "bg-err/10 text-err",
+};
+
+/** Refreshes what a suggestion changed; live updates skip your own changes, so the panel does it. */
+function invalidateAfter(qc: QueryClient, tripId: string, proposal: AssistantProposal) {
+  void qc.invalidateQueries({ queryKey: ["trip", tripId] });
+  void qc.invalidateQueries({ queryKey: ["route"] });
+  void qc.invalidateQueries({ queryKey: ["library"] });
+  void qc.invalidateQueries({ queryKey: ["graph"] });
+  if (proposal.kind === "add_activity") {
+    void qc.invalidateQueries({ queryKey: ["trip-activities"] });
+  } else {
+    void qc.invalidateQueries({ queryKey: ["compare"] });
+    void qc.invalidateQueries({ queryKey: ["bookings"] });
+  }
+}
+
+/** One suggested change: what it does, Apply and Dismiss, and what happened. Editors and owners only. */
+function ProposalCard({ proposal, tripId, onNavigate }: { proposal: AssistantProposal; tripId: string; onNavigate: () => void }) {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState<"apply" | "dismiss" | null>(null);
+  const [error, setError] = useState<unknown>(null);
+
+  const store = (next: AssistantProposal) =>
+    qc.setQueryData<AssistantThread>(threadKey(tripId), (old) =>
+      old
+        ? { ...old, turns: old.turns.map((t) => (t.proposals?.some((p) => p.id === next.id) ? { ...t, proposals: t.proposals.map((p) => (p.id === next.id ? next : p)) } : t)) }
+        : old,
+    );
+
+  const act = async (action: "apply" | "dismiss") => {
+    setBusy(action);
+    setError(null);
+    try {
+      const res = await api<AssistantProposalResult>(`/trips/${tripId}/assistant/proposals/${encodeURIComponent(proposal.id)}/${action}`, { method: "POST" });
+      store(res.proposal);
+      if (action === "apply" && res.proposal.status === "applied") invalidateAfter(qc, tripId, res.proposal);
+    } catch (e) {
+      const stale = (e instanceof ApiError && e.code === "version_conflict" ? (e.details as { proposal?: AssistantProposal } | undefined)?.proposal : undefined) ?? null;
+      if (stale) store(stale);
+      else setError(e);
+      void qc.invalidateQueries({ queryKey: threadKey(tripId) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const link = proposal.status === "applied" && proposal.target ? targetLink(tripId, proposal.target) : null;
+  const done = proposal.status !== "open";
+  return (
+    <li
+      className={`rounded-xl border px-3 py-2.5 ${done ? "border-line bg-paper" : "border-amber/60 bg-amber/5"}`}
+      data-testid="assistant-proposal"
+      data-status={proposal.status}
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className={`font-medium leading-snug ${proposal.status === "dismissed" ? "text-ink-faint line-through" : ""}`}>{proposal.summary}</div>
+          {proposal.detail ? <div className="mt-0.5 text-xs text-ink-soft">{proposal.detail}</div> : null}
+        </div>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_STYLE[proposal.status]}`}>
+          {STATUS_LABEL[proposal.status]}
+        </span>
+      </div>
+      {proposal.note && proposal.status !== "open" ? (
+        <p className={`mt-1 text-xs ${proposal.status === "applied" ? "text-ink-soft" : proposal.status === "dismissed" ? "text-ink-faint" : "text-err"}`}>{proposal.note}</p>
+      ) : null}
+      {proposal.status === "open" ? (
+        <div className="mt-2 flex gap-2">
+          <Button size="sm" variant="primary" onClick={() => void act("apply")} disabled={busy !== null}>
+            {busy === "apply" ? "Applying…" : "Apply"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => void act("dismiss")} disabled={busy !== null}>
+            Dismiss
+          </Button>
+        </div>
+      ) : null}
+      {link ? (
+        <Link href={link.href} onClick={onNavigate} className="mt-1.5 inline-block text-xs font-medium text-sky underline-offset-2 hover:underline">
+          {link.label}
+        </Link>
+      ) : null}
+      {error ? (
+        <div className="mt-1.5">
+          <ErrorNote error={error} />
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function Answer({ turn, tripId, onNavigate, canPropose = false }: { turn: AssistantTurn; tripId: string; onNavigate: () => void; canPropose?: boolean }) {
   const labels = turn.labels ?? [];
+  const proposals = canPropose ? (turn.proposals ?? []) : [];
   return (
     <div className="rounded-2xl rounded-tl-sm border border-line bg-card px-3.5 py-3 text-sm" data-testid="assistant-answer">
       <ToolLines tools={turn.tools ?? []} />
       {turn.text ? <div className="whitespace-pre-wrap leading-relaxed">{turn.text}</div> : null}
       {turn.error ? <p className="mt-1 text-xs text-err">{turn.error}</p> : null}
+      {proposals.length ? (
+        <ul className="mt-2.5 space-y-2" aria-label="Suggested changes">
+          {proposals.map((p) => (
+            <ProposalCard key={p.id} proposal={p} tripId={tripId} onNavigate={onNavigate} />
+          ))}
+        </ul>
+      ) : null}
       {labels.length ? (
         <div className="mt-2.5 flex flex-wrap gap-1.5" aria-label="Things this answer is about">
           {labels.map((l) => (
@@ -177,11 +304,25 @@ function Question({ text }: { text: string }) {
   );
 }
 
-function Conversation({ turns, tripId, onNavigate }: { turns: AssistantTurn[]; tripId: string; onNavigate: () => void }) {
+function Conversation({
+  turns,
+  tripId,
+  onNavigate,
+  canPropose = false,
+}: {
+  turns: AssistantTurn[];
+  tripId: string;
+  onNavigate: () => void;
+  canPropose?: boolean;
+}) {
   return (
     <>
       {turns.map((t, i) =>
-        t.role === "user" ? <Question key={i} text={t.text} /> : <Answer key={i} turn={t} tripId={tripId} onNavigate={onNavigate} />,
+        t.role === "user" ? (
+          <Question key={i} text={t.text} />
+        ) : (
+          <Answer key={i} turn={t} tripId={tripId} onNavigate={onNavigate} canPropose={canPropose} />
+        ),
       )}
     </>
   );
@@ -312,7 +453,10 @@ export default function AssistantPanel({ tripId, onClose }: { tripId: string; on
             </div>
           </div>
           <p className="mt-1.5 text-xs text-amber-soft/70">
-            Answers come from the trip plan, with a web search when the plan doesn&apos;t know. It can read the plan but not change it.
+            Answers come from the trip plan, with a web search when the plan doesn&apos;t know.{" "}
+            {data?.canPropose
+              ? "It can suggest changes for you to apply, but never changes the plan itself."
+              : "It can read the plan but not change it."}
           </p>
         </div>
 
@@ -355,7 +499,7 @@ export default function AssistantPanel({ tripId, onClose }: { tripId: string; on
                   </div>
                 </div>
               ) : null}
-              <Conversation turns={turns} tripId={tripId} onNavigate={onClose} />
+              <Conversation turns={turns} tripId={tripId} onNavigate={onClose} canPropose={Boolean(data?.canPropose)} />
               {pending ? (
                 <>
                   <Question text={pending.question} />
