@@ -188,6 +188,18 @@ To use Neo4j instead: `docker compose --profile neo4j up -d neo4j`, set `DB_DIAL
 
 CI runs all of these on every pull request, plus lint, typecheck and a Docker build of the API.
 
+## Data pipeline
+
+`pipelines/` is a Python 3.12 package (uv, DuckDB, pydantic, pytest) that builds Trippr's place catalogue from open data, following the [Trip Data Platform Spec](docs/data-platform-spec.md). So far it extracts Overture Maps Places for each city's area straight from the public GeoParquet (bounding-box reads, no full downloads), stages it into one `staged_place` schema with normalised names and Trippr's 33-category taxonomy, runs quality checks and writes a run report. Foursquare Open Source Places is wired up but disabled until the owner has access, since its official copies now need an account. Every source's licence and attribution is recorded in `pipelines/sources.yaml`.
+
+```sh
+cd pipelines && uv sync
+uv run python -m trippr_data run --cities TYO,OSA   # extract, stage, check, report
+uv run pytest                                        # offline tests on checked-in fixtures
+```
+
+CI runs ruff and pytest for the pipeline; `.github/workflows/data-pipeline.yml` runs it monthly and uploads to Cloud Storage once `DATA_BUCKET` is set. Details in [pipelines/README.md](pipelines/README.md).
+
 ## Deploying
 
 Production runs in `us-central1`:

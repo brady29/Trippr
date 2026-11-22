@@ -24,6 +24,7 @@ candy_store,dessert_bakery
 patisserie_cake_shop,dessert_bakery
 food_court,street_food
 food_truck_stand,street_food
+street_vendor,street_food
 alcoholic_beverage_venue,bar
 bar,bar
 brewery,bar
