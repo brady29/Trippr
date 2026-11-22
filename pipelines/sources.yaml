@@ -1,0 +1,75 @@
+# Source registry. Every source the pipeline reads must have an entry here; the
+# pipeline refuses to extract or stage a source that is missing or disabled.
+# Re-check each source's terms when it is changed or once a year, and update
+# terms_checked_on. See docs/data-platform-spec.md, "Provenance and licences".
+
+sources:
+  overture:
+    name: Overture Maps Places
+    enabled: true
+    url: https://docs.overturemaps.org/guides/places/
+    access: >-
+      Public GeoParquet on AWS S3 (s3://overturemaps-us-west-2/release/<release>/theme=places/type=place/*),
+      read anonymously with DuckDB httpfs and a bounding box per city. The current release is read from the
+      STAC catalog at https://stac.overturemaps.org/catalog.json ("latest"). No account or key is needed.
+    licence: CDLA-Permissive-2.0 AND Apache-2.0 AND CC0-1.0
+    licence_detail: >-
+      The Places theme is licensed per data provider and each record carries its provider's licence in
+      sources[].license: CDLA Permissive 2.0 (Meta, Microsoft, PinMeTo, Krick, RenderSEO, DAC, BrightQuery,
+      Birdeye, Uberall, OpenTravel Alliance), Apache 2.0 (Foursquare) and CC0 1.0 (AllThePlaces).
+      Places contains no OpenStreetMap data.
+    licence_urls:
+      - https://cdla.dev/permissive-2-0/
+      - https://www.apache.org/licenses/LICENSE-2.0
+      - https://creativecommons.org/publicdomain/zero/1.0/
+    attribution: >-
+      © Overture Maps Foundation, overturemaps.org. Places data from Meta, Microsoft, Foursquare,
+      AllThePlaces and other providers under CDLA Permissive 2.0, Apache 2.0 and CC0 1.0.
+      Includes data Copyright 2024 Foursquare Labs, Inc. All rights reserved (Apache 2.0).
+    terms_checked_on: 2026-11-22
+    terms_urls:
+      - https://docs.overturemaps.org/attribution/
+      - https://docs.overturemaps.org/guides/places/
+      - https://docs.overturemaps.org/getting-data/
+    allowed_uses:
+      - Read, transform and combine with other data (permissive licences; no share-alike)
+      - Show places and derived fields in the app with the attribution above
+      - Keep raw and staged copies in our own bucket
+    notes: >-
+      Joining CDLA data with OpenStreetMap can make the result an ODbL derivative database (see the spec);
+      that join happens in PR 2. The categories field was removed in September 2026; we use taxonomy.
+
+  foursquare:
+    name: Foursquare Open Source Places
+    # Disabled: the official copies now need an account. See notes.
+    enabled: false
+    url: https://docs.foursquare.com/data-products/docs/access-fsq-os-places
+    access: >-
+      Official routes as of the check date: (1) the Foursquare Places Portal (https://places.foursquare.com/):
+      create an account, generate an access token, and read the Iceberg catalog; (2) the Hugging Face dataset
+      https://huggingface.co/datasets/foursquare/fsq-os-places, which is gated (log in and accept the
+      dataset's conditions, then use a Hugging Face token). The legacy public S3 bucket no longer serves the
+      Parquet releases. The extractor reads any Parquet glob given in FSQ_PLACES_PATH (for example
+      hf://datasets/foursquare/fsq-os-places/release/dt=2026-11-17/places/parquet/*.parquet with HF_TOKEN set,
+      or a local copy).
+    licence: Apache-2.0
+    licence_urls:
+      - https://www.apache.org/licenses/LICENSE-2.0
+    attribution: >-
+      Foursquare Open Source Places, Copyright 2024 Foursquare Labs, Inc. All rights reserved.
+      Licensed under the Apache License, Version 2.0.
+    terms_checked_on: 2026-11-22
+    terms_urls:
+      - https://docs.foursquare.com/data-products/docs/access-fsq-os-places
+      - https://huggingface.co/datasets/foursquare/fsq-os-places
+      - https://docs.foursquare.com/data-products/docs/places-os-data-schema
+    allowed_uses:
+      - Read, transform and combine with other data (Apache 2.0; keep the copyright and licence notice)
+      - Show places and derived fields in the app with the attribution above
+      - Keep raw and staged copies in our own bucket
+    notes: >-
+      Not enabled. Access needs an account: either a Foursquare Places Portal account and access token, or
+      a Hugging Face login and acceptance of the dataset's gating conditions (which include letting Foursquare
+      use your organisation's name). The pipeline did not sign up or accept any terms. To enable: the owner
+      gets access, sets FSQ_PLACES_PATH (and HF_TOKEN for hf:// paths) locally or as GitHub secrets, and
+      sets enabled: true here.

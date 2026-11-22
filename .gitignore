@@ -15,3 +15,10 @@ test-results/
 .vercel/
 *.log
 .claude/
+# Data pipeline (Python)
+pipelines/out/
+pipelines/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

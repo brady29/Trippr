@@ -1,0 +1,34 @@
+category,tag,label
+viewpoint,nature,Viewpoint
+park_garden,nature,Park or garden
+hike,nature,Hike or trail
+beach,nature,Beach
+nature_spot,nature,"Lake, waterfall, cave, island or reserve"
+aquarium_zoo,nature,Aquarium or zoo
+museum,culture,Museum
+gallery,culture,Gallery
+temple_shrine,culture,Temple or shrine
+place_of_worship,culture,"Church, mosque or other place of worship"
+historic_site,culture,Historic site
+castle_palace,culture,Castle or palace
+monument,culture,Monument or memorial
+landmark,culture,Landmark
+cultural_centre,culture,Cultural centre
+performance,culture,"Theatre, concert or live music"
+science_tech,tech,"Science museum, planetarium or observatory"
+arcade_gaming,tech,"Arcade, escape room or VR"
+electronics,tech,Electronics and games shopping
+sports_venue,sport,Stadium or arena
+sport_activity,sport,"Climbing, diving, surfing, golf, skiing, bowling and similar"
+restaurant,food,Restaurant
+street_food,food,"Street food, food hall or food truck"
+cafe,food,"Café, coffee or tea"
+dessert_bakery,food,"Bakery, dessert or sweets"
+bar,food,"Bar, pub, brewery or winery"
+market,food,Market
+nightlife,other,"Club, lounge or karaoke"
+theme_park,other,Theme park or water park
+shopping,other,"Mall, department store, souvenirs or books"
+onsen_spa,other,Onsen or spa
+cinema,other,Cinema
+tour,other,Tour or visitor centre

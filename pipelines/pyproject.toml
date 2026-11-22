@@ -1,0 +1,46 @@
+[project]
+name = "trippr-data"
+version = "0.1.0"
+description = "Trippr data pipeline: extract open place datasets, stage them into one schema, check and report."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "duckdb>=2.0.1",
+    "numpy>=2.5.5",
+    "pydantic>=2.14.4",
+    "pyyaml>=6.0.4",
+    "tzdata>=2026.6",
+]
+
+[project.scripts]
+trippr-data = "trippr_data.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["out"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+# Long lines are mostly SQL inside strings; the formatter handles code layout.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Full-width and CJK characters are the point of the name normalisation code and its tests.
+"src/trippr_data/names.py" = ["RUF001"]
+"tests/test_names.py" = ["RUF001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

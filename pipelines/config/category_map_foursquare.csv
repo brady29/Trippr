@@ -1,0 +1,123 @@
+source_category,category
+# Foursquare category labels (fsq_category_labels, "Level 1 > Level 2 > ...") to Trippr categories.
+# A place takes the rule for the longest matching label prefix of its first category; "exclude"
+# drops it on purpose and a place with no matching rule is "unmapped" (also dropped, and reported).
+# Written from Foursquare's published taxonomy; review against a live sample once the source is
+# enabled (see sources.yaml). Lines starting with # are comments.
+#
+# Dining and drinking
+Dining and Drinking > Restaurant,restaurant
+Dining and Drinking > Breakfast Spot,restaurant
+Dining and Drinking > Cafeteria,exclude
+"Dining and Drinking > Cafe, Coffee, and Tea House",cafe
+Dining and Drinking > Juice Bar,cafe
+Dining and Drinking > Smoothie Shop,cafe
+Dining and Drinking > Bakery,dessert_bakery
+Dining and Drinking > Bagel Shop,dessert_bakery
+Dining and Drinking > Dessert Shop,dessert_bakery
+Dining and Drinking > Donut Shop,dessert_bakery
+Dining and Drinking > Food Court,street_food
+Dining and Drinking > Food Stand,street_food
+Dining and Drinking > Food Truck,street_food
+Dining and Drinking > Street Food Gathering,street_food
+Dining and Drinking > Night Market,market
+Dining and Drinking > Bar,bar
+Dining and Drinking > Brewery,bar
+Dining and Drinking > Winery,bar
+Dining and Drinking > Distillery,bar
+Dining and Drinking > Bar > Lounge,nightlife
+Dining and Drinking > Bar > Karaoke Bar,nightlife
+# Arts and entertainment
+Arts and Entertainment > Museum,museum
+Arts and Entertainment > Museum > Science Museum,science_tech
+Arts and Entertainment > Planetarium,science_tech
+Arts and Entertainment > Art Gallery,gallery
+Arts and Entertainment > Exhibit,gallery
+Arts and Entertainment > Public Art,landmark
+Arts and Entertainment > Performing Arts Venue,performance
+Arts and Entertainment > Music Venue,performance
+Arts and Entertainment > Comedy Club,performance
+Arts and Entertainment > Movie Theater,cinema
+Arts and Entertainment > Amusement Park,theme_park
+Arts and Entertainment > Water Park,theme_park
+Arts and Entertainment > Aquarium,aquarium_zoo
+Arts and Entertainment > Zoo,aquarium_zoo
+Arts and Entertainment > Arcade,arcade_gaming
+Arts and Entertainment > Escape Room,arcade_gaming
+Arts and Entertainment > Gaming Cafe,arcade_gaming
+Arts and Entertainment > Laser Tag Center,arcade_gaming
+Arts and Entertainment > Karaoke Box,nightlife
+Arts and Entertainment > Night Club,nightlife
+Arts and Entertainment > Casino,nightlife
+Arts and Entertainment > Stadium,sports_venue
+Arts and Entertainment > Bowling Alley,sport_activity
+Arts and Entertainment > Mini Golf Course,sport_activity
+Arts and Entertainment > Strip Club,exclude
+# Landmarks and outdoors
+Landmarks and Outdoors > Scenic Lookout,viewpoint
+Landmarks and Outdoors > Park,park_garden
+Landmarks and Outdoors > Park > National Park,nature_spot
+Landmarks and Outdoors > Park > Playground,exclude
+Landmarks and Outdoors > Park > Dog Park,exclude
+Landmarks and Outdoors > Garden,park_garden
+Landmarks and Outdoors > Botanical Garden,park_garden
+Landmarks and Outdoors > Beach,beach
+Landmarks and Outdoors > Trail,hike
+Landmarks and Outdoors > Hiking Trail,hike
+Landmarks and Outdoors > Mountain,hike
+Landmarks and Outdoors > Lake,nature_spot
+Landmarks and Outdoors > Waterfall,nature_spot
+Landmarks and Outdoors > Cave,nature_spot
+Landmarks and Outdoors > Island,nature_spot
+Landmarks and Outdoors > Forest,nature_spot
+Landmarks and Outdoors > Nature Preserve,nature_spot
+Landmarks and Outdoors > Volcano,nature_spot
+Landmarks and Outdoors > Hot Spring,onsen_spa
+Landmarks and Outdoors > Castle,castle_palace
+Landmarks and Outdoors > Palace,castle_palace
+Landmarks and Outdoors > Historic and Protected Site,historic_site
+Landmarks and Outdoors > Monument,monument
+Landmarks and Outdoors > Memorial Site,monument
+Landmarks and Outdoors > Plaza,landmark
+Landmarks and Outdoors > Lighthouse,landmark
+Landmarks and Outdoors > Rock Climbing Spot,sport_activity
+Landmarks and Outdoors > Surf Spot,sport_activity
+Landmarks and Outdoors > Bridge,exclude
+Landmarks and Outdoors > Campground,exclude
+# Community, faith and culture
+Community and Government > Spiritual Center,place_of_worship
+Community and Government > Spiritual Center > Buddhist Temple,temple_shrine
+Community and Government > Spiritual Center > Hindu Temple,temple_shrine
+Community and Government > Spiritual Center > Sikh Temple,temple_shrine
+Community and Government > Spiritual Center > Shrine,temple_shrine
+Community and Government > Spiritual Center > Monastery,temple_shrine
+Community and Government > Cultural Center,cultural_centre
+Community and Government,exclude
+# Retail
+Retail > Shopping Mall,shopping
+Retail > Department Store,shopping
+Retail > Gift Store,shopping
+Retail > Bookstore,shopping
+Retail > Flea Market,market
+Retail > Farmers Market,market
+Retail > Food and Beverage Retail > Farmers Market,market
+Retail > Electronics Store,electronics
+Retail > Computers and Electronics Retail,electronics
+Retail > Video Games Store,electronics
+Retail,exclude
+# Sport
+Sports and Recreation > Golf Course,sport_activity
+Sports and Recreation > Ski Area,sport_activity
+Sports and Recreation > Skating Rink,sport_activity
+Sports and Recreation > Climbing Gym,sport_activity
+Sports and Recreation > Stadium,sports_venue
+Sports and Recreation > Gym and Studio,exclude
+# Travel, spas and the rest
+Travel and Transportation > Tourist Information and Service,tour
+Travel and Transportation > Tour Provider,tour
+Travel and Transportation,exclude
+Business and Professional Services > Health and Beauty Service > Spa,onsen_spa
+Business and Professional Services > Health and Beauty Service > Bathhouse,onsen_spa
+Business and Professional Services,exclude
+Health and Medicine,exclude
+Event,exclude
