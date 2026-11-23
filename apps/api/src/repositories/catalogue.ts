@@ -21,6 +21,8 @@ export interface ExistingActivity {
   listed: boolean;
   /** Deleted by the group; the load job leaves it alone. */
   hidden: boolean;
+  /** A person edited its text. */
+  edited: boolean;
   contentHash: string | null;
   cityCode: string;
   cityName: string;
@@ -137,6 +139,7 @@ export function catalogueRepository(db: GraphClient) {
           sourceKeys: Array.isArray(a.sourceKeys) ? (a.sourceKeys as string[]) : [],
           listed: a.listed !== false,
           hidden: a.hidden === true,
+          edited: a.edited === true,
           contentHash: (a.contentHash as string | null | undefined) ?? null,
           cityCode: r.cityCode,
           cityName: r.cityName,

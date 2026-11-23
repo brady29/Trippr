@@ -17,7 +17,7 @@ const repoPath = (path: string) => fileURLToPath(new URL(`../../../${path}`, imp
  * Connect to the database, retrying with backoff: on a fresh deploy the
  * FalkorDB VM may still be booting when Cloud Run starts the API.
  */
-export async function connectWithRetry(config: Config, log: Logger, attempts = 6): Promise<AdminGraphClient> {
+export async function connectWithRetry(config: Parameters<typeof createGraphClient>[0], log: Logger, attempts = 6): Promise<AdminGraphClient> {
   let delay = 1000;
   for (let attempt = 1; ; attempt++) {
     try {

@@ -14,12 +14,14 @@
     "build": "tsup",
     "start": "node dist/server.js",
     "flights:snapshot": "tsx --env-file-if-exists=../../.env src/flight-snapshots.ts",
+    "load-bundle": "tsx --env-file-if-exists=../../.env src/load-bundle.ts",
     "typecheck": "tsc --noEmit",
     "test:integration": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.11.0",
     "@fastify/cors": "10.0.2",
+    "@google-cloud/storage": "7.16.0",
     "@sentry/node": "10.78.0",
     "@trippr/contracts": "workspace:^",
     "@trippr/rules": "workspace:^",

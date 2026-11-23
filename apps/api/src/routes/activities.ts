@@ -1,4 +1,5 @@
 import {
+  activityPageQuery,
   cityCode,
   commentBody,
   createActivityBody,
@@ -6,6 +7,8 @@ import {
   placeBody,
   tripQuery,
   voteBody,
+  type ActivityFacets,
+  type ActivityPage,
   type LibraryActivity,
   type PlaceLookupResult,
 } from "@trippr/contracts";
@@ -25,6 +28,25 @@ export function activityRoutes(app: FastifyInstance, ctx: AppContext) {
     const { id } = ctx.parse(idParams, req.params);
     await guards.trip(user, id, "viewer");
     return repos.activities.list(id, user.id);
+  });
+
+  /**
+   * The whole library, catalogue included, filtered and paged: ?scope=all|mine|catalogue&city=&tag=&category=
+   * &q=&source=&minScore=&maxRank=&fixedDates=&sort=relevance|score|title&offset=&limit= (50 by default).
+   */
+  app.get("/trips/:id/activities/page", async (req): Promise<ActivityPage> => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    await guards.trip(user, id, "viewer");
+    return repos.activities.page(id, user.id, ctx.parse(activityPageQuery, req.query));
+  });
+
+  /** What the filter menus offer and the library's headline numbers. */
+  app.get("/trips/:id/activities/facets", async (req): Promise<ActivityFacets> => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    await guards.trip(user, id, "viewer");
+    return repos.activities.facets(id);
   });
 
   /** The shared library for one city. */

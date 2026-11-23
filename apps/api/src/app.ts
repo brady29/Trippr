@@ -11,6 +11,7 @@ import { preloadQueries } from "./repositories/queries";
 import { activityRoutes } from "./routes/activities";
 import { assistantRoutes } from "./routes/assistant";
 import { authRoutes } from "./routes/auth";
+import { dataRoutes } from "./routes/data";
 import { explorerRoutes } from "./routes/explorer";
 import { flightRoutes } from "./routes/flights";
 import { liveRoutes } from "./routes/live";
@@ -197,6 +198,7 @@ export async function buildApp({
 
   await app.register(async (scope) => {
     metaRoutes(scope, ctx);
+    dataRoutes(scope, ctx);
     authRoutes(scope, ctx);
     tripRoutes(scope, ctx);
     routeRoutes(scope, ctx);
