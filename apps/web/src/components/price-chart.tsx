@@ -2,7 +2,7 @@
 
 import type { FlightPricePoint } from "@trippr/contracts";
 import { shortDate } from "@trippr/rules";
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { cad } from "@/lib/flights";
 import { chartGeometry, nearestPoint, type ChartBox } from "@/lib/price-chart";
 
@@ -30,6 +30,18 @@ export function PriceChart({ points, label }: { points: FlightPricePoint[]; labe
     setHover(p ? g.points.indexOf(p) : null);
   };
 
+  const step = (to: (i: number | null) => number) => setHover(to(hover));
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const n = g.points.length;
+    if (e.key === "ArrowLeft") step((i) => Math.max(0, (i ?? n) - 1));
+    else if (e.key === "ArrowRight") step((i) => Math.min(n - 1, (i ?? -1) + 1));
+    else if (e.key === "Home") step(() => 0);
+    else if (e.key === "End") step(() => n - 1);
+    else if (e.key === "Escape") setHover(null);
+    else return;
+    e.preventDefault();
+  };
+
   const { min, last } = g;
   // Keep labels inside the plot: flip to the left of a point near the right edge.
   const anchor = (x: number) => (x > BOX.width - 70 ? "end" : "start");
@@ -39,7 +51,17 @@ export function PriceChart({ points, label }: { points: FlightPricePoint[]; labe
     <div data-testid="price-chart">
       <div
         ref={wrap}
-        className="relative touch-pan-y"
+        className="relative touch-pan-y rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky"
+        tabIndex={0}
+        role="group"
+        aria-label={`${label}. Use the left and right arrow keys to step through the days.`}
+        data-testid="price-chart-surface"
+        onKeyDown={onKey}
+        onFocus={(e) => {
+          // Keyboard focus shows the latest day; a click or tap picks its own day.
+          if (e.currentTarget.matches(":focus-visible")) setHover(g.points.length - 1);
+        }}
+        onBlur={() => setHover(null)}
         onPointerMove={(e) => onMove(e.clientX)}
         onPointerDown={(e) => onMove(e.clientX)}
         onPointerLeave={() => setHover(null)}

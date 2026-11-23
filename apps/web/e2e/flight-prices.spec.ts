@@ -41,8 +41,15 @@ test("a flight shows its price history, the booking signal and the disclaimer", 
   // The chart: hovering shows a tooltip with a price and a date.
   const chart = panel.getByTestId("price-chart");
   await expect(chart.getByRole("img")).toHaveAttribute("aria-label", /YYZ to HND/);
-  const box = (await chart.getByRole("img").boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  // hover() scrolls the chart into view first, so the pointer lands on it even below the fold.
+  await chart.getByRole("img").hover({ position: { x: 150, y: 60 } });
+  await expect(chart.getByTestId("price-chart-tooltip")).toContainText("$");
+  await expect(chart.getByTestId("price-chart-tooltip")).toContainText(" on ");
+  // The keyboard works too: focus the chart and step back a day.
+  await page.mouse.move(0, 0);
+  await expect(chart.getByTestId("price-chart-tooltip")).toHaveCount(0);
+  await chart.getByTestId("price-chart-surface").focus();
+  await page.keyboard.press("ArrowLeft");
   await expect(chart.getByTestId("price-chart-tooltip")).toContainText("$");
 
   // The signal says what it saw, and that it is an estimate.

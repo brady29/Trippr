@@ -273,6 +273,8 @@ describe("flight prices: snapshots, history, signal and notices", () => {
 
   it("stops on an auth error, and carries on past a single failing flight", async () => {
     clock.today = day(22);
+    // onCall receives the running call count, so start counting from zero.
+    fake.reset();
     fake.onCall((n) => {
       if (n === 1) throw new ProviderAuthError("bad token");
     });
