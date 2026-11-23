@@ -145,6 +145,28 @@ export interface Activity extends ActivityRef {
   votes: number;
   myVote: -1 | 0 | 1;
   commentCount: number;
+  /** True for places loaded from the data pipeline's catalogue rather than written by the group. */
+  catalogue?: boolean;
+  /** The catalogue's category (viewpoint, museum, ...). */
+  category?: string | null;
+  /** Ranking score and rank in the city, 1 = best (catalogue places). */
+  score?: number | null;
+  rank?: number | null;
+  /** False once a newer bundle stopped listing the place: "no longer listed". Planned and voted places stay. */
+  listed?: boolean;
+  nameLocal?: string | null;
+  phone?: string | null;
+  openingHours?: string | null;
+  /** Where a catalogue place comes from: each source record with its licence. */
+  sources?: ActivitySource[];
+}
+
+export interface ActivitySource {
+  /** Source id from the registry, e.g. "overture". */
+  source: string;
+  /** The record's id in that source. */
+  sourceId: string;
+  licence: string;
 }
 
 export interface LibraryActivity extends Activity {

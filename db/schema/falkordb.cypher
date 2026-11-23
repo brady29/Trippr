@@ -44,3 +44,9 @@ GRAPH.CONSTRAINT CREATE UNIQUE NODE AssistantThread PROPERTIES 1 id;
 GRAPH.CONSTRAINT CREATE UNIQUE NODE FlightPrice PROPERTIES 1 id;
 GRAPH.CONSTRAINT CREATE UNIQUE NODE FlightPriceRun PROPERTIES 1 id;
 CREATE INDEX FOR (n:FlightPrice) ON (n.routeKey);
+
+// Activity catalogue (data pipeline): curated places loaded from a bundle, with provenance.
+// (:Activity)-[:FROM_SOURCE {sourceId, fetchedAt, licence}]->(:DataSource); one DataLoad per bundle loaded.
+GRAPH.CONSTRAINT CREATE UNIQUE NODE DataSource PROPERTIES 1 id;
+GRAPH.CONSTRAINT CREATE UNIQUE NODE DataLoad PROPERTIES 1 id;
+CREATE INDEX FOR (n:Activity) ON (n.category);

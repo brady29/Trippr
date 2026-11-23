@@ -1,7 +1,9 @@
 import type { GraphClient } from "../db/graph";
 import { activitiesRepository } from "./activities";
 import { calendarRepository } from "./calendar";
+import { catalogueRepository } from "./catalogue";
 import { citiesRepository } from "./cities";
+import { dataRepository } from "./data";
 import { explorerRepository } from "./explorer";
 import { flightsRepository } from "./flights";
 import { graphRepository } from "./graph";
@@ -26,6 +28,8 @@ export function createRepositories(db: GraphClient) {
     places: placesRepository(db),
     calendar: calendarRepository(db),
     flights: flightsRepository(db),
+    catalogue: catalogueRepository(db),
+    data: dataRepository(db),
   };
 }
 

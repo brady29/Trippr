@@ -6,3 +6,4 @@ export * from "./inbox";
 export * from "./calendar";
 export * from "./assistant";
 export * from "./flights";
+export * from "./catalogue";

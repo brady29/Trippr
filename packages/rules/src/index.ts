@@ -12,3 +12,4 @@ export * from "./places";
 export * from "./itinerary";
 export * from "./links";
 export * from "./flight-signal";
+export * from "./catalogue";

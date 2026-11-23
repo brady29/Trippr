@@ -1,4 +1,12 @@
-import type { Activity, Comment, LibraryActivity } from "@trippr/contracts";
+import type {
+  Activity,
+  ActivityFacets,
+  ActivityPage,
+  ActivityPageParams,
+  ActivitySource,
+  Comment,
+  LibraryActivity,
+} from "@trippr/contracts";
 import { PLACE_STATUSES, type PlaceStatus, type When } from "@trippr/rules";
 import type { GraphClient } from "../db/graph";
 import { newId, nowIso } from "../ids";
@@ -21,6 +29,17 @@ export type ActivityNode = {
   lon?: unknown;
   address?: string | null;
   placeStatus?: string | null;
+  /** Set on places that came from, or were matched to, the data pipeline's catalogue. */
+  catalogue?: boolean | null;
+  category?: string | null;
+  score?: unknown;
+  rank?: unknown;
+  listed?: boolean | null;
+  nameLocal?: string | null;
+  phone?: string | null;
+  openingHours?: string | null;
+  /** JSON: [{ source, sourceId, licence }]. */
+  sources?: unknown;
 };
 
 /** Fields shared by every activity DTO, from the stored node. */
@@ -44,6 +63,14 @@ export function activityFields(a: ActivityNode) {
     lon: pinned ? lon : null,
     address: a.address ?? null,
     placeStatus: pinned || status === "not_found" ? status : "unplaced",
+    ...(a.catalogue === true ? { catalogue: true as const, listed: a.listed !== false } : {}),
+    ...(a.category != null ? { category: a.category } : {}),
+    ...(a.score != null ? { score: num(a.score) } : {}),
+    ...(a.rank != null ? { rank: num(a.rank) } : {}),
+    ...(a.nameLocal != null ? { nameLocal: a.nameLocal } : {}),
+    ...(a.phone != null ? { phone: a.phone } : {}),
+    ...(a.openingHours != null ? { openingHours: a.openingHours } : {}),
+    ...(a.sources != null ? { sources: parseJson<ActivitySource[]>(a.sources) ?? [] } : {}),
   } satisfies Partial<Activity>;
 }
 
@@ -66,11 +93,11 @@ export function activitiesRepository(db: GraphClient) {
   async function list(
     tripId: string,
     userId: string,
-    filter: { cityCode?: string; activityId?: string } = {},
+    filter: { cityCode?: string; activityId?: string; ids?: string[] } = {},
   ): Promise<LibraryActivity[]> {
     const rows = await db.query<Row>(
       q("activities/list"),
-      { tripId, userId, cityCode: filter.cityCode ?? null, activityId: filter.activityId ?? null },
+      { tripId, userId, cityCode: filter.cityCode ?? null, activityId: filter.activityId ?? null, ids: filter.ids ?? null },
       read,
     );
     return rows.map((r) => ({
@@ -88,8 +115,73 @@ export function activitiesRepository(db: GraphClient) {
     }));
   }
 
+  /** The filtered, ordered, paged view of the whole library, catalogue included. */
+  async function page(tripId: string, userId: string, query: ActivityPageParams): Promise<ActivityPage> {
+    const matches = await db.query<{ id: string }>(
+      q("activities/page-ids"),
+      {
+        tripId,
+        scope: query.scope,
+        cityCode: query.city ?? null,
+        tag: query.tag ?? null,
+        category: query.category ?? null,
+        source: query.source ?? null,
+        minScore: query.minScore ?? null,
+        maxRank: query.maxRank ?? null,
+        fixedDates: query.fixedDates,
+        includeUnlisted: query.includeUnlisted,
+        q: query.q ? query.q.toLowerCase() : null,
+        sort: query.sort,
+      },
+      read,
+    );
+    const ids = matches.map((m) => m.id);
+    const pageIds = ids.slice(query.offset, query.offset + query.limit);
+    const rows = pageIds.length ? await list(tripId, userId, { ids: pageIds }) : [];
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const end = query.offset + pageIds.length;
+    return {
+      items: pageIds.map((id) => byId.get(id)).filter((r): r is LibraryActivity => r !== undefined),
+      total: ids.length,
+      offset: query.offset,
+      limit: query.limit,
+      nextOffset: end < ids.length ? end : null,
+    };
+  }
+
+  async function facets(tripId: string): Promise<ActivityFacets> {
+    const params = { tripId };
+    const [cities, tags, categories, sources, totals] = await Promise.all([
+      db.query<{ code: string; name: string; n: unknown }>(q("activities/facet-cities"), params, read),
+      db.query<{ name: string; n: unknown }>(q("activities/facet-tags"), params, read),
+      db.query<{ name: string; n: unknown }>(q("activities/facet-categories"), params, read),
+      db.query<{ id: string; name: string; n: unknown }>(q("activities/facet-sources"), params, read),
+      db.query<{ ideas: unknown; catalogue: unknown; planned: unknown; onMap: unknown; cities: unknown }>(
+        q("activities/facet-totals"),
+        params,
+        read,
+      ),
+    ]);
+    const t = totals[0];
+    return {
+      cities: cities.map((c) => ({ code: c.code, name: c.name, count: num(c.n) })),
+      tags: tags.map((x) => ({ name: x.name, count: num(x.n) })),
+      categories: categories.map((x) => ({ name: x.name, count: num(x.n) })),
+      sources: sources.map((x) => ({ id: x.id, name: x.name, count: num(x.n) })),
+      totals: {
+        ideas: num(t?.ideas),
+        catalogue: num(t?.catalogue),
+        planned: num(t?.planned),
+        onMap: num(t?.onMap),
+        cities: num(t?.cities),
+      },
+    };
+  }
+
   return {
     list,
+    page,
+    facets,
 
     async get(tripId: string, userId: string, activityId: string) {
       return (await list(tripId, userId, { activityId }))[0] ?? null;
@@ -188,8 +280,10 @@ export function activitiesRepository(db: GraphClient) {
       });
     },
 
+    /** A hand-written activity is deleted; a catalogue place is hidden, or the load job would add it back. */
     async delete(activityId: string) {
-      await db.query(q("activities/delete"), { activityId });
+      const hidden = await db.query(q("activities/hide"), { activityId });
+      if (hidden.length === 0) await db.query(q("activities/delete"), { activityId });
     },
 
     async vote(userId: string, activityId: string, value: -1 | 0 | 1) {

@@ -39,3 +39,9 @@ CREATE CONSTRAINT assistant_thread_id IF NOT EXISTS FOR (n:AssistantThread) REQU
 CREATE CONSTRAINT flight_price_id IF NOT EXISTS FOR (n:FlightPrice) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT flight_price_run_id IF NOT EXISTS FOR (n:FlightPriceRun) REQUIRE n.id IS UNIQUE;
 CREATE INDEX flight_price_route IF NOT EXISTS FOR (n:FlightPrice) ON (n.routeKey);
+
+// Activity catalogue (data pipeline): curated places loaded from a bundle, with provenance.
+// (:Activity)-[:FROM_SOURCE {sourceId, fetchedAt, licence}]->(:DataSource); one DataLoad per bundle loaded.
+CREATE CONSTRAINT data_source_id IF NOT EXISTS FOR (n:DataSource) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT data_load_id IF NOT EXISTS FOR (n:DataLoad) REQUIRE n.id IS UNIQUE;
+CREATE INDEX activity_category IF NOT EXISTS FOR (n:Activity) ON (n.category);
