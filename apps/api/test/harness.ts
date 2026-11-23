@@ -7,10 +7,11 @@ import type { Geocoder } from "../src/services/places/geocoder";
 import type { InboxReader } from "../src/services/inbox/reader";
 import type { AssistantModel } from "../src/services/assistant/model";
 import type { PlaceLookup } from "../src/services/inbox/lookup";
-import { loadConfig } from "../src/config";
+import { loadConfig, type Config } from "../src/config";
 import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db";
 import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
 import { seedDatabase, type SeedResult } from "../src/db/seed";
+import type { FlightPricesOptions } from "../src/services/flights/service";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 export const SEED_DIR = resolve(ROOT, "seed");
@@ -18,6 +19,7 @@ export const SEED_DIR = resolve(ROOT, "seed");
 export interface Harness {
   app: FastifyInstance;
   db: AdminGraphClient;
+  config: Config;
   seed: SeedResult;
   explorer: ExplorerMigrationResult;
   ownerInvite: string;
@@ -39,6 +41,8 @@ export async function startHarness(
     resolveShortLink?: (url: string) => Promise<string | null>;
     /** The trip assistant is off unless a (scripted) model is passed. */
     assistantModel?: AssistantModel;
+    /** Flight price provider and clock; the feature itself is on only with FLIGHT_PRICES_ENABLED in env. */
+    flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
   } = {},
 ): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
@@ -71,10 +75,12 @@ export async function startHarness(
     ...(options.geocoder ? { geocoder: options.geocoder } : {}),
     ...(options.resolveShortLink ? { resolveShortLink: options.resolveShortLink } : {}),
     ...(options.assistantModel ? { assistantModel: options.assistantModel } : {}),
+    ...(options.flightPrices ? { flightPrices: options.flightPrices } : {}),
   });
   return {
     app,
     db,
+    config,
     seed,
     explorer,
     ownerInvite,

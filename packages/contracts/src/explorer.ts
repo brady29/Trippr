@@ -92,6 +92,9 @@ export interface Leg {
   status: LegStatus;
   source?: string | null;
   asOf?: string | null;
+  /** Set when the daily flight snapshot filled in priceCad (idea flights only): the snapshot day and the provider. */
+  priceAsOf?: string | null;
+  priceSource?: string | null;
 }
 
 /** Editors and the owner only (GET /legs/:id/private). */

@@ -21,6 +21,7 @@ import { ActivityDrawer } from "@/components/activity-drawer";
 import { AddStop } from "@/components/add-stop";
 import { BudgetPanel } from "@/components/budget-panel";
 import { ChecksPanel } from "@/components/checks-panel";
+import { FlightNotices } from "@/components/flight-prices";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { StopCard } from "@/components/stop-card";
 import { StopLegs } from "@/components/stop-legs";
@@ -31,6 +32,7 @@ import { useToast } from "@/components/toast";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ChecksBadge, ErrorNote, Spinner, Tag } from "@/components/ui";
 import { download } from "@/lib/api";
+import { useTripFlightPrices } from "@/lib/flights";
 import { useRoute, useRouteEdit, useRouteLibrary } from "@/lib/queries";
 
 const RouteMap = dynamic(() => import("@/components/route-map"), {
@@ -43,6 +45,7 @@ function Editor({ view }: { view: RouteView }) {
   const canEdit = hasRole(view.role, "editor");
   const edit = useRouteEdit(routeId);
   const library = useRouteLibrary(routeId);
+  const flightPrices = useTripFlightPrices(view.trip.id);
   const toast = useToast();
   const [drawerStop, setDrawerStop] = useState<string | null>(null);
   const [hotelStop, setHotelStop] = useState<string | null>(null);
@@ -117,6 +120,7 @@ function Editor({ view }: { view: RouteView }) {
         </div>
 
         <section className="space-y-3 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="Stops">
+          {view.route.isCurrent ? <FlightNotices tripId={view.trip.id} /> : null}
           {!canEdit ? (
             <p className="rounded-lg bg-paper-2 px-3 py-2 text-sm text-ink-soft">
               You&apos;re a viewer on this trip: you can vote and comment on activities, but not change the route.
@@ -148,7 +152,7 @@ function Editor({ view }: { view: RouteView }) {
                       onOpenActivities: () => setDrawerStop(stop.id),
                     }}
                   >
-                    <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} />
+                    <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} pricesOn={flightPrices.data?.enabled === true} />
                     <TravelOptions
                       stop={stop}
                       prev={view.stops[i - 1]}

@@ -39,3 +39,8 @@ GRAPH.CONSTRAINT CREATE UNIQUE NODE CalendarFeed PROPERTIES 1 tokenHash;
 
 // Trip assistant: one thread per member per trip ((:User)-[:ASKED]->(:AssistantThread)).
 GRAPH.CONSTRAINT CREATE UNIQUE NODE AssistantThread PROPERTIES 1 id;
+
+// Flight prices: one FlightPrice per provider, route, departure date and snapshot day; one run counter per day.
+GRAPH.CONSTRAINT CREATE UNIQUE NODE FlightPrice PROPERTIES 1 id;
+GRAPH.CONSTRAINT CREATE UNIQUE NODE FlightPriceRun PROPERTIES 1 id;
+CREATE INDEX FOR (n:FlightPrice) ON (n.routeKey);

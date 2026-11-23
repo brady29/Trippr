@@ -82,6 +82,24 @@ const envSchema = z.object({
   /** Nominatim's usage policy asks for a User-Agent that names the app. */
   GEOCODER_USER_AGENT: z.string().default("Trippr (https://github.com/brady29/Trippr)"),
 
+  /**
+   * Flight price history (docs/flight-prices-provider-spike.md). Off by default; when on, the history
+   * endpoints answer and the web shows the chart. The daily job is a separate process (flight-snapshots).
+   */
+  FLIGHT_PRICES_ENABLED: bool,
+  /** "travelpayouts" needs TRAVELPAYOUTS_TOKEN; "demo" serves clearly labelled sample data. */
+  FLIGHT_PRICES_PROVIDER: z.enum(["travelpayouts", "demo"]).default("travelpayouts"),
+  /** Secret: the Travelpayouts Data API token. Read from the environment only. */
+  TRAVELPAYOUTS_TOKEN: optional(z.string()),
+  /** Most provider requests the job makes per UTC day. */
+  FLIGHT_PRICES_DAILY_BUDGET: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(300)),
+  /** Days searched either side of each flight's planned date. */
+  FLIGHT_PRICES_WINDOW_DAYS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).max(7).default(3)),
+  /** Minimum gap between provider requests, to stay under its rate limit. */
+  FLIGHT_PRICES_MIN_INTERVAL_MS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(250)),
+  /** A snapshot this many percent below the previous low raises a price-drop notice. */
+  FLIGHT_PRICES_DROP_PCT: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().min(1).max(90).default(15)),
+
   /** Comma-separated origins allowed by CORS. */
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   /** Base URL of the web app, used to build invite links. */

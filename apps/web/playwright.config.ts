@@ -26,6 +26,9 @@ const apiEnv = {
   GEOCODER: "none",
   // Never call Claude from end-to-end runs; the Ask panel shows its "off" state.
   ASSISTANT_ENABLED: "false",
+  // Flight prices run on invented sample history (see flight-prices.spec.ts); no provider key is ever used.
+  FLIGHT_PRICES_ENABLED: "true",
+  FLIGHT_PRICES_PROVIDER: "demo",
 };
 
 export default defineConfig({
@@ -49,7 +52,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "pnpm --dir ../.. db:reset && pnpm --dir ../api exec tsx src/server.ts",
+      command: "pnpm --dir ../.. db:reset && pnpm --dir ../api exec tsx src/flight-snapshots.ts --demo-seed && pnpm --dir ../api exec tsx src/server.ts",
       url: `${E2E_API_URL}/health`,
       env: apiEnv,
       reuseExistingServer: !process.env.CI,

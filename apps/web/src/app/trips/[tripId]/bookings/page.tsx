@@ -13,6 +13,7 @@ import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell"
 import { TripNav } from "@/components/trip-nav";
 import { ErrorNote, Panel, Select, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
+import { cad, useTripFlightPrices } from "@/lib/flights";
 import { useAuth } from "@/lib/auth";
 import { formatLegTime } from "@/lib/explorer";
 import { useTrip } from "@/lib/queries";
@@ -139,6 +140,9 @@ function Bookings({ tripId }: { tripId: string }) {
   const routeId = params.get("route");
   const q = useBookings(tripId, routeId);
   const b = q.data;
+  // Latest flight fares are tracked for the current route only.
+  const fares = useTripFlightPrices(tripId).data;
+  const fareFor = (stopId: string) => (b?.route.isCurrent && fares?.enabled ? fares.items.find((i) => i.stopId === stopId && i.latestCad != null) : undefined);
 
   return (
     <>
@@ -226,6 +230,12 @@ function Bookings({ tripId }: { tripId: string }) {
                         {t.needsTransport ? <span className="rounded-full border border-dashed border-ink-faint px-1.5 text-[10px] text-ink-soft">transport</span> : null}
                         {t.needsStay ? <span className="rounded-full border border-dashed border-ink-faint px-1.5 text-[10px] text-ink-soft">hotel</span> : null}
                       </span>
+                      {t.needsTransport && fareFor(t.stopId) ? (
+                        <p className="w-full text-[11px] text-ink-soft" data-testid="to-book-fare">
+                          Latest fare {cad(fareFor(t.stopId)!.latestCad)} per person ({fares!.sample ? "sample data, " : ""}
+                          {fareFor(t.stopId)!.origin} to {fareFor(t.stopId)!.destination}, as of {shortDate(fareFor(t.stopId)!.asOf!)}). An estimate; check the airline.
+                        </p>
+                      ) : null}
                       {t.needsTransport && t.fromCity ? (
                         <BookingLinks
                           className="w-full"

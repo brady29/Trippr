@@ -5,3 +5,4 @@ export * from "./maps";
 export * from "./inbox";
 export * from "./calendar";
 export * from "./assistant";
+export * from "./flights";

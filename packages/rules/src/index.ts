@@ -11,3 +11,4 @@ export * from "./booking-links";
 export * from "./places";
 export * from "./itinerary";
 export * from "./links";
+export * from "./flight-signal";

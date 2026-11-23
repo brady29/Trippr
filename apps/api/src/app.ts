@@ -12,6 +12,7 @@ import { activityRoutes } from "./routes/activities";
 import { assistantRoutes } from "./routes/assistant";
 import { authRoutes } from "./routes/auth";
 import { explorerRoutes } from "./routes/explorer";
+import { flightRoutes } from "./routes/flights";
 import { liveRoutes } from "./routes/live";
 import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
@@ -27,6 +28,7 @@ import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { tripRoutes } from "./routes/trips";
 import { createGuards, type Guards } from "./services/guards";
+import { createFlightPrices, type FlightPrices, type FlightPricesOptions } from "./services/flights/service";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -44,6 +46,8 @@ export interface AppContext {
   repos: Repositories;
   auth: Auth;
   guards: Guards;
+  /** Flight price history and booking signal; off unless FLIGHT_PRICES_ENABLED and a provider is configured. */
+  flights: FlightPrices;
   live: LiveHub;
   /** Tell everyone viewing the trip that `by` just changed something. */
   notify(tripId: string, change: LiveChange, by: string): void;
@@ -77,6 +81,8 @@ export interface BuildOptions {
   resolveShortLink?: (url: string) => Promise<string | null>;
   /** Overrides the trip assistant's model (tests use a scripted fake). */
   assistantModel?: AssistantModel;
+  /** Overrides the flight price provider and the clock (tests). */
+  flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
 }
 
 export async function buildApp({
@@ -89,6 +95,7 @@ export async function buildApp({
   geocoder,
   resolveShortLink,
   assistantModel,
+  flightPrices,
 }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
@@ -148,6 +155,7 @@ export async function buildApp({
     repos,
     auth,
     guards: createGuards(repos),
+    flights: createFlightPrices({ config, repos, ...flightPrices }),
     live,
     notify(tripId, change, by) {
       live.publish(tripId, change, by);
@@ -199,6 +207,7 @@ export async function buildApp({
     inboxRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
     calendarRoutes(scope, ctx);
+    flightRoutes(scope, ctx);
     assistantRoutes(scope, ctx, { model: assistantModel });
   });
 

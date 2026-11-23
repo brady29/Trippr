@@ -34,3 +34,8 @@ CREATE CONSTRAINT calendar_feed_token_hash IF NOT EXISTS FOR (n:CalendarFeed) RE
 
 // Trip assistant: one thread per member per trip ((:User)-[:ASKED]->(:AssistantThread)).
 CREATE CONSTRAINT assistant_thread_id IF NOT EXISTS FOR (n:AssistantThread) REQUIRE n.id IS UNIQUE;
+
+// Flight prices: one FlightPrice per provider, route, departure date and snapshot day; one run counter per day.
+CREATE CONSTRAINT flight_price_id IF NOT EXISTS FOR (n:FlightPrice) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT flight_price_run_id IF NOT EXISTS FOR (n:FlightPriceRun) REQUIRE n.id IS UNIQUE;
+CREATE INDEX flight_price_route IF NOT EXISTS FOR (n:FlightPrice) ON (n.routeKey);

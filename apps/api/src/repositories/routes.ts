@@ -138,6 +138,8 @@ export function routesRepository(db: GraphClient) {
           priceCad: optNum(l.priceCad),
           source: str(l.source),
           asOf: str(l.asOf),
+          priceAsOf: str(l.priceAsOf),
+          priceSource: str(l.priceSource),
           bookingRef: str(l.bookingRef),
           seat: str(l.seat),
           from: toHub(row.fromHub),

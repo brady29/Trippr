@@ -13,6 +13,7 @@ import {
   useRouteWrite,
 } from "@/lib/explorer";
 import { ModeIcon, PlusIcon, XIcon } from "./icons";
+import { FlightPricePanel } from "./flight-prices";
 import { MapsLink } from "./maps-link";
 import { Button, Input, Label, Select } from "./ui";
 
@@ -269,14 +270,18 @@ export function StopLegs({
   stop,
   prevCityCode,
   canEdit,
+  pricesOn = false,
 }: {
   routeId: string;
   stop: StopView;
   prevCityCode?: string;
   canEdit: boolean;
+  /** Flight price tracking is on: flights between airports get a "Prices" button. */
+  pricesOn?: boolean;
 }) {
   const write = useRouteWrite(routeId);
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [pricesFor, setPricesFor] = useState<string | null>(null);
   const legs = stop.legs ?? [];
 
   return (
@@ -319,8 +324,22 @@ export function StopLegs({
                 <span className="text-ink-soft">{[leg.operator, leg.number].filter(Boolean).join(" ")}</span>
               ) : null}
               {leg.departAt ? <span className="text-ink-soft">{formatLegTime(leg.departAt)}</span> : null}
-              {leg.priceCad != null ? <span className="font-mono">${leg.priceCad}</span> : null}
+              {leg.priceCad != null ? (
+                <span className="font-mono" title={leg.priceSource ? `Estimated from recent searches (${leg.priceAsOf ?? "recent"})` : undefined}>
+                  {leg.priceSource ? "~" : ""}${leg.priceCad}
+                </span>
+              ) : null}
               <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide ${STATUS_STYLE[leg.status]}`}>{leg.status}</span>
+              {pricesOn && leg.mode === "flight" && leg.from.kind === "airport" && leg.to.kind === "airport" ? (
+                <button
+                  onClick={() => setPricesFor(pricesFor === leg.id ? null : leg.id)}
+                  className="font-medium text-sky hover:underline"
+                  aria-expanded={pricesFor === leg.id}
+                  aria-label={`Prices for ${hubCode(leg.from)} to ${hubCode(leg.to)}`}
+                >
+                  Prices
+                </button>
+              ) : null}
               {canEdit ? (
                 <span className="ml-auto flex items-center gap-2">
                   <button onClick={() => setEditing(leg.id)} className="text-sky hover:underline" aria-label={`Edit leg ${hubCode(leg.from)} to ${hubCode(leg.to)}`}>
@@ -339,6 +358,7 @@ export function StopLegs({
                   </button>
                 </span>
               ) : null}
+              {pricesFor === leg.id ? <FlightPricePanel legId={leg.id} /> : null}
             </li>
           ),
         )}

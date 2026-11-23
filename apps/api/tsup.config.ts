@@ -7,7 +7,7 @@ import { defineConfig } from "tsup";
  * The .cypher files are copied next to the bundle (see repositories/queries.ts).
  */
 export default defineConfig({
-  entry: ["src/server.ts"],
+  entry: ["src/server.ts", "src/flight-snapshots.ts"],
   format: ["esm"],
   target: "node22",
   platform: "node",

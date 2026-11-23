@@ -3,6 +3,7 @@ import { activitiesRepository } from "./activities";
 import { calendarRepository } from "./calendar";
 import { citiesRepository } from "./cities";
 import { explorerRepository } from "./explorer";
+import { flightsRepository } from "./flights";
 import { graphRepository } from "./graph";
 import { inboxRepository } from "./inbox";
 import { placesRepository } from "./places";
@@ -24,6 +25,7 @@ export function createRepositories(db: GraphClient) {
     inbox: inboxRepository(db),
     places: placesRepository(db),
     calendar: calendarRepository(db),
+    flights: flightsRepository(db),
   };
 }
 
