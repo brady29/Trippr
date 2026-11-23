@@ -1,15 +1,14 @@
 "use client";
 
-import { hasRole, type LibraryActivity } from "@trippr/contracts";
-import { isFixedDate } from "@trippr/rules";
+import { hasRole, type ActivityFacets, type ActivityPageQuery, type LibraryActivity } from "@trippr/contracts";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityItem, NewActivityForm } from "@/components/activity";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { TripNav } from "@/components/trip-nav";
-import { Button, ErrorNote, Select, Spinner, Tag } from "@/components/ui";
-import { useLookupPlace, useTrip, useTripActivities } from "@/lib/queries";
+import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
+import { useActivityFacets, useActivityPages, useLookupPlace, useTrip, useTripActivities } from "@/lib/queries";
 
 /**
  * "Find places": looks up every activity that has no pin yet, one at a time
@@ -69,25 +68,91 @@ function FindPlaces({ activities }: { activities: LibraryActivity[] }) {
   );
 }
 
+/** A value that follows `value` after it has stopped changing for `ms`. */
+function useDebounced<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return settled;
+}
+
+const SCOPE_LABEL = { all: "Everything", mine: "Our ideas", catalogue: "From the catalogue" } as const;
+const TOP_PICKS = [
+  ["", "Any rank"],
+  ["10", "Top 10 in each city"],
+  ["25", "Top 25 in each city"],
+  ["50", "Top 50 in each city"],
+  ["100", "Top 100 in each city"],
+] as const;
+
+const humanize = (category: string) => category.replace(/_/g, " ");
+
+/** Where a catalogue place comes from: its category, rank, whether it is still listed, and each source with its licence. */
+function CatalogueFooter({ activity, facets }: { activity: LibraryActivity; facets: ActivityFacets | undefined }) {
+  const names = new Map((facets?.sources ?? []).map((s) => [s.id, s.name]));
+  const sources = activity.sources ?? [];
+  if (!activity.catalogue && !sources.length && !activity.category) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft" data-testid="catalogue-info">
+      {activity.catalogue ? (
+        <span data-testid="catalogue-badge">
+          <Tag tone="amber">From the catalogue</Tag>
+        </span>
+      ) : null}
+      {activity.catalogue && activity.listed === false ? <Tag tone="dark">No longer listed</Tag> : null}
+      {activity.category ? <span>{humanize(activity.category)}</span> : null}
+      {activity.rank != null ? (
+        <span title={activity.score != null ? `Score ${activity.score.toFixed(1)}` : undefined}>
+          #{activity.rank} in {activity.cityName}
+        </span>
+      ) : null}
+      {sources.length ? (
+        <span className="text-ink-faint">
+          Source: {[...new Set(sources.map((s) => names.get(s.source) ?? s.source))].join(", ")} ({[...new Set(sources.map((s) => s.licence))].join(", ")})
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function Library({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId);
-  const activities = useTripActivities(tripId);
+  const own = useTripActivities(tripId); // the group's own ideas, for "Find places"
+  const facets = useActivityFacets(tripId);
+  const [scope, setScope] = useState<keyof typeof SCOPE_LABEL>("all");
   const [city, setCity] = useState("");
   const [tag, setTag] = useState("");
+  const [category, setCategory] = useState("");
+  const [source, setSource] = useState("");
+  const [maxRank, setMaxRank] = useState("");
   const [fixedOnly, setFixedOnly] = useState(false);
+  const [text, setText] = useState("");
+  const q = useDebounced(text.trim(), 300);
 
-  const all = useMemo(() => activities.data ?? [], [activities.data]);
-  const cities = useMemo(
-    () => [...new Map(all.map((a) => [a.cityCode, a.cityName])).entries()].sort((a, b) => a[1].localeCompare(b[1])),
-    [all],
+  const filters = useMemo<ActivityPageQuery>(
+    () => ({
+      scope,
+      ...(city ? { city } : {}),
+      ...(tag ? { tag } : {}),
+      ...(category ? { category } : {}),
+      ...(source ? { source } : {}),
+      ...(maxRank ? { maxRank: Number(maxRank) } : {}),
+      ...(fixedOnly ? { fixedDates: true } : {}),
+      ...(q ? { q } : {}),
+    }),
+    [scope, city, tag, category, source, maxRank, fixedOnly, q],
   );
-  const tags = useMemo(() => [...new Set(all.flatMap((a) => a.tags))].sort(), [all]);
-  const shown = all.filter(
-    (a) => (!city || a.cityCode === city) && (!tag || a.tags.includes(tag)) && (!fixedOnly || isFixedDate(a.when)),
-  );
+  const pages = useActivityPages(tripId, filters);
+  const shown = useMemo(() => pages.data?.pages.flatMap((p) => p.items) ?? [], [pages.data]);
+  const total = pages.data?.pages[0]?.total ?? 0;
+
+  const f = facets.data;
+  const cityName = f?.cities.find((c) => c.code === city)?.name ?? city;
   const canEdit = hasRole(trip.data?.role, "editor");
   const isOwner = trip.data?.role === "owner";
-  const pinned = all.filter((a) => a.lat != null).length;
+  const hasCatalogue = (f?.totals.catalogue ?? 0) > 0;
 
   return (
     <>
@@ -96,42 +161,91 @@ function Library({ tripId }: { tripId: string }) {
         title="Activities"
         meta={
           <>
-            <BoardStat label="Ideas" value={all.length} />
-            <BoardStat label="Cities" value={cities.length} />
-            <BoardStat label="Planned somewhere" value={all.filter((a) => a.plannedIn.length).length} />
-            <BoardStat label="On the map" value={pinned} />
+            <BoardStat label="Ideas" value={f?.totals.ideas ?? 0} />
+            {hasCatalogue ? <BoardStat label="In the catalogue" value={f?.totals.catalogue ?? 0} /> : null}
+            <BoardStat label="Cities" value={f?.totals.cities ?? 0} />
+            <BoardStat label="Planned somewhere" value={f?.totals.planned ?? 0} />
+            <BoardStat label="On the map" value={f?.totals.onMap ?? 0} />
           </>
         }
       />
       <main className="mx-auto grid grid-cols-1 max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_320px]">
         <section className="space-y-3">
-          {isOwner ? <FindPlaces activities={shown} /> : null}
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={city} onChange={(e) => setCity(e.target.value)} aria-label="Filter by city">
-              <option value="">All cities</option>
-              {cities.map(([code, name]) => (
-                <option key={code} value={code}>
-                  {name}
-                </option>
-              ))}
-            </Select>
-            <Select value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Filter by tag">
-              <option value="">All tags</option>
-              {tags.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </Select>
-            <label className="flex items-center gap-2 text-sm text-ink-soft">
-              <input type="checkbox" checked={fixedOnly} onChange={(e) => setFixedOnly(e.target.checked)} className="h-4 w-4" />
-              Fixed dates only
-            </label>
-            <span className="ml-auto text-xs text-ink-faint">{shown.length} shown</span>
+          {isOwner ? <FindPlaces activities={own.data ?? []} /> : null}
+          <div className="space-y-2" data-testid="library-filters">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Search by name or address"
+              aria-label="Search activities"
+              type="search"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              {hasCatalogue ? (
+                <Select value={scope} onChange={(e) => setScope(e.target.value as keyof typeof SCOPE_LABEL)} aria-label="Show">
+                  {Object.entries(SCOPE_LABEL).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              ) : null}
+              <Select value={city} onChange={(e) => setCity(e.target.value)} aria-label="Filter by city">
+                <option value="">All cities</option>
+                {(f?.cities ?? []).map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name} ({c.count})
+                  </option>
+                ))}
+              </Select>
+              <Select value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Filter by tag">
+                <option value="">All tags</option>
+                {(f?.tags ?? []).map((t) => (
+                  <option key={t.name} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </Select>
+              {hasCatalogue ? (
+                <>
+                  <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
+                    <option value="">All categories</option>
+                    {(f?.categories ?? []).map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {humanize(c.name)} ({c.count})
+                      </option>
+                    ))}
+                  </Select>
+                  <Select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Filter by source">
+                    <option value="">All sources</option>
+                    {(f?.sources ?? []).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <Select value={maxRank} onChange={(e) => setMaxRank(e.target.value)} aria-label="Filter by rank">
+                    {TOP_PICKS.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                </>
+              ) : null}
+              <label className="flex items-center gap-2 text-sm text-ink-soft">
+                <input type="checkbox" checked={fixedOnly} onChange={(e) => setFixedOnly(e.target.checked)} className="h-4 w-4" />
+                Fixed dates only
+              </label>
+              <span className="ml-auto text-xs text-ink-faint" data-testid="result-count">
+                {pages.isPending ? "" : `${shown.length} of ${total} shown`}
+              </span>
+            </div>
           </div>
-          {activities.isPending ? <Spinner /> : null}
-          {activities.error ? <ErrorNote error={activities.error} /> : null}
-          <ul className="space-y-2">
+          {pages.isPending ? <Spinner /> : null}
+          {pages.error ? <ErrorNote error={pages.error} /> : null}
+          {!pages.isPending && !shown.length ? <p className="text-sm text-ink-soft">Nothing matches those filters.</p> : null}
+          <ul className="space-y-2" data-testid="activity-list">
             {shown.map((a) => (
               <ActivityItem
                 key={a.id}
@@ -144,22 +258,32 @@ function Library({ tripId }: { tripId: string }) {
                   </span>
                 }
                 footer={
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-ink-soft">
-                    {a.plannedIn.length ? "Planned in" : "Not planned in any route"}
-                    {a.plannedIn.map((p) => (
-                      <Link key={`${p.routeId}-${p.stopId}`} href={`/routes/${p.routeId}`}>
-                        <Tag tone="dark">{p.routeName}</Tag>
-                      </Link>
-                    ))}
-                  </div>
+                  <>
+                    <CatalogueFooter activity={a} facets={f} />
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-ink-soft">
+                      {a.plannedIn.length ? "Planned in" : "Not planned in any route"}
+                      {a.plannedIn.map((p) => (
+                        <Link key={`${p.routeId}-${p.stopId}`} href={`/routes/${p.routeId}`}>
+                          <Tag tone="dark">{p.routeName}</Tag>
+                        </Link>
+                      ))}
+                    </div>
+                  </>
                 }
               />
             ))}
           </ul>
+          {pages.hasNextPage ? (
+            <div className="flex justify-center">
+              <Button data-testid="show-more" onClick={() => void pages.fetchNextPage()} disabled={pages.isFetchingNextPage}>
+                {pages.isFetchingNextPage ? "Loading" : `Show ${Math.min(50, total - shown.length)} more`}
+              </Button>
+            </div>
+          ) : null}
         </section>
         <aside>
           {canEdit && city ? (
-            <NewActivityForm tripId={tripId} cityCode={city} cityName={cities.find(([c]) => c === city)?.[1] ?? city} />
+            <NewActivityForm tripId={tripId} cityCode={city} cityName={cityName} />
           ) : canEdit ? (
             <p className="rounded-xl border border-dashed border-line p-3 text-sm text-ink-soft">
               Pick a city to add an activity there, or add one from a stop in the route editor.

@@ -1,13 +1,16 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Smoke tests against a real API and a throwaway graph (trippr_e2e), which
- * is reset and re-seeded with the real trip every run.
+ * is reset, re-seeded with the real trip and loaded with a small catalogue bundle every run.
  */
 const API_PORT = 8081;
 const WEB_PORT = 3100;
 export const E2E_API_URL = `http://localhost:${API_PORT}`;
 export const E2E_OWNER_INVITE = "e2e-owner-invite-token";
+/** The data pipeline's golden bundle (Tokyo and Osaka places), put in the graph by the real load job. */
+export const E2E_BUNDLES = fileURLToPath(new URL("../../pipelines/tests/fixtures/expected/bundle", import.meta.url));
 
 const apiEnv = {
   NODE_ENV: "test",
@@ -52,7 +55,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "pnpm --dir ../.. db:reset && pnpm --dir ../api exec tsx src/flight-snapshots.ts --demo-seed && pnpm --dir ../api exec tsx src/server.ts",
+      command: `pnpm --dir ../.. db:reset && pnpm --dir ../.. db:load-bundle --bundle "${E2E_BUNDLES}" && pnpm --dir ../api exec tsx src/flight-snapshots.ts --demo-seed && pnpm --dir ../api exec tsx src/server.ts`,
       url: `${E2E_API_URL}/health`,
       env: apiEnv,
       reuseExistingServer: !process.env.CI,

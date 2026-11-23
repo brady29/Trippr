@@ -1,8 +1,12 @@
 "use client";
 
 import type {
+  ActivityFacets,
+  ActivityPage,
+  ActivityPageQuery,
   AddStopBody,
   City,
+  DataSourcesResponse,
   Comment,
   CompareResult,
   CreateActivityBody,
@@ -20,7 +24,7 @@ import type {
   TripListItem,
 } from "@trippr/contracts";
 import { computeBudget, effectiveStopCosts, runChecks, worstLevel } from "@trippr/rules";
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, isConflict } from "./api";
 import { useToast } from "@/components/toast";
 import { useAuth } from "./auth";
@@ -34,6 +38,9 @@ export const keys = {
   route: (id: string) => ["route", id] as const,
   library: (routeId: string) => ["library", routeId] as const,
   tripActivities: (tripId: string) => ["trip-activities", tripId] as const,
+  // Under the same prefix, so every change that refreshes the activity lists refreshes these too.
+  activityPage: (tripId: string, filters: ActivityPageQuery) => ["trip-activities", tripId, "page", filters] as const,
+  activityFacets: (tripId: string) => ["trip-activities", tripId, "facets"] as const,
   comments: (activityId: string) => ["comments", activityId] as const,
   compare: (a: string, b: string) => ["compare", a, b] as const,
 };
@@ -70,6 +77,38 @@ export const useTripActivities = (tripId: string) => {
     enabled: ready && Boolean(tripId),
   });
 };
+
+const queryString = (params: Record<string, string | number | boolean | undefined>) => {
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "" && v !== false) search.set(k, String(v));
+  const text = search.toString();
+  return text ? `?${text}` : "";
+};
+
+/** The activity library, filtered and paged 50 at a time; "show more" fetches the next page. */
+export const useActivityPages = (tripId: string, filters: ActivityPageQuery) => {
+  const ready = useReady();
+  return useInfiniteQuery({
+    queryKey: keys.activityPage(tripId, filters),
+    queryFn: ({ pageParam }) => api<ActivityPage>(`/trips/${tripId}/activities/page${queryString({ ...filters, offset: pageParam })}`),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.nextOffset ?? undefined,
+    enabled: ready && Boolean(tripId),
+  });
+};
+
+export const useActivityFacets = (tripId: string) => {
+  const ready = useReady();
+  return useQuery({
+    queryKey: keys.activityFacets(tripId),
+    queryFn: () => api<ActivityFacets>(`/trips/${tripId}/activities/facets`),
+    enabled: ready && Boolean(tripId),
+  });
+};
+
+/** The Data page: public, so it loads whether or not anyone is signed in. */
+export const useDataSources = () =>
+  useQuery({ queryKey: ["data-sources"], queryFn: () => api<DataSourcesResponse>("/data/sources"), staleTime: 60_000 });
 
 export const useComments = (activityId: string, enabled: boolean) => {
   const ready = useReady();
@@ -355,7 +394,13 @@ export function useVote() {
       qc.setQueriesData<StopLibrary[]>({ queryKey: ["library"] }, (old) =>
         old?.map((l) => ({ ...l, activities: l.activities.map(patch) })),
       );
-      qc.setQueriesData<LibraryActivity[]>({ queryKey: ["trip-activities"] }, (old) => old?.map(patch));
+      // Both the plain list and the paged library (pages of items) hold activities.
+      qc.setQueriesData({ queryKey: ["trip-activities"] }, (old: unknown) => {
+        if (Array.isArray(old)) return (old as LibraryActivity[]).map(patch);
+        const paged = old as { pages?: ActivityPage[] } | undefined;
+        if (paged?.pages) return { ...paged, pages: paged.pages.map((p) => ({ ...p, items: p.items.map(patch) })) };
+        return old;
+      });
     },
     onError: (error) => {
       void qc.invalidateQueries({ queryKey: ["library"] });

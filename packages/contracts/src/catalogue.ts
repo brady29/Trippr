@@ -154,7 +154,22 @@ export const activityPageQuery = z.object({
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
   limit: z.coerce.number().int().min(1).max(100).default(PAGE_SIZE),
 });
-export type ActivityPageQuery = z.input<typeof activityPageQuery>;
+/** What a client sends: every field is optional (the server fills in the defaults). */
+export interface ActivityPageQuery {
+  scope?: (typeof ACTIVITY_SCOPES)[number];
+  city?: string;
+  tag?: string;
+  category?: string;
+  q?: string;
+  source?: string;
+  minScore?: number;
+  maxRank?: number;
+  fixedDates?: boolean;
+  includeUnlisted?: boolean;
+  sort?: (typeof ACTIVITY_SORTS)[number];
+  offset?: number;
+  limit?: number;
+}
 export type ActivityPageParams = z.output<typeof activityPageQuery>;
 
 export interface ActivityPage {

@@ -111,6 +111,9 @@ export function TripNav({ tripId, tripName }: { tripId: string; tripName?: strin
       <NavLink href={`${base}/paths`} active={path.startsWith(`${base}/paths`)}>
         Paths
       </NavLink>
+      <NavLink href="/data" active={path.startsWith("/data")}>
+        Data
+      </NavLink>
       <Presence tripId={tripId} />
       <AskButton tripId={tripId} />
     </>

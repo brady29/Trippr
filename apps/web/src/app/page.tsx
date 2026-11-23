@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BoardHeader, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, NavLink, RequireAuth, TopBar } from "@/components/shell";
 import { Button, ErrorNote, Input, Label, Spinner, Tag } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -88,7 +88,12 @@ function Trips() {
 export default function Home() {
   return (
     <>
-      <TopBar />
+      <TopBar>
+        <NavLink href="/" active>
+          Trips
+        </NavLink>
+        <NavLink href="/data">Data</NavLink>
+      </TopBar>
       <RequireAuth>
         <Trips />
       </RequireAuth>
