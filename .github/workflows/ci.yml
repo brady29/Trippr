@@ -136,3 +136,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f apps/api/Dockerfile -t trippr-api:ci .
+      - name: The data load job starts from the same image
+        run: docker run --rm trippr-api:ci node dist/load-bundle.js --help

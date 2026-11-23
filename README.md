@@ -200,6 +200,8 @@ uv run pytest                                        # offline tests on checked-
 
 CI runs ruff and pytest for the pipeline; `.github/workflows/data-pipeline.yml` runs it monthly and uploads to Cloud Storage once `DATA_BUCKET` is set. Details in [pipelines/README.md](pipelines/README.md).
 
+The pipeline now ends by ranking the places per city (a graph budget of about 8,000, a category mix, provenance on every place) and writing a checked **bundle**. A load job, the API image run as a Cloud Run Job, merges the newest passing bundle into the graph without touching votes, plans or hand edits; the Activities page filters and pages the result, and the public **Data** page (at /data) shows each source's licence, attribution, counts, freshness and the latest quality checks. Run it locally with `pnpm db:load-bundle --bundle pipelines/out/bundles --dry-run`; see [docs/data-platform.md](docs/data-platform.md).
+
 ## Flight prices
 
 Each flight between two airports on a trip's current route gets a daily price snapshot (the planned date and 3 days either side), a price history chart, a plain-language "book now or wait" estimate and a notice when a price falls 15% below its previous low. The feature is off until `FLIGHT_PRICES_ENABLED=true`. Prices come from the Travelpayouts Data API (cached fares from recent searches, so they are estimates and the app says so); the provider choice and the options that were ruled out are in [docs/flight-prices-provider-spike.md](docs/flight-prices-provider-spike.md). Nothing is scraped.

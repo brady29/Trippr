@@ -4,7 +4,7 @@ Python package that turns open place datasets into one clean, checked, deduplica
 for Trippr's 108 cities. PRs 1 and 2 of the [Trip Data Platform Spec](../docs/data-platform-spec.md):
 extract and stage **Overture Maps Places**, **Foursquare Open Source Places**, **OpenStreetMap**,
 **Wikidata** and **Wikivoyage**, match the same place across sources into golden records, run quality
-checks and write a run report. Curation, enrichment and loading into the graph come in later PRs.
+checks and write a run report. PR 3 adds curation and the bundle (below, and in [docs/data-platform.md](../docs/data-platform.md)); enrichment comes in a later PR.
 
 ```
 extract ─► raw/<source>/<date>/<CITY>.parquet + _meta.json
@@ -13,6 +13,8 @@ match   ─► matched/<date>/links.parquet (record -> cluster) + golden.parquet
 eval-er ─► matched/<date>/eval.json          (precision and recall on eval/er_pairs.csv)
 check   ─► reports/<date>.checks.json        (exit 1 on a failed check)
 report  ─► reports/<date>.md + <date>.json   (+ $GITHUB_STEP_SUMMARY, + latest.json when passed)
+curate  ─► curated/<date>/curated_place.parquet + curate.stats.json   (from matched/<date>/golden.parquet, else staged rows)
+bundle  ─► bundles/<date>/{places.jsonl.gz, places.parquet, sources.json, manifest.json}   (exit 1 if a check fails)
 upload  ─► gs://$DATA_BUCKET/...             (same layout)
 ```
 
@@ -30,6 +32,8 @@ uv run python -m trippr_data match        # entity resolution: matched/<date>/{l
 uv run python -m trippr_data eval-er      # precision / recall on the labelled pairs (eval/)
 uv run python -m trippr_data check
 uv run python -m trippr_data report       # prints the report path
+uv run python -m trippr_data curate       # ranks places and picks ~8,000 for the graph (CURATE_BUDGET)
+uv run python -m trippr_data bundle       # writes bundles/<date>/ with its checks
 
 uv run python -m trippr_data run --cities all   # all of the above, plus upload when DATA_BUCKET is set
 
@@ -53,6 +57,7 @@ took about 37 minutes on a home connection for 6.8 million rows (560 MB of raw P
 | `HF_TOKEN`, `FSQ_PLACES_PATH`, `FSQ_S3_REGION` | extract | Foursquare token and an optional other location (see below) |
 | `OSM_GROUPS` | extract | Comma list of Overpass query groups to fetch (`sights,amenity,shop,food`; default all). The `food` group (restaurants, cafes, bars) is by far the heaviest query |
 | `TRIPPR_DATA_OUT` | all | Output root instead of `pipelines/out/` |
+| `CURATE_BUDGET` | curate | Total curated places for the graph (default 8000; floor and cap per city in `config/curation.yaml`) |
 
 ## Layout
 
@@ -67,6 +72,7 @@ took about 37 minutes on a home connection for 6.8 million rows (560 MB of raw P
 | `config/category_map_wikivoyage.csv` | Wikivoyage listing type (see, do, eat, drink, buy, sleep) → Trippr category |
 | `config/category_family.csv` | Category families: two places are only compared when their categories share one |
 | `config/city_radius.csv` | Per-city radius overrides (small towns and islands at 10 km, Macau at 10 km) |
+| `config/curation.yaml`, `config/category_weight.csv` | Curation settings: graph budget, per-city floor and cap, score weights, category weights and shares, colour-tag mix |
 | `config/countries.csv` | Country bounding boxes (for the coordinate check) and local languages (for `name_local`) |
 | `src/trippr_data/` | `extract/` (one module per source), `stage.py`, `match.py`, `similarity.py`, `eval_er.py`, `checks.py`, `report.py`, `storage.py`, `cli.py` |
 | `eval/` | The hand-labelled pairs for entity resolution and how they were labelled (`eval/README.md`) |

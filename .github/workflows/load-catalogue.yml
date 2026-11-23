@@ -1,0 +1,54 @@
+name: Load catalogue
+
+# Runs the data load job (a Cloud Run Job made from the API image: `node dist/load-bundle.js`), which puts the
+# newest bundle that passed its checks into the graph. Monthly, a day after the data pipeline, and on demand.
+# See docs/data-platform.md.
+#
+# Skipped until the CATALOGUE_LOAD_JOB repository variable names the job. Nothing here creates the job or any
+# Google Cloud resource; the one-time setup commands are in docs/data-platform.md.
+# Repository variables: CATALOGUE_LOAD_JOB (job name), GCP_REGION (default us-central1),
+#   GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT (same as deploy.yml; the service account needs
+#   roles/run.developer on the job).
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Work out what would change and write nothing"
+        type: boolean
+        default: false
+  schedule:
+    # 06:00 UTC on the 27th: after the data pipeline's run on the 26th.
+    - cron: "0 6 27 * *"
+
+concurrency:
+  group: load-catalogue
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: Run the load job
+    if: vars.CATALOGUE_LOAD_JOB != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      JOB: ${{ vars.CATALOGUE_LOAD_JOB }}
+      REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Execute the job and wait for it
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            gcloud run jobs execute "$JOB" --region "$REGION" --args="dist/load-bundle.js,--dry-run,--json" --wait
+          else
+            gcloud run jobs execute "$JOB" --region "$REGION" --wait
+          fi

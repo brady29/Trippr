@@ -1,8 +1,9 @@
 name: Data pipeline
 
 # Monthly (and on demand): extract Overture Places for every Trippr city, stage them into the
-# staged_place schema, run the quality checks, write the run report to this run's summary, and
-# upload raw/, staging/ and reports/ to gs://$DATA_BUCKET. A failed check fails the workflow.
+# staged_place schema, run the quality checks, curate the places for the graph, write a checked bundle,
+# write the run report to this run's summary, and upload raw/, staging/, curated/, bundles/ and reports/ to
+# gs://$DATA_BUCKET. A failed check fails the workflow. The load job (load-catalogue.yml) takes the bundle from there.
 # See pipelines/README.md and docs/data-platform-spec.md.
 #
 # Skipped until the DATA_BUCKET repository variable exists.
