@@ -59,8 +59,9 @@ def test_mapping_csvs_load_and_only_target_taxonomy(source, taxonomy):
         ("ski_resort", ["lodging", "resort", "ski_resort"], ("sport_activity", "mapped")),
         ("atm", ["services_and_business", "financial_service", "atm"], (None, "excluded")),
         ("hotel", ["lodging", "hotel"], (None, "excluded")),
-        ("shopping", ["shopping"], (None, "unmapped")),  # top level only: no rule
-        (None, None, (None, "unmapped")),
+        ("shopping", ["shopping"], (None, "excluded")),  # top level only: dropped on purpose
+        ("rodeo", ["arts_and_entertainment", "rodeo"], (None, "excluded")),  # falls back to its top level
+        (None, None, (None, "uncategorised")),
     ],
 )
 def test_overture_mapping(primary, hierarchy, expected, taxonomy):
@@ -80,8 +81,13 @@ def test_overture_mapping(primary, hierarchy, expected, taxonomy):
         ("Community and Government > Spiritual Center > Church", ("place_of_worship", "mapped")),
         ("Community and Government > Post Office", (None, "excluded")),
         ("Landmarks and Outdoors > Scenic Lookout", ("viewpoint", "mapped")),
-        ("Landmarks and Outdoors > Structure", (None, "unmapped")),
-        (None, (None, "unmapped")),
+        ("Landmarks and Outdoors > Structure", (None, "excluded")),
+        ("Dining and Drinking > Snack Place", ("street_food", "mapped")),
+        ("Landmarks and Outdoors > Other Great Outdoors", ("park_garden", "mapped")),
+        ("Arts and Entertainment > Internet Cafe", ("arcade_gaming", "mapped")),
+        ("Arts and Entertainment > Museum", ("museum", "mapped")),  # a rule beats its excluded parent
+        ("Unknown Category > Thing", (None, "unmapped")),
+        (None, (None, "uncategorised")),
     ],
 )
 def test_foursquare_mapping(label, expected, taxonomy):

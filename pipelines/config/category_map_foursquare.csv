@@ -121,3 +121,18 @@ Business and Professional Services > Health and Beauty Service > Bathhouse,onsen
 Business and Professional Services,exclude
 Health and Medicine,exclude
 Event,exclude
+# Added 2026-11-22 after the first live run (most common unmapped labels)
+Landmarks and Outdoors > Structure,exclude
+Dining and Drinking > Snack Place,street_food
+Arts and Entertainment,exclude
+Landmarks and Outdoors > Other Great Outdoors,park_garden
+Landmarks and Outdoors > States and Municipalities,exclude
+Sports and Recreation,exclude
+Sports and Recreation > Water Sports > Swimming > Swimming Pool,exclude
+Sports and Recreation > Soccer > Soccer Field,exclude
+Sports and Recreation > Basketball > Basketball Court,exclude
+Sports and Recreation > Racquet Sports > Tennis > Tennis Court,exclude
+Arts and Entertainment > Internet Cafe,arcade_gaming
+Arts and Entertainment > Pool Hall,nightlife
+Landmarks and Outdoors > Field,exclude
+Landmarks and Outdoors > Farm,exclude

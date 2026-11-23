@@ -54,10 +54,12 @@ STAT_KEYS = (
     "located",
     "excluded",
     "unmapped",
+    "uncategorised",
     "no_name",
     "staged_rows",
     "excluded_share",
     "unmapped_share",
+    "uncategorised_share",
     "by_category",
     "per_city",
 )

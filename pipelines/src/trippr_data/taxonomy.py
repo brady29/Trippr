@@ -13,7 +13,7 @@ from .settings import CONFIG_DIR
 TAGS = ("sport", "tech", "nature", "culture", "food", "other")
 EXCLUDE = "exclude"
 
-Status = Literal["mapped", "excluded", "unmapped"]
+Status = Literal["mapped", "excluded", "unmapped", "uncategorised"]
 
 
 @dataclass(frozen=True)
@@ -67,7 +67,12 @@ class CategoryMap:
     def resolve(
         self, primary: str | None, hierarchy: Sequence[str] | None = None
     ) -> tuple[str | None, Status]:
-        for key in self.candidates(primary, hierarchy):
+        """A place the source gave no category at all is "uncategorised": dropped, and reported apart
+        from "unmapped" (a category with no rule yet), so the unmapped share points at missing rules."""
+        keys = self.candidates(primary, hierarchy)
+        if not keys:
+            return None, "uncategorised"
+        for key in keys:
             target = self.rules.get(key)
             if target == EXCLUDE:
                 return None, "excluded"

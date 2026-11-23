@@ -98,7 +98,9 @@ def test_stats_add_up(staged_out):
             s["unique_rows"] - s["closed"]
             == s["no_city"] + s["country_mismatch"] + s["other_city"] + s["located"]
         )
-        assert s["located"] == s["excluded"] + s["unmapped"] + s["staged_rows"] + s["no_name"]
+        assert s["located"] == (
+            s["excluded"] + s["unmapped"] + s["uncategorised"] + s["staged_rows"] + s["no_name"]
+        )
         assert sum(c["staged_rows"] for c in s["per_city"].values()) == s["staged_rows"]
         assert 0 <= s["unmapped_share"] <= 1
 

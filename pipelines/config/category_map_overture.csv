@@ -184,3 +184,9 @@ community_and_government,exclude
 lifestyle_services,exclude
 lodging,exclude
 travel_and_transportation,exclude
+# Added 2026-11-22 after the first live run: places tagged only with a top-level category
+shopping,exclude
+food_and_drink,restaurant
+arts_and_entertainment,exclude
+sports_and_recreation,exclude
+geographic_entities,exclude

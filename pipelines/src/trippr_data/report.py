@@ -57,19 +57,21 @@ def build_report(
     lines += [
         "## Sources",
         "",
-        "| Source | Version | Raw rows | Staged rows | Excluded share | Unmapped share | Licence |",
-        "|---|---|---:|---:|---:|---:|---|",
+        "| Source | Version | Raw rows | Staged rows | Excluded share | No category | Unmapped share | Licence |",
+        "|---|---|---:|---:|---:|---:|---:|---|",
     ]
     for s, st in stats.items():
         lines.append(
             f"| {registry.sources[s].name if s in registry.sources else s} | {st['version']} | {st['raw_rows']:,} "
-            f"| {st['staged_rows']:,} | {_pct(st['excluded_share'])} | {_pct(st['unmapped_share'])} | {st['licence']} |"
+            f"| {st['staged_rows']:,} | {_pct(st['excluded_share'])} | {_pct(st.get('uncategorised_share', 0))} "
+            f"| {_pct(st['unmapped_share'])} | {st['licence']} |"
         )
     lines += [
         "",
         "Shares are of rows inside a Trippr city (after dropping duplicates and closed places). "
         "Excluded categories are dropped on purpose (offices, clinics, shops that are not trip activities); "
-        "unmapped ones have no rule in the source's mapping CSV yet.",
+        "places with no category at all are dropped and counted under No category; "
+        "unmapped ones have a category with no rule in the source's mapping CSV yet.",
         "",
     ]
 

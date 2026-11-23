@@ -23,8 +23,8 @@
       "closed": 1,
       "country_mismatch": 1,
       "duplicate_rows": 1,
-      "excluded": 10,
-      "excluded_share": 0.2703,
+      "excluded": 27,
+      "excluded_share": 0.7297,
       "located": 37,
       "no_city": 4,
       "no_name": 0,
@@ -41,9 +41,11 @@
       },
       "raw_rows": 46,
       "staged_rows": 10,
+      "uncategorised": 0,
+      "uncategorised_share": 0.0,
       "unique_rows": 45,
-      "unmapped": 17,
-      "unmapped_share": 0.4595
+      "unmapped": 0,
+      "unmapped_share": 0.0
     },
     "overture": {
       "by_category": {
@@ -76,8 +78,8 @@
       "closed": 3,
       "country_mismatch": 0,
       "duplicate_rows": 0,
-      "excluded": 115,
-      "excluded_share": 0.4275,
+      "excluded": 117,
+      "excluded_share": 0.4349,
       "located": 269,
       "no_city": 25,
       "no_name": 0,
@@ -94,9 +96,11 @@
       },
       "raw_rows": 300,
       "staged_rows": 138,
+      "uncategorised": 14,
+      "uncategorised_share": 0.052,
       "unique_rows": 300,
-      "unmapped": 16,
-      "unmapped_share": 0.0595
+      "unmapped": 0,
+      "unmapped_share": 0.0
     }
   }
 }
