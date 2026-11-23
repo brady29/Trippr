@@ -65,3 +65,9 @@ One request per departure date, 7 per hop per day with the default window. The a
 1. Create a Travelpayouts account, connect the Aviasales programme, and read the current Terms and the Data API terms for storing and showing cached prices. If the terms forbid keeping snapshots, set `FLIGHT_PRICES_PROVIDER=demo` (sample data only) or stop at the live endpoint.
 2. Put the API token in Secret Manager as `TRAVELPAYOUTS_TOKEN` and pass it to the Cloud Run Job.
 3. Run one manual job (`--dry-run` first) and compare a stored price with the same fare on the Aviasales site.
+
+## Running the daily job (not yet created)
+
+The database is only reachable inside the VPC, so the job is a Cloud Run Job using the API image with the command `node dist/flight-snapshots.js`, the same VPC connector and database settings as the API, `FLIGHT_PRICES_ENABLED=true`, and `TRAVELPAYOUTS_TOKEN` mapped from Secret Manager. Trigger it once a day with Cloud Scheduler. No Google Cloud resources were created for this change. The notices and the leg price refresh on the next page load or tab focus (the live feed only runs in the API process).
+
+Limits to know: only flights between two airports on a trip's current route are tracked; the flight home is not a leg in the data model today, so it is not covered.
