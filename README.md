@@ -200,6 +200,14 @@ uv run pytest                                        # offline tests on checked-
 
 CI runs ruff and pytest for the pipeline; `.github/workflows/data-pipeline.yml` runs it monthly and uploads to Cloud Storage once `DATA_BUCKET` is set. Details in [pipelines/README.md](pipelines/README.md).
 
+## Flight prices
+
+Each flight between two airports on a trip's current route gets a daily price snapshot (the planned date and 3 days either side), a price history chart, a plain-language "book now or wait" estimate and a notice when a price falls 15% below its previous low. The feature is off until `FLIGHT_PRICES_ENABLED=true`. Prices come from the Travelpayouts Data API (cached fares from recent searches, so they are estimates and the app says so); the provider choice and the options that were ruled out are in [docs/flight-prices-provider-spike.md](docs/flight-prices-provider-spike.md). Nothing is scraped.
+
+- **Daily job:** `node dist/flight-snapshots.js` in the API image (run it as a Cloud Run Job on a schedule), or `pnpm flights:snapshot` locally. It does nothing until `FLIGHT_PRICES_ENABLED` is on and `TRAVELPAYOUTS_TOKEN` is set (a Secret Manager secret, never in the repo), takes one snapshot per route and day (re-runs cost nothing), keeps to `FLIGHT_PRICES_DAILY_BUDGET` requests a day and stops at the provider's rate limit. `--dry-run` prints the plan.
+- **Demo mode:** `FLIGHT_PRICES_PROVIDER=demo` with `pnpm flights:snapshot --demo-seed` writes invented history, labelled "Sample data" everywhere it shows. End-to-end tests use it.
+- **API:** `GET /legs/:id/flight-prices` and `GET /trips/:id/flight-prices` (any member, viewers included). The signal is the pure `bookingSignal` in `packages/rules`.
+
 ## Deploying
 
 Production runs in `us-central1`:
