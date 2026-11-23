@@ -22,7 +22,10 @@ from .duck import connect, rows, run, scalar, sql_str
 from .layout import (
     DATE_RE,
     checks_file,
+    eval_file,
+    golden_file,
     latest_json,
+    links_file,
     read_json,
     reports_dir,
     staged_file,
@@ -284,6 +287,146 @@ def check_categories(con: duckdb.DuckDBPyConnection, ctx: CheckContext) -> list[
     return [CheckResult("categories.in_taxonomy", "pass", f"{len(used)} taxonomy categories in use")]
 
 
+MAX_CLUSTER_SPREAD_M = 500.0
+SPREAD_SLACK_M = 1.0
+MIN_ER_PRECISION = 0.95
+MIN_ER_RECALL = 0.85
+MAX_DUPLICATE_GOLDEN_SHARE = 0.005
+
+
+def check_match(con: duckdb.DuckDBPyConnection, ctx: CheckContext, out: Path, date: str) -> list[CheckResult]:
+    """Checks on matched/<date>/: spread, link integrity, golden licences, duplicates and the ER eval."""
+    if not golden_file(out, date).is_file() or not links_file(out, date).is_file():
+        return []
+    run(
+        con,
+        f"CREATE OR REPLACE VIEW links AS SELECT * FROM read_parquet({sql_str(links_file(out, date).as_posix())})",
+    )
+    run(
+        con,
+        f"CREATE OR REPLACE VIEW golden AS SELECT * FROM read_parquet({sql_str(golden_file(out, date).as_posix())})",
+    )
+    results: list[CheckResult] = []
+
+    # no cluster wider than 500 m
+    run(
+        con,
+        """CREATE OR REPLACE TEMP TABLE member_xy AS
+           SELECT l.cluster_id, l.record_id, s.lat, s.lon FROM links l
+           JOIN staged s ON s.source = l.source AND s.source_id = l.source_id
+           WHERE l.cluster_id IN (SELECT cluster_id FROM links GROUP BY 1 HAVING count(*) > 1)""",
+    )
+    wide = rows(
+        con,
+        f"""SELECT a.cluster_id, max(1000 * hav_km(a.lat, a.lon, b.lat, b.lon)) AS spread_m
+            FROM member_xy a JOIN member_xy b ON a.cluster_id = b.cluster_id AND a.record_id < b.record_id
+            GROUP BY 1 HAVING max(1000 * hav_km(a.lat, a.lon, b.lat, b.lon)) > {MAX_CLUSTER_SPREAD_M + SPREAD_SLACK_M}
+            ORDER BY 2 DESC LIMIT 10""",
+    )
+    results.append(
+        CheckResult(
+            "match.cluster_spread",
+            "fail",
+            f"{len(wide)}+ clusters wider than {MAX_CLUSTER_SPREAD_M:.0f} m",
+            {"examples": wide},
+        )
+        if wide
+        else CheckResult(
+            "match.cluster_spread", "pass", f"no cluster wider than {MAX_CLUSTER_SPREAD_M:.0f} m"
+        )
+    )
+
+    # every link points at an existing record, every record has one link, every cluster has a golden record
+    problems = {
+        "dangling_links": scalar(
+            con,
+            "SELECT count(*) FROM links l LEFT JOIN staged s ON s.source = l.source AND s.source_id = l.source_id "
+            "WHERE s.source_id IS NULL",
+        ),
+        "records_without_link": scalar(
+            con,
+            "SELECT count(*) FROM staged s LEFT JOIN links l ON s.source = l.source AND s.source_id = l.source_id "
+            "WHERE l.record_id IS NULL",
+        ),
+        "records_linked_twice": scalar(
+            con, "SELECT count(*) FROM (SELECT record_id FROM links GROUP BY 1 HAVING count(*) > 1)"
+        ),
+        "links_without_golden": scalar(
+            con,
+            "SELECT count(*) FROM links l LEFT JOIN golden g ON g.golden_id = l.cluster_id WHERE g.golden_id IS NULL",
+        ),
+    }
+    bad = {k: v for k, v in problems.items() if v}
+    results.append(
+        CheckResult("match.links", "fail", f"link problems: {bad}", problems)
+        if bad
+        else CheckResult("match.links", "pass", "every link points at an existing record and cluster")
+    )
+
+    # golden records keep a licence list that is covered by the registry
+    no_licence = scalar(con, "SELECT count(*) FROM golden WHERE licences IS NULL OR len(licences) = 0")
+    inconsistent = scalar(con, "SELECT count(*) FROM golden WHERE n_records <> len(sources)")
+    licences_used = sorted(
+        r["licence"] for r in rows(con, "SELECT DISTINCT unnest(licences) AS licence FROM golden")
+    )
+    registered = {lic for entry in ctx.registry.sources.values() for lic in entry.licence_ids()}
+    unregistered = sorted(set(licences_used) - registered)
+    if no_licence or inconsistent or unregistered:
+        results.append(
+            CheckResult(
+                "match.golden_licences",
+                "fail",
+                f"{no_licence} golden records without a licence list, {inconsistent} with an inconsistent "
+                f"sources list, licences not in sources.yaml: {unregistered}",
+            )
+        )
+    else:
+        results.append(
+            CheckResult(
+                "match.golden_licences",
+                "pass",
+                "every golden record lists its sources and licences (" + ", ".join(licences_used) + ")",
+            )
+        )
+
+    # no two golden records within 50 m with the same name (spec, Feature 7)
+    total = scalar(con, "SELECT count(*) FROM golden") or 0
+    dup = scalar(
+        con,
+        """SELECT count(DISTINCT a.golden_id) FROM golden a JOIN golden b
+             ON a.city_code = b.city_code AND a.golden_id < b.golden_id AND lower(a.name) = lower(b.name)
+            AND abs(a.lat - b.lat) < 0.0006 AND abs(a.lon - b.lon) < 0.0007
+            AND 1000 * hav_km(a.lat, a.lon, b.lat, b.lon) < 50""",
+    )
+    share = dup / total if total else 0.0
+    results.append(
+        CheckResult(
+            "match.duplicate_golden",
+            "fail" if share > MAX_DUPLICATE_GOLDEN_SHARE else ("warn" if dup else "pass"),
+            f"{dup} golden records ({share:.2%}) have another golden record within 50 m with the same name "
+            f"(limit {MAX_DUPLICATE_GOLDEN_SHARE:.1%})",
+        )
+    )
+
+    # entity-resolution quality on the labelled pairs
+    if eval_file(out, date).is_file():
+        ev = read_json(eval_file(out, date))
+        at = ev["at_threshold"]
+        detail = (
+            f"precision {at['precision']:.1%} (target {MIN_ER_PRECISION:.0%}), recall {at['recall']:.1%} "
+            f"(target {MIN_ER_RECALL:.0%}) on {ev['pairs_labelled']} labelled pairs"
+        )
+        status: Status = (
+            "fail"
+            if at["precision"] < MIN_ER_PRECISION
+            else ("warn" if at["recall"] < MIN_ER_RECALL else "pass")
+        )
+        results.append(CheckResult("match.eval", status, detail, {"at_threshold": at}))
+    else:
+        results.append(CheckResult("match.eval", "info", "no entity-resolution eval for this run"))
+    return results
+
+
 CHECKS: list[Callable[[duckdb.DuckDBPyConnection, CheckContext], list[CheckResult]]] = [
     check_schema,
     check_row_counts,
@@ -376,6 +519,11 @@ def check(
     )
     con = open_staged([staged_file(out, date, s) for s in sources])
     results = run_checks(con, ctx)
+    try:
+        results.extend(check_match(con, ctx, out, date))
+    except Exception as exc:  # a crashing check is a failed check
+        log.exception("match checks crashed")
+        results.append(CheckResult("match", "fail", f"match checks crashed: {exc}"))
     counts = counts_by_source_city(con)
     con.close()
     passed = not any(r.status == "fail" for r in results)

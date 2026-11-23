@@ -157,13 +157,18 @@ def token_set_similarity(ta: list[str], tb: list[str]) -> float:
 
 
 def name_similarity(a: str | None, b: str | None) -> float:
-    """Similarity of two names in [0, 1]: the better of Jaro-Winkler and the token-set measure.
+    """Similarity of two names in [0, 1]: the better of rescaled Jaro-Winkler and the token-set measure.
 
     Very short keys (two characters or fewer, common for Chinese and Japanese names) are only equal or
     an exact prefix of the other; fuzzy matching on two characters is noise.
     """
     ka, kb = name_key(a), name_key(b)
     return key_similarity(ka, kb)
+
+
+# Jaro-Winkler below this is noise between unrelated names; above it is rescaled onto 0..1 (the match
+# stage does the same in SQL with MatchConfig.jw_floor).
+JW_FLOOR = 0.7
 
 
 def key_similarity(ka: str | None, kb: str | None) -> float:
@@ -174,7 +179,8 @@ def key_similarity(ka: str | None, kb: str | None) -> float:
     if min(len(ka), len(kb)) <= 2:
         longer, shorter = (ka, kb) if len(ka) >= len(kb) else (kb, ka)
         return 0.8 if longer.startswith(shorter) else 0.0
-    return max(jaro_winkler(ka, kb), token_set_similarity(name_tokens(ka), name_tokens(kb)))
+    rescaled = max(0.0, (jaro_winkler(ka, kb) - JW_FLOOR) / (1 - JW_FLOOR))
+    return max(rescaled, token_set_similarity(name_tokens(ka), name_tokens(kb)))
 
 
 # Hosts where many places share the same address: the first path segment identifies the page.

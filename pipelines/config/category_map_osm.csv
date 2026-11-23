@@ -29,6 +29,7 @@ tourism=aquarium,aquarium_zoo
 tourism=theme_park,theme_park
 leisure=water_park,theme_park
 tourism=information+information=office,tour
+tourism=information,exclude
 tourism=artwork,exclude
 # Historic
 historic=castle,castle_palace

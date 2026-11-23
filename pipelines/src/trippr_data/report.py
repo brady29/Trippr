@@ -11,7 +11,9 @@ from typing import Any
 from .cities import load_cities
 from .layout import (
     checks_file,
+    eval_file,
     latest_json,
+    match_stats_file,
     read_json,
     report_json,
     report_md,
@@ -34,6 +36,60 @@ def _pct(x: float) -> str:
 
 def _cell(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ")
+
+
+def match_section(m: dict[str, Any], ev: dict[str, Any] | None, city_names: dict[str, str]) -> list[str]:
+    """The entity-resolution part of the report: match stats and the eval on the labelled pairs."""
+    sizes = ", ".join(f"{k}: {v:,}" for k, v in m["cluster_size_distribution"].items())
+    rules = ", ".join(f"{k} {v:,}" for k, v in m["links_by_rule"].items())
+    lines = [
+        "## Entity resolution",
+        "",
+        f"{m['records_in']:,} staged records became **{m['clusters_out']:,} places**: "
+        f"{m['multi_source_clusters']:,} ({_pct(m['multi_source_share'])}) are confirmed by more than one source, "
+        f"and {_pct(m['strong_link_share'])} of the linked records were linked by a strong rule "
+        f"(shared Wikidata QID or website). {m['refused_by_spread']:,} merges were refused by the 500 m spread guard "
+        f"and {m['candidate_pairs']:,} candidate pairs were scored.",
+        "",
+        f"- Cluster sizes (records per place): {sizes}",
+        f"- Links by rule: {rules}",
+        "",
+        "| Source | Records | In a multi-source place | Share |",
+        "|---|---:|---:|---:|",
+    ]
+    for src, v in m["by_source"].items():
+        share = v["in_multi_source_clusters"] / v["records"] if v["records"] else 0
+        lines.append(f"| {src} | {v['records']:,} | {v['in_multi_source_clusters']:,} | {_pct(share)} |")
+    gains = sorted(m["per_city"].items(), key=lambda kv: kv[1]["multi_source_clusters"], reverse=True)[:10]
+    lines += [
+        "",
+        "<details><summary>Cities with the most multi-source places</summary>",
+        "",
+        "| City | Records | Places | Multi-source places |",
+        "|---|---:|---:|---:|",
+    ]
+    lines += [
+        f"| {c} {city_names.get(c, '')} | {v['records']:,} | {v['clusters']:,} | {v['multi_source_clusters']:,} |"
+        for c, v in gains
+    ]
+    lines += ["", "</details>", ""]
+    if ev:
+        at = ev["at_threshold"]
+        lines += [
+            f"**Evaluation** on {ev['pairs_labelled']} hand-labelled candidate pairs "
+            f"({ev['positives']} matches; labelled by {ev['labelled_by']}): at threshold {ev['threshold']} "
+            f"precision **{_pct(at['precision'])}** (target 95%) and recall **{_pct(at['recall'])}** (target 85%), "
+            f"F1 {_pct(at['f1'])}.",
+            "",
+            "| Threshold | Precision | Recall | F1 |",
+            "|---:|---:|---:|---:|",
+        ]
+        lines += [
+            f"| {t} | {_pct(x['precision'])} | {_pct(x['recall'])} | {_pct(x['f1'])} |"
+            for t, x in ev["sweep"].items()
+        ]
+        lines.append("")
+    return lines
 
 
 def build_report(
@@ -88,6 +144,11 @@ def build_report(
             f"{st['country_mismatch']:,} | {st['other_city']:,} | {st['no_name']:,} |"
         )
     lines.append("")
+
+    match_stats = read_json(match_stats_file(out, date)) if match_stats_file(out, date).is_file() else None
+    eval_result = read_json(eval_file(out, date)) if eval_file(out, date).is_file() else None
+    if match_stats:
+        lines += match_section(match_stats, eval_result, city_names)
 
     all_cities = sorted({c for st in stats.values() for c in st["per_city"]})
     lines += [
@@ -155,6 +216,8 @@ def build_report(
         "counts": checks["counts"] if checks else {},
         "sources": {s: {k: v for k, v in st.items() if k not in ("per_city",)} for s, st in stats.items()},
         "checks": checks["results"] if checks else [],
+        "match": {k: v for k, v in (match_stats or {}).items() if k not in ("per_city", "config")},
+        "eval": {k: v for k, v in (eval_result or {}).items() if k != "errors"},
     }
     return markdown, data
 

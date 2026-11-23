@@ -82,7 +82,7 @@ class CategoryMap:
     ) -> tuple[str | None, Status]:
         """A place the source gave no category at all is "uncategorised": dropped, and reported apart
         from "unmapped" (a category with no rule yet), so the unmapped share points at missing rules."""
-        if self.style == "tags":
+        if self.style in ("tags", "exact"):
             return self._resolve_tags(primary)
         keys = self.candidates(primary, hierarchy)
         if not keys:

@@ -48,8 +48,8 @@ ENDPOINTS = (
     ("https://overpass-api.de/api/interpreter", "https://overpass-api.de/api/status"),
     ("https://overpass.private.coffee/api/interpreter", "https://overpass.private.coffee/api/status"),
 )
-QUERY_TIMEOUT_S = 300
-MIN_INTERVAL_S = 15.0
+QUERY_TIMEOUT_S = 150
+MIN_INTERVAL_S = 10.0
 
 
 class OverpassIncompleteError(RuntimeError):
@@ -111,21 +111,32 @@ def wait_for_slot(client: PoliteClient, status_url: str, sleep: Callable[[float]
         sleep(wait)
 
 
-def fetch_city(
+def query_groups(fetch: dict[str, list[str]]) -> dict[str, dict[str, list[str]]]:
+    """Split the tag filters into lighter queries: sights (tourism, historic, natural, leisure ...),
+    amenities (restaurants and bars dominate) and shops. A busy public server completes small queries
+    far more often than one query for everything."""
+    groups: dict[str, dict[str, list[str]]] = {"sights": {}, "amenity": {}, "shop": {}}
+    for key, values in fetch.items():
+        groups["amenity" if key == "amenity" else "shop" if key == "shop" else "sights"][key] = values
+    return {name: tags for name, tags in groups.items() if tags}
+
+
+def fetch_group(
     city: City,
+    group: str,
+    tags: dict[str, list[str]],
     directory: Path,
     client: PoliteClient,
-    fetch: dict[str, list[str]],
-    endpoints: tuple[tuple[str, str], ...] = ENDPOINTS,
+    endpoints: tuple[tuple[str, str], ...],
 ) -> tuple[Path, bool, str | None]:
-    """The cached response for a city (downloading it when missing).
+    """One group's cached response for a city (downloading it when missing).
 
     Returns (path, from_cache, endpoint used). Each endpoint gets two attempts before the next is tried.
     """
-    cache = directory / f"{city.code}.overpass.json.gz"
+    cache = directory / f"{city.code}.{group}.overpass.json.gz"
     if cache.is_file():
         return cache, True, None
-    query = build_query(city, fetch)
+    query = build_query(city, tags)
     last: Exception | None = None
     for endpoint, status_url in endpoints:
         try:
@@ -135,7 +146,7 @@ def fetch_city(
             )
             json.loads(payload)  # a busy server can answer 200 with an HTML or remark page
         except (HttpError, ValueError) as err:
-            log.warning("%s: %s failed (%s); trying the next endpoint", city.code, endpoint, err)
+            log.warning("%s/%s: %s failed (%s); trying the next endpoint", city.code, group, endpoint, err)
             last = err
             continue
         directory.mkdir(parents=True, exist_ok=True)
@@ -143,7 +154,54 @@ def fetch_city(
         tmp.write_bytes(gzip.compress(payload, compresslevel=6))
         tmp.replace(cache)
         return cache, False, endpoint
-    raise HttpError(f"{city.code}: every Overpass endpoint failed; last error: {last}")
+    raise HttpError(f"{city.code}/{group}: every Overpass endpoint failed; last error: {last}")
+
+
+def fetch_city(
+    city: City,
+    directory: Path,
+    client: PoliteClient,
+    fetch: dict[str, list[str]],
+    endpoints: tuple[tuple[str, str], ...] = ENDPOINTS,
+) -> tuple[list[Path], bool, list[str]]:
+    """All cached responses for a city: (paths, all from cache, endpoints used).
+
+    A single-file response from an earlier run (<CITY>.overpass.json.gz, everything in one query) is
+    accepted as is. Finished groups stay cached when a later group fails, so a re-run only repeats the
+    missing ones.
+    """
+    legacy = directory / f"{city.code}.overpass.json.gz"
+    if legacy.is_file():
+        return [legacy], True, []
+    paths, cached, used = [], True, []
+    failure: HttpError | None = None
+    for group, tags in query_groups(fetch).items():
+        try:
+            path, from_cache, endpoint = fetch_group(city, group, tags, directory, client, endpoints)
+        except HttpError as err:
+            failure = err
+            continue
+        paths.append(path)
+        cached = cached and from_cache
+        if endpoint:
+            used.append(endpoint)
+    if failure:
+        raise failure
+    return paths, cached, used
+
+
+def merge_responses(paths: list[Path]) -> dict[str, Any]:
+    """One response from several: elements de-duplicated by (type, id), the oldest data timestamp kept."""
+    elements: dict[tuple[str, int], Any] = {}
+    stamps = []
+    for path in paths:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
+            response = json.load(fh)
+        stamps.append((response.get("osm3s") or {}).get("timestamp_osm_base"))
+        for el in response.get("elements", []):
+            elements[(el["type"], el["id"])] = el
+    stamp = min((s for s in stamps if s), default=None)
+    return {"osm3s": {"timestamp_osm_base": stamp}, "elements": list(elements.values())}
 
 
 def extract(
@@ -159,7 +217,7 @@ def extract(
     rules = load_category_map(SOURCE, load_taxonomy(config_dir), config_dir).rules
     fetch = osm_fetch_tags(rules)
     client = client or PoliteClient(
-        min_interval=MIN_INTERVAL_S, timeout=QUERY_TIMEOUT_S + 60, retries=5, backoff=30.0
+        min_interval=MIN_INTERVAL_S, timeout=QUERY_TIMEOUT_S + 30, retries=5, backoff=30.0
     )
     template_city = City("<code>", "", "", 0.0, 0.0, "city", 0.0)
     job = ExtractRun(
@@ -187,13 +245,12 @@ def extract(
     for city in cities:
         started = time.monotonic()
         try:
-            cache, cached, endpoint = fetch_city(city, directory, client, fetch)
+            caches, cached, endpoints_used = fetch_city(city, directory, client, fetch)
         except HttpError as err:
             log.error("osm %s skipped: %s", city.code, err)
             failed.append(city.code)
             continue
-        with gzip.open(cache, "rt", encoding="utf-8") as fh:
-            response = json.load(fh)
+        response = merge_responses(caches)
         lines = elements_to_ndjson(response)
         nd = directory / f"{city.code}.ndjson.tmp"
         nd.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
@@ -204,9 +261,9 @@ def extract(
         )
         info = job.write_city(con, city, select)
         nd.unlink(missing_ok=True)
-        info["cache_file"] = cache.name
+        info["cache_files"] = [c.name for c in caches]
         info["from_cache"] = cached
-        info["endpoint"] = endpoint
+        info["endpoints"] = sorted(set(endpoints_used))
         info["osm_base"] = (response.get("osm3s") or {}).get("timestamp_osm_base")
         info["seconds"] = round(time.monotonic() - started, 1)
         files[f"{city.code}.parquet"] = info

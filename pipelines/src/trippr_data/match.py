@@ -77,6 +77,7 @@ class MatchConfig:
     chain_max_per_source: int = 3
     high_score: float = 0.92
     other_family_category_score: float = 0.5
+    jw_floor: float = 0.7  # Jaro-Winkler below this is noise; above it is rescaled to 0..1
 
 
 # ---------------------------------------------------------------------------------------------
@@ -177,7 +178,7 @@ def score_candidates(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
     )
     run(
         con,
-        """CREATE OR REPLACE TABLE name_sims AS
+        f"""CREATE OR REPLACE TABLE name_sims AS
            SELECT c.ra, c.rb,
              max(CASE
                WHEN va.key = vb.key THEN 1.0
@@ -186,7 +187,7 @@ def score_candidates(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
                                        CASE WHEN len(va.key) >= len(vb.key) THEN vb.key ELSE va.key END)
                       THEN 0.8 ELSE 0.0 END
                ELSE greatest(
-                 jaro_winkler_similarity(va.key, vb.key),
+                 greatest(0.0, (jaro_winkler_similarity(va.key, vb.key) - {cfg.jw_floor}) / (1.0 - {cfg.jw_floor})),
                  CASE WHEN va.tw + vb.tw = 0 THEN 0.0 ELSE
                    2.0 * coalesce(list_sum(list_transform(list_intersect(va.tok, vb.tok), lambda t: len(t))), 0)
                    / (va.tw + vb.tw) END)

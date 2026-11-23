@@ -1,0 +1,23 @@
+{
+  "source": "wikidata",
+  "licence": "CC0-1.0",
+  "version": "wdqs-fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T00:00:00+00:00",
+  "row_count": 36,
+  "fixture": true,
+  "files": {
+    "TYO.parquet": {
+      "city": "TYO",
+      "rows": 18,
+      "sha256": "8da4f09b87cc8d4851cd39b2ba3b2537a3d14c6697b9c0e08997fd0085d70793",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    },
+    "OSA.parquet": {
+      "city": "OSA",
+      "rows": 18,
+      "sha256": "93d23196370ec7f72eb0bcb5691f8a962d73ab2048f18482f5961b5de425eaef",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    }
+  }
+}

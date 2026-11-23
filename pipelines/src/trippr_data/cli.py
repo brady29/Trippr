@@ -1,4 +1,4 @@
-"""Command line: python -m trippr_data <extract|stage|check|report|upload|run> [options]."""
+"""Command line: python -m trippr_data <extract|stage|match|sample-er|eval-er|check|report|upload|run> [options]."""
 
 from __future__ import annotations
 
@@ -9,26 +9,31 @@ from pathlib import Path
 
 from . import checks as checks_mod
 from .cities import load_cities, select_cities
+from .eval_er import EVAL_CITIES, evaluate, format_eval, sample_pairs
 from .extract import EXTRACTORS
 from .extract.foursquare import FoursquareNotConfiguredError
 from .layout import latest_raw_date, latest_staging_date
+from .match import MatchConfig, match
 from .registry import Registry, SourceDisabledError, SourceNotRegisteredError, load_registry
 from .report import write_report
-from .settings import data_bucket, out_dir, today
+from .settings import PIPELINE_ROOT, data_bucket, out_dir, today
 from .stage import stage
 from .storage import upload
 
 log = logging.getLogger("trippr_data")
 
+ER_LABELS = PIPELINE_ROOT / "eval" / "er_pairs.csv"
+
 
 def _sources(spec: str | None, registry: Registry) -> list[str]:
     if not spec or spec == "enabled":
-        return registry.enabled()
-    names = [s.strip() for s in spec.split(",") if s.strip()]
-    unknown = [s for s in names if s not in EXTRACTORS]
-    if unknown:
-        raise SystemExit(f"Unknown source(s): {', '.join(unknown)}. Known: {', '.join(EXTRACTORS)}")
-    return names
+        names = registry.enabled()
+    else:
+        names = [s.strip() for s in spec.split(",") if s.strip()]
+        unknown = [s for s in names if s not in EXTRACTORS]
+        if unknown:
+            raise SystemExit(f"Unknown source(s): {', '.join(unknown)}. Known: {', '.join(EXTRACTORS)}")
+    return sorted(names, key=lambda n: list(EXTRACTORS).index(n) if n in EXTRACTORS else len(EXTRACTORS))
 
 
 def _date(args: argparse.Namespace, out: Path, kind: str) -> str:
@@ -75,6 +80,30 @@ def cmd_stage(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     return 0
 
 
+def _match_config(args: argparse.Namespace) -> MatchConfig:
+    return MatchConfig(threshold=args.threshold) if getattr(args, "threshold", None) else MatchConfig()
+
+
+def cmd_match(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    match(out, _date(args, out, "staging"), registry=registry, cfg=_match_config(args))
+    return 0
+
+
+def cmd_sample_er(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    cities = tuple(c.strip().upper() for c in args.cities.split(",")) if args.cities else EVAL_CITIES
+    n = sample_pairs(out, _date(args, out, "staging"), args.labels, cities=cities, per_city=args.per_city)
+    print(
+        f"wrote {n} candidate pairs to {args.labels}; fill in the label column (1 same place, 0 different, ? unsure)"
+    )
+    return 0
+
+
+def cmd_eval_er(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    result = evaluate(out, _date(args, out, "staging"), args.labels, cfg=_match_config(args))
+    print(format_eval(result))
+    return 0 if result["meets_targets"] or not args.strict else 1
+
+
 def cmd_check(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     date = _date(args, out, "staging")
     passed, _ = checks_mod.check(out, date, registry=registry)
@@ -96,13 +125,18 @@ def cmd_upload(args: argparse.Namespace, registry: Registry, out: Path) -> int:
 
 
 def cmd_run(args: argparse.Namespace, registry: Registry, out: Path) -> int:
-    """extract -> stage -> check -> report -> upload (when DATA_BUCKET is set). Fails if a check fails."""
+    """extract -> stage -> match -> eval -> check -> report -> upload (when DATA_BUCKET is set). Fails if a check fails."""
     date = args.date or today()
     args.date = date
     extracted = _extract(args, registry, out)
     if not extracted:
         raise SystemExit("No source was extracted")
     stage(out, date, registry=registry, sources=extracted)
+    match(out, date, registry=registry)
+    if ER_LABELS.is_file():
+        evaluate(out, date, ER_LABELS)
+    else:
+        log.warning("no labelled pairs at %s; skipping the entity-resolution eval", ER_LABELS)
     passed, _ = checks_mod.check(out, date, registry=registry)
     print(write_report(out, date, registry=registry))
     bucket = data_bucket()
@@ -128,12 +162,28 @@ def build_parser() -> argparse.ArgumentParser:
         return p
 
     p = add("extract", cmd_extract, "read each city's bounding box from a source into raw/")
-    p.add_argument("--source", help="overture, foursquare or a comma list (default: enabled sources)")
+    p.add_argument(
+        "--source",
+        help="overture, foursquare, osm, wikidata, wikivoyage or a comma list (default: enabled sources)",
+    )
     p.add_argument("--cities", default="all", help="'all' or city codes, e.g. TYO,OSA")
     p.add_argument("--release", help="Overture release (default: latest from the STAC catalog)")
 
     p = add("stage", cmd_stage, "map raw rows onto staged_place in staging/")
     p.add_argument("--source", help="comma list (default: every source with raw data for the date)")
+
+    p = add("match", cmd_match, "entity resolution: links.parquet and golden.parquet in matched/")
+    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.78)")
+
+    p = add("sample-er", cmd_sample_er, "sample candidate pairs into a labelling CSV")
+    p.add_argument("--labels", type=Path, default=ER_LABELS, help="CSV to write (default eval/er_pairs.csv)")
+    p.add_argument("--cities", help=f"comma list (default {','.join(EVAL_CITIES)})")
+    p.add_argument("--per-city", type=int, default=68)
+
+    p = add("eval-er", cmd_eval_er, "precision and recall of the matcher on the labelled pairs")
+    p.add_argument("--labels", type=Path, default=ER_LABELS)
+    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.78)")
+    p.add_argument("--strict", action="store_true", help="exit 1 when the 95% / 85% targets are not met")
 
     add("check", cmd_check, "run the data quality checks; exits 1 on failure")
     add("report", cmd_report, "write the Markdown run report (and to $GITHUB_STEP_SUMMARY)")

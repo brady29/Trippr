@@ -80,3 +80,10 @@ Q330284,market,marketplace
 Q11707,restaurant,restaurant
 Q30022,cafe,cafe
 Q187456,bar,bar
+Q27686,exclude,hotel (not an activity; hotels come in PR 7)
+Q16917,exclude,hospital
+Q41176,exclude,building
+Q3918,exclude,university
+Q811979,exclude,architectural structure
+Q4830453,exclude,business
+Q1021645,exclude,office building

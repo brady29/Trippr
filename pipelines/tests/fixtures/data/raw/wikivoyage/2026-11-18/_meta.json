@@ -1,0 +1,23 @@
+{
+  "source": "wikivoyage",
+  "licence": "CC-BY-SA-4.0",
+  "version": "enwikivoyage-fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T00:00:00+00:00",
+  "row_count": 36,
+  "fixture": true,
+  "files": {
+    "TYO.parquet": {
+      "city": "TYO",
+      "rows": 18,
+      "sha256": "f8e1520ecdbfef74f00103fd40248f7980ac1bad9050d286d6f8021bb3a77857",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    },
+    "OSA.parquet": {
+      "city": "OSA",
+      "rows": 18,
+      "sha256": "fd7f5a2ab6a0370cae29fc12276983d8cb9dbce8071b83bbe6c5072a420490a1",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    }
+  }
+}

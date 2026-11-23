@@ -1,0 +1,17 @@
+{
+  "source": "osm",
+  "licence": "ODbL-1.0",
+  "version": "overpass-fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T00:00:00+00:00",
+  "row_count": 18,
+  "fixture": true,
+  "files": {
+    "TYO.parquet": {
+      "city": "TYO",
+      "rows": 18,
+      "sha256": "5b32a212115da76e78bfaeb4385252392a7b1e4f8aae9f4cc4962042d0b867fe",
+      "fetched_at": "2026-11-18T00:00:00+00:00"
+    }
+  }
+}
