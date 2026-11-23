@@ -1,0 +1,37 @@
+category,families
+# Category families for entity-resolution blocking: two places are only compared when their categories
+# share at least one family. Broad categories (landmark, historic_site, monument, tour) sit in several
+# families because sources use them loosely. Every category in taxonomy.csv needs a row.
+viewpoint,outdoor landmarks
+park_garden,outdoor
+hike,outdoor
+beach,outdoor
+nature_spot,outdoor
+aquarium_zoo,outdoor fun
+museum,culture
+gallery,culture
+temple_shrine,worship heritage
+place_of_worship,worship heritage
+historic_site,heritage landmarks culture worship
+castle_palace,heritage landmarks
+monument,heritage landmarks outdoor
+landmark,landmarks heritage outdoor culture worship fun
+cultural_centre,culture
+performance,culture fun
+science_tech,culture fun
+arcade_gaming,fun
+electronics,shop
+sports_venue,fun
+sport_activity,fun outdoor
+restaurant,food
+street_food,food
+cafe,food
+dessert_bakery,food
+bar,food night
+market,food shop
+nightlife,night food fun
+theme_park,fun
+shopping,shop
+onsen_spa,fun
+cinema,fun
+tour,landmarks heritage outdoor culture fun

@@ -8,7 +8,7 @@ map categories through the source's CSV, and write staging/<date>/<source>.parqu
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -21,13 +21,34 @@ from .layout import raw_dir, raw_sources, read_json, stage_stats_file, staged_fi
 from .registry import Registry, SourceEntry
 from .schema import SIGNALS_TYPE, STAGED_COLUMNS
 from .settings import CONFIG_DIR
-from .taxonomy import Category, CategoryMap, load_category_map, load_taxonomy
+from .taxonomy import Category, CategoryMap, load_category_map, load_taxonomy, osm_relevant_tags
 
 log = logging.getLogger(__name__)
 
-# Each source's raw columns projected onto one intermediate shape ("pre").
-PRE_SQL: dict[str, str] = {
-    "overture": f"""
+SIGNAL_DEFAULTS: dict[str, str] = {
+    "confidence": "NULL::DOUBLE",
+    "providers": "NULL::VARCHAR[]",
+    "brand_wikidata": "NULL::VARCHAR",
+    "wikidata_sitelinks": "NULL::INTEGER",
+    "wikivoyage_listed": "NULL::BOOLEAN",
+    "description": "NULL::VARCHAR",
+    "description_licence": "NULL::VARCHAR",
+    "wikipedia_url": "NULL::VARCHAR",
+}
+
+
+def signals_sql(**exprs: str) -> str:
+    """A signals struct with every field present; fields not given are NULL."""
+    unknown = set(exprs) - set(SIGNAL_DEFAULTS)
+    assert not unknown, f"unknown signals {unknown}"
+    fields = {**SIGNAL_DEFAULTS, **exprs}
+    packed = ", ".join(f"{k} := {v}" for k, v in fields.items())
+    return f"struct_pack({packed})::{SIGNALS_TYPE}"
+
+
+# Each source's raw columns projected onto one intermediate shape ("pre"). A value may be a function of
+# the source's category map (OpenStreetMap builds its category key from the tags the map mentions).
+OVERTURE_PRE = f"""
         SELECT
           id AS source_id,
           names."primary" AS name_raw,
@@ -47,22 +68,23 @@ PRE_SQL: dict[str, str] = {
           phones[1] AS phone,
           NULL::VARCHAR AS opening_hours,
           NULL::VARCHAR AS wikidata_qid,
-          struct_pack(
-            confidence := confidence,
-            providers := list_sort(list_distinct(list_transform(
-              list_filter(sources, lambda s: s.dataset NOT IN ('Overture', 'Overture-signals')), lambda s: s.dataset))),
-            brand_wikidata := brand.wikidata,
-            wikidata_sitelinks := NULL::INTEGER,
-            wikivoyage_listed := NULL::BOOLEAN
-          )::{SIGNALS_TYPE} AS signals,
+          {
+    signals_sql(
+        confidence="confidence",
+        providers='''list_sort(list_distinct(list_transform(
+              list_filter(sources, lambda s: s.dataset NOT IN ('Overture', 'Overture-signals')), lambda s: s.dataset)))''',
+        brand_wikidata="brand.wikidata",
+    )
+} AS signals,
           nullif(array_to_string(list_sort(list_distinct(list_transform(
             list_filter(sources, lambda s: s.dataset NOT IN ('Overture', 'Overture-signals') AND s.license IS NOT NULL),
             lambda s: s.license))), ' AND '), '') AS licence,
           coalesce(operating_status = 'permanently_closed', false) AS closed,
           filename AS raw_file
         FROM raw
-    """,
-    "foursquare": f"""
+"""
+
+FOURSQUARE_PRE = f"""
         SELECT
           fsq_place_id AS source_id,
           name AS name_raw,
@@ -77,19 +99,131 @@ PRE_SQL: dict[str, str] = {
           tel AS phone,
           NULL::VARCHAR AS opening_hours,
           NULL::VARCHAR AS wikidata_qid,
-          struct_pack(
-            confidence := NULL::DOUBLE,
-            providers := ['foursquare'],
-            brand_wikidata := NULL::VARCHAR,
-            wikidata_sitelinks := NULL::INTEGER,
-            wikivoyage_listed := NULL::BOOLEAN
-          )::{SIGNALS_TYPE} AS signals,
+          {signals_sql(providers="['foursquare']")} AS signals,
           'Apache-2.0' AS licence,
           date_closed IS NOT NULL AS closed,
           filename AS raw_file
         FROM raw
-    """,
+"""
+
+NAME_LANG_TYPE = 'STRUCT("language" VARCHAR, value VARCHAR)[]'
+
+
+def osm_pre(cmap: CategoryMap) -> str:
+    """OpenStreetMap: tags is a MAP. The category key lists the tags the category map mentions."""
+    relevant = ", ".join(sql_str(t) for t in osm_relevant_tags(cmap.rules))
+    return f"""
+        SELECT
+          osm_type || '/' || osm_id AS source_id,
+          tags['name'] AS name_raw,
+          list_transform(
+            list_filter(map_keys(tags), lambda k: regexp_full_match(k, 'name:[a-z]{{2,3}}(-[A-Za-z]{{2,4}})?')),
+            lambda k: struct_pack("language" := substr(k, 6), value := tags[k])
+          ) AS names_by_lang,
+          array_to_string(list_filter([{relevant}],
+            lambda t: tags[split_part(t, '=', 1)] = split_part(t, '=', 2)), '|') AS category_primary,
+          NULL::VARCHAR[] AS category_hierarchy,
+          lat,
+          lon,
+          tags['addr:country'] AS country,
+          coalesce(tags['addr:full'], nullif(concat_ws(', ',
+            nullif(concat_ws(' ', tags['addr:housenumber'], tags['addr:street']), ''),
+            tags['addr:city'], tags['addr:postcode']), '')) AS address,
+          coalesce(tags['website'], tags['contact:website'], tags['url']) AS website,
+          coalesce(tags['phone'], tags['contact:phone']) AS phone,
+          tags['opening_hours'] AS opening_hours,
+          CASE WHEN regexp_matches(split_part(coalesce(tags['wikidata'], ''), ';', 1), '^Q[1-9][0-9]*$')
+               THEN split_part(tags['wikidata'], ';', 1) END AS wikidata_qid,
+          {signals_sql(description="NULL::VARCHAR")} AS signals,
+          'ODbL-1.0' AS licence,
+          false AS closed,
+          filename AS raw_file
+        FROM raw
+"""
+
+
+def wikidata_pre(cmap: CategoryMap) -> str:
+    """Wikidata: the item's classes joined with | are its category key; labels become name variants."""
+    return f"""
+        SELECT
+          qid AS source_id,
+          coalesce(label_en, label_local) AS name_raw,
+          list_filter([
+            struct_pack("language" := 'en', value := label_en),
+            struct_pack("language" := 'local', value := label_local)], lambda r: r.value IS NOT NULL)
+            AS names_by_lang,
+          array_to_string(class_qids, '|') AS category_primary,
+          NULL::VARCHAR[] AS category_hierarchy,
+          lat,
+          lon,
+          NULL::VARCHAR AS country,
+          NULL::VARCHAR AS address,
+          website,
+          NULL::VARCHAR AS phone,
+          NULL::VARCHAR AS opening_hours,
+          qid AS wikidata_qid,
+          {
+        signals_sql(
+            wikidata_sitelinks="sitelinks",
+            description="description",
+            description_licence="CASE WHEN description IS NOT NULL THEN 'CC0-1.0' END",
+            wikipedia_url="wikipedia_url",
+        )
+    } AS signals,
+          'CC0-1.0' AS licence,
+          false AS closed,
+          filename AS raw_file
+        FROM raw
+"""
+
+
+def wikivoyage_pre(cmap: CategoryMap) -> str:
+    """Wikivoyage: the listing type is the category key; `alt` in a non-Latin script is the local name."""
+    return f"""
+        SELECT
+          source_id,
+          name AS name_raw,
+          CASE WHEN alt IS NOT NULL AND NOT is_latin(alt)
+               THEN [struct_pack("language" := 'local', value := alt)]
+               ELSE []::{NAME_LANG_TYPE} END AS names_by_lang,
+          listing_type AS category_primary,
+          NULL::VARCHAR[] AS category_hierarchy,
+          lat,
+          lon,
+          NULL::VARCHAR AS country,
+          address,
+          url AS website,
+          phone,
+          hours AS opening_hours,
+          wikidata AS wikidata_qid,
+          {
+        signals_sql(
+            wikivoyage_listed="true",
+            description="content",
+            description_licence="CASE WHEN content IS NOT NULL THEN 'CC-BY-SA-4.0' END",
+            wikipedia_url='''CASE WHEN wikipedia IS NOT NULL AND NOT contains(wikipedia, ':')
+                 THEN 'https://en.wikipedia.org/wiki/' || replace(wikipedia, ' ', '_') END''',
+        )
+    } AS signals,
+          'CC-BY-SA-4.0' AS licence,
+          false AS closed,
+          filename AS raw_file
+        FROM raw
+"""
+
+
+PRE_SQL: dict[str, str | Callable[[CategoryMap], str]] = {
+    "overture": OVERTURE_PRE,
+    "foursquare": FOURSQUARE_PRE,
+    "osm": osm_pre,
+    "wikidata": wikidata_pre,
+    "wikivoyage": wikivoyage_pre,
 }
+
+
+def pre_sql(source: str, cmap: CategoryMap) -> str:
+    sql = PRE_SQL[source]
+    return sql(cmap) if callable(sql) else sql
 
 
 @dataclass
@@ -187,7 +321,7 @@ def stage_source(out: Path, date: str, source: str, entry: SourceEntry, ctx: Sta
         con,
         f"CREATE VIEW raw AS SELECT * FROM read_parquet({sql_str(raw_glob)}, filename = true, union_by_name = true)",
     )
-    run(con, f"CREATE TABLE pre AS {PRE_SQL[source]}")
+    run(con, f"CREATE TABLE pre AS {pre_sql(source, cmap)}")
     run(
         con,
         """CREATE TABLE uniq AS SELECT * FROM pre
@@ -229,6 +363,17 @@ def stage_source(out: Path, date: str, source: str, entry: SourceEntry, ctx: Sta
         "(FORMAT parquet, COMPRESSION zstd)",
     )
 
+    if source == "wikidata":
+        # Every fetched item, including those whose class has no category: the match stage uses it to
+        # attach sitelink counts to places that only name the QID (OpenStreetMap, Wikivoyage).
+        aux = staged_file(out, date, source).parent / "aux" / "wikidata_qids.parquet"
+        aux.parent.mkdir(parents=True, exist_ok=True)
+        run(
+            con,
+            f"""COPY (SELECT source_id AS qid, signals.wikidata_sitelinks AS sitelinks,
+                       signals.wikipedia_url AS wikipedia_url, name_raw AS label, lat, lon
+                FROM uniq ORDER BY qid) TO {sql_str(aux.as_posix())} (FORMAT parquet, COMPRESSION zstd)""",
+        )
     stats = _stats(con, source, date, meta, extracted)
     write_json(stage_stats_file(out, date, source), stats)
     con.close()
@@ -246,7 +391,10 @@ def _final_exprs(source: str, date: str, entry: SourceEntry) -> dict[str, str]:
     english = (
         "list_filter(p.names_by_lang, lambda x: x.\"language\" = 'en' OR starts_with(x.\"language\", 'en-'))"
     )
-    local = 'list_filter(p.names_by_lang, lambda x: list_contains(c.languages, x."language"))'
+    local = (
+        "list_filter(p.names_by_lang, "
+        'lambda x: list_contains(c.languages, x."language") OR x."language" = \'local\')'
+    )
     exprs = {
         "source": sql_str(source),
         "source_id": "p.source_id",

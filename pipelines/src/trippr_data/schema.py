@@ -15,6 +15,9 @@ class Signals(BaseModel):
     brand_wikidata: str | None = None
     wikidata_sitelinks: int | None = None
     wikivoyage_listed: bool | None = None
+    description: str | None = None
+    description_licence: str | None = None
+    wikipedia_url: str | None = None
 
 
 class StagedPlace(BaseModel):
@@ -43,7 +46,8 @@ class StagedPlace(BaseModel):
 
 SIGNALS_TYPE = (
     "STRUCT(confidence DOUBLE, providers VARCHAR[], brand_wikidata VARCHAR, "
-    "wikidata_sitelinks INTEGER, wikivoyage_listed BOOLEAN)"
+    "wikidata_sitelinks INTEGER, wikivoyage_listed BOOLEAN, description VARCHAR, "
+    "description_licence VARCHAR, wikipedia_url VARCHAR)"
 )
 
 # Column order and DuckDB types of the staged Parquet files.

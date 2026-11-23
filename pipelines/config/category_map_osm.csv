@@ -1,0 +1,117 @@
+source_category,category
+# OpenStreetMap tags to Trippr categories.
+# A rule is one tag ("tourism=museum") or several joined with + that must all be present
+# ("amenity=place_of_worship+religion=shinto"). A place takes the FIRST rule, in file order, that
+# its tags satisfy, so more specific rules come first. "exclude" drops the place on purpose.
+# The Overpass query is generated from the first tag of every rule that is not "exclude", so this file
+# decides both what is fetched and how it is mapped. Lines starting with # are comments.
+#
+# Places of worship (by religion)
+amenity=place_of_worship+religion=buddhist,temple_shrine
+amenity=place_of_worship+religion=shinto,temple_shrine
+amenity=place_of_worship+religion=taoist,temple_shrine
+amenity=place_of_worship+religion=hindu,temple_shrine
+amenity=place_of_worship+religion=folk,temple_shrine
+amenity=place_of_worship,place_of_worship
+building=temple,temple_shrine
+building=shrine,temple_shrine
+building=cathedral,place_of_worship
+building=church,place_of_worship
+building=mosque,place_of_worship
+# Tourism, specific kinds first
+tourism=viewpoint,viewpoint
+man_made=tower+tower:type=observation,viewpoint
+tourism=museum,museum
+tourism=gallery,gallery
+amenity=arts_centre,cultural_centre
+tourism=zoo,aquarium_zoo
+tourism=aquarium,aquarium_zoo
+tourism=theme_park,theme_park
+leisure=water_park,theme_park
+tourism=information+information=office,tour
+tourism=artwork,exclude
+# Historic
+historic=castle,castle_palace
+historic=palace,castle_palace
+historic=manor,castle_palace
+historic=fort,historic_site
+historic=shrine,temple_shrine
+historic=temple,temple_shrine
+historic=monument,monument
+historic=memorial,monument
+historic=ruins,historic_site
+historic=archaeological_site,historic_site
+historic=city_gate,historic_site
+historic=tomb,historic_site
+historic=battlefield,historic_site
+historic=building,historic_site
+historic=house,historic_site
+historic=pagoda,temple_shrine
+historic=wayside_cross,exclude
+historic=wayside_shrine,exclude
+historic=boundary_stone,exclude
+historic=milestone,exclude
+historic=cannon,exclude
+historic=charcoal_pile,exclude
+historic=yes,historic_site
+# Nature
+natural=peak,hike
+natural=volcano,nature_spot
+natural=beach,beach
+leisure=beach_resort,beach
+natural=waterfall,nature_spot
+waterway=waterfall,nature_spot
+natural=cave_entrance,nature_spot
+natural=hot_spring,onsen_spa
+leisure=nature_reserve,nature_spot
+leisure=garden+garden:type=botanical,park_garden
+leisure=garden,park_garden
+leisure=park,park_garden
+# Leisure and sport
+leisure=stadium,sports_venue
+leisure=sports_centre,sport_activity
+leisure=golf_course,sport_activity
+leisure=miniature_golf,sport_activity
+leisure=bowling_alley,sport_activity
+leisure=ice_rink,sport_activity
+leisure=amusement_arcade,arcade_gaming
+leisure=escape_game,arcade_gaming
+leisure=playground,exclude
+# Amenities
+amenity=public_bath,onsen_spa
+leisure=sauna,onsen_spa
+amenity=planetarium,science_tech
+man_made=observatory,science_tech
+amenity=theatre,performance
+amenity=cinema,cinema
+amenity=nightclub,nightlife
+amenity=karaoke_box,nightlife
+amenity=bar,bar
+amenity=pub,bar
+amenity=biergarten,bar
+amenity=cafe,cafe
+amenity=ice_cream,dessert_bakery
+amenity=food_court,street_food
+amenity=marketplace,market
+amenity=restaurant,restaurant
+amenity=fast_food,restaurant
+# Shops
+shop=bakery,dessert_bakery
+shop=pastry,dessert_bakery
+shop=confectionery,dessert_bakery
+shop=coffee,cafe
+shop=tea,cafe
+shop=mall,shopping
+shop=department_store,shopping
+shop=souvenir,shopping
+shop=gift,shopping
+shop=books,shopping
+shop=electronics,electronics
+shop=computer,electronics
+shop=video_games,electronics
+# Landmarks and other tourism, last
+man_made=lighthouse,landmark
+man_made=tower,landmark
+man_made=obelisk,monument
+tourism=attraction,landmark
+tourism=yes,landmark

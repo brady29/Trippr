@@ -48,11 +48,24 @@ class CategoryMap:
     its primary label, else the nearest ancestor in its hierarchy.
     style="path": Foursquare. Rules are keyed by label paths ("A > B > C"); a place takes the rule
     for the longest matching prefix of its label.
+    style="tags": OpenStreetMap. A rule is one tag ("tourism=museum") or several joined with "+" that
+    must all be present; a place takes the FIRST rule, in file order, its tags satisfy. The place's
+    category key is its relevant tags joined with "|" (see tag_key).
+    style="exact": Wikidata classes and Wikivoyage listing types, one key each.
     """
 
     source: str
-    style: Literal["label", "path"]
+    style: Literal["label", "path", "tags", "exact"]
     rules: dict[str, str]
+
+    def _resolve_tags(self, tag_key: str | None) -> tuple[str | None, Status]:
+        tags = {t for t in (tag_key or "").split("|") if t}
+        if not tags:
+            return None, "uncategorised"
+        for rule, target in self.rules.items():
+            if all(cond in tags for cond in rule.split("+")):
+                return (None, "excluded") if target == EXCLUDE else (target, "mapped")
+        return None, "unmapped"
 
     def candidates(self, primary: str | None, hierarchy: Sequence[str] | None) -> list[str]:
         if self.style == "label":
@@ -69,6 +82,8 @@ class CategoryMap:
     ) -> tuple[str | None, Status]:
         """A place the source gave no category at all is "uncategorised": dropped, and reported apart
         from "unmapped" (a category with no rule yet), so the unmapped share points at missing rules."""
+        if self.style == "tags":
+            return self._resolve_tags(primary)
         keys = self.candidates(primary, hierarchy)
         if not keys:
             return None, "uncategorised"
@@ -81,7 +96,35 @@ class CategoryMap:
         return None, "unmapped"
 
 
-MAP_STYLES: dict[str, Literal["label", "path"]] = {"overture": "label", "foursquare": "path"}
+MAP_STYLES: dict[str, Literal["label", "path", "tags", "exact"]] = {
+    "overture": "label",
+    "foursquare": "path",
+    "osm": "tags",
+    "wikidata": "exact",
+    "wikivoyage": "exact",
+}
+
+
+def osm_fetch_tags(rules: dict[str, str]) -> dict[str, list[str]]:
+    """key -> values to fetch from OSM: the first tag of every rule that is not "exclude"."""
+    wanted: dict[str, list[str]] = {}
+    for rule, target in rules.items():
+        if target == EXCLUDE:
+            continue
+        key, _, value = rule.split("+")[0].partition("=")
+        values = wanted.setdefault(key, [])
+        if value not in values:
+            values.append(value)
+    return wanted
+
+
+def osm_relevant_tags(rules: dict[str, str]) -> list[str]:
+    """Every "key=value" that appears in any rule condition (what the category key is built from)."""
+    seen: dict[str, None] = {}
+    for rule in rules:
+        for cond in rule.split("+"):
+            seen[cond] = None
+    return list(seen)
 
 
 def load_category_map(

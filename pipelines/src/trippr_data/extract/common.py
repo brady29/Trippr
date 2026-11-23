@@ -56,8 +56,16 @@ class ExtractRun:
         started = time.monotonic()
         run(con, f"COPY ({select_sql}) TO '{tmp.as_posix()}' (FORMAT parquet, COMPRESSION zstd)")
         tmp.replace(target)
+        info = self.file_info(con, city, target, started)
+        log.info("%s %s: %s rows in %.1fs", self.source, city.code, f"{info['rows']:,}", info["seconds"])
+        return info
+
+    def file_info(
+        self, con: duckdb.DuckDBPyConnection, city: City, target: Path, started: float | None = None
+    ) -> dict[str, Any]:
+        """The manifest entry for one written city file."""
         rows = scalar(con, f"SELECT count(*) FROM read_parquet('{target.as_posix()}')")
-        info = {
+        return {
             "city": city.code,
             "country": city.country,
             "radius_km": city.radius_km,
@@ -66,10 +74,8 @@ class ExtractRun:
             "bytes": target.stat().st_size,
             "sha256": sha256_file(target),
             "fetched_at": utc_now().isoformat(),
-            "seconds": round(time.monotonic() - started, 1),
+            "seconds": round(time.monotonic() - started, 1) if started is not None else None,
         }
-        log.info("%s %s: %s rows in %.1fs", self.source, city.code, f"{rows:,}", info["seconds"])
-        return info
 
     def write_meta(self, files: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Merge with an existing _meta.json so cities extracted in separate calls share one manifest."""

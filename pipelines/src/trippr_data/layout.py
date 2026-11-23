@@ -26,6 +26,26 @@ def stage_stats_file(out: Path, date: str, source: str) -> Path:
     return staging_dir(out, date) / f"{source}.stats.json"
 
 
+def matched_dir(out: Path, date: str) -> Path:
+    return out / "matched" / date
+
+
+def links_file(out: Path, date: str) -> Path:
+    return matched_dir(out, date) / "links.parquet"
+
+
+def golden_file(out: Path, date: str) -> Path:
+    return matched_dir(out, date) / "golden.parquet"
+
+
+def match_stats_file(out: Path, date: str) -> Path:
+    return matched_dir(out, date) / "match.stats.json"
+
+
+def eval_file(out: Path, date: str) -> Path:
+    return matched_dir(out, date) / "eval.json"
+
+
 def reports_dir(out: Path) -> Path:
     return out / "reports"
 
@@ -59,6 +79,11 @@ def latest_raw_date(out: Path) -> str | None:
 
 def latest_staging_date(out: Path) -> str | None:
     dates = dated_dirs(out / "staging")
+    return dates[-1] if dates else None
+
+
+def latest_matched_date(out: Path) -> str | None:
+    dates = [d for d in dated_dirs(out / "matched") if (matched_dir(out, d) / "golden.parquet").is_file()]
     return dates[-1] if dates else None
 
 

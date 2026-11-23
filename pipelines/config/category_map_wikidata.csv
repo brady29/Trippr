@@ -1,0 +1,82 @@
+source_category,category,label
+# Wikidata instance-of (P31) classes to Trippr categories. Every QID was checked against its English label
+# on 2026-11-22. An item takes the FIRST rule, in file order, that any of its P31 classes satisfies, so
+# specific classes come first. Only the direct class is matched (subclass paths time out on the public
+# query service), so list the specific classes you want. "exclude" drops the item on purpose.
+# The SPARQL query is generated from the classes that are not "exclude". Lines starting with # are comments.
+#
+Q5393308,temple_shrine,Buddhist temple
+Q845945,temple_shrine,Shinto shrine
+Q514480,temple_shrine,Inari shrine
+Q3124902,temple_shrine,Balinese temple
+Q44539,temple_shrine,temple
+Q1370598,temple_shrine,structure of worship
+Q2977,place_of_worship,cathedral
+Q16970,place_of_worship,church building
+Q32815,place_of_worship,mosque
+Q108325,place_of_worship,chapel
+Q23413,castle_palace,castle
+Q16560,castle_palace,palace
+Q33506,museum,museum
+Q207694,museum,art museum
+Q17431399,museum,national museum
+Q2087181,museum,historic house museum
+Q16735822,museum,history museum
+Q10624527,museum,biographical museum
+Q3867745,museum,corporate museum
+Q18704634,museum,railway museum
+Q866133,museum,university museum
+Q1007870,gallery,art gallery
+Q2281788,aquarium_zoo,public aquarium
+Q43501,aquarium_zoo,zoo
+Q2416723,theme_park,theme park
+Q194195,theme_park,amusement park
+Q167346,park_garden,botanical garden
+Q11433351,park_garden,daimyo garden
+Q1107656,park_garden,garden
+Q22746,park_garden,urban park
+Q22698,park_garden,park
+Q11559043,park_garden,seaside park
+Q95977092,park_garden,Tokyo metropolitan park
+Q46169,nature_spot,national park
+Q179049,nature_spot,nature reserve
+Q34038,nature_spot,waterfall
+Q35509,nature_spot,cave
+Q8072,nature_spot,volcano
+Q8502,hike,mountain
+Q207326,hike,summit
+Q2143825,hike,hiking trail
+Q40080,beach,beach
+Q24354,performance,theatre building
+Q153562,performance,opera house
+Q1060829,performance,concert hall
+Q8719053,performance,music venue
+Q41253,cinema,movie theater
+Q483110,sports_venue,stadium
+Q641226,sports_venue,arena
+Q1076486,sports_venue,sports venue
+Q1329623,cultural_centre,cultural center
+Q1763828,cultural_centre,multi-purpose hall
+Q1378975,cultural_centre,convention center
+Q4989906,monument,monument
+Q575759,monument,war memorial
+Q179700,monument,statue
+Q839954,historic_site,archaeological site
+Q1141225,historic_site,kofun
+Q16748868,historic_site,city walls
+Q1081138,historic_site,historic site
+Q39614,historic_site,cemetery
+Q39715,landmark,lighthouse
+Q2319498,landmark,architectural landmark
+Q570116,landmark,tourist attraction
+Q811534,landmark,remarkable tree
+Q12518,landmark,tower
+Q11303,landmark,skyscraper
+Q12280,landmark,bridge
+Q537127,landmark,road bridge
+Q13691,nature_spot,artificial island
+Q11315,shopping,shopping center
+Q330284,market,marketplace
+Q11707,restaurant,restaurant
+Q30022,cafe,cafe
+Q187456,bar,bar

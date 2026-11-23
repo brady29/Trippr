@@ -1,0 +1,11 @@
+source_category,category
+# Wikivoyage listing templates to Trippr categories. The listing type is coarse (a "see" listing may be
+# a museum, a temple or a park), so see maps to landmark and do to tour; more specific categories come
+# from the other sources when a place is matched. Hotels (sleep) are not activities: they come in PR 7.
+see,landmark
+do,tour
+eat,restaurant
+drink,bar
+buy,shopping
+sleep,exclude
+listing,exclude

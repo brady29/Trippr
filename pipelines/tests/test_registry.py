@@ -24,7 +24,7 @@ def test_overture_licences_are_spdx_ids():
 
 def test_unregistered_source_is_refused():
     with pytest.raises(SourceNotRegisteredError):
-        load_registry().require("osm")
+        load_registry().require("mapbox")
 
 
 def _with_foursquare_disabled():
@@ -35,7 +35,7 @@ def _with_foursquare_disabled():
 
 def test_both_sources_are_enabled_and_disabled_ones_are_refused():
     registry = load_registry()
-    assert registry.enabled() == ["overture", "foursquare"]
+    assert registry.enabled() == ["overture", "foursquare", "osm", "wikidata", "wikivoyage"]
     assert registry.require("foursquare").licence == "Apache-2.0"
     disabled = _with_foursquare_disabled()
     with pytest.raises(SourceDisabledError):
