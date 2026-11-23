@@ -1,4 +1,4 @@
-"""Command line: python -m trippr_data <extract|stage|match|sample-er|eval-er|check|report|upload|run> [options]."""
+"""Command line: python -m trippr_data <extract|stage|match|sample-er|eval-er|check|report|curate|bundle|upload|run> [options]."""
 
 from __future__ import annotations
 
@@ -8,11 +8,13 @@ import sys
 from pathlib import Path
 
 from . import checks as checks_mod
+from .bundle import append_bundle_report, build_bundle
 from .cities import load_cities, select_cities
+from .curation import curate, default_date
 from .eval_er import EVAL_CITIES, evaluate, format_eval, sample_pairs
 from .extract import EXTRACTORS
 from .extract.foursquare import FoursquareNotConfiguredError
-from .layout import latest_raw_date, latest_staging_date
+from .layout import latest_curated_date, latest_raw_date, latest_staging_date
 from .match import MatchConfig, match
 from .registry import Registry, SourceDisabledError, SourceNotRegisteredError, load_registry
 from .report import write_report
@@ -116,6 +118,24 @@ def cmd_report(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     return 0
 
 
+def cmd_curate(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    date = args.date or default_date(out)
+    if not date:
+        raise SystemExit(f"No golden or staged data under {out}; run stage (and match) first or pass --date")
+    curate(out, date, source=args.input)
+    return 0
+
+
+def cmd_bundle(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    date = args.date or latest_curated_date(out)
+    if not date:
+        raise SystemExit(f"No curated data under {out}; run curate first or pass --date")
+    path, manifest = build_bundle(out, date, registry=registry, parquet=not args.no_parquet)
+    append_bundle_report(out, date, manifest)
+    print(path)
+    return 0 if manifest.checks.passed else 1
+
+
 def cmd_upload(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     bucket = data_bucket()
     if not bucket:
@@ -139,6 +159,11 @@ def cmd_run(args: argparse.Namespace, registry: Registry, out: Path) -> int:
         log.warning("no labelled pairs at %s; skipping the entity-resolution eval", ER_LABELS)
     passed, _ = checks_mod.check(out, date, registry=registry)
     print(write_report(out, date, registry=registry))
+    if passed and not args.no_bundle:
+        curate(out, date)
+        _, manifest = build_bundle(out, date, registry=registry)
+        append_bundle_report(out, date, manifest)
+        passed = manifest.checks.passed
     bucket = data_bucket()
     if bucket and not args.no_upload:
         upload(out, date, bucket)
@@ -187,6 +212,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     add("check", cmd_check, "run the data quality checks; exits 1 on failure")
     add("report", cmd_report, "write the Markdown run report (and to $GITHUB_STEP_SUMMARY)")
+    p = add("curate", cmd_curate, "rank golden records and choose the places for the graph (curated/)")
+    p.add_argument(
+        "--input",
+        choices=["auto", "golden", "staged"],
+        default="auto",
+        help="golden records from the match stage, or staged rows (default: golden when present)",
+    )
+    p = add("bundle", cmd_bundle, "write bundles/<date>/ from the curated places; exits 1 if a check fails")
+    p.add_argument("--no-parquet", action="store_true", help="leave places.parquet out of the bundle")
     add("upload", cmd_upload, "copy the run to gs://$DATA_BUCKET")
 
     p = add("run", cmd_run, "extract, stage, check, report and upload")
@@ -194,6 +228,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--cities", default="all", help="'all' or city codes")
     p.add_argument("--release", help="Overture release (default: latest)")
     p.add_argument("--no-upload", action="store_true", help="skip the upload even when DATA_BUCKET is set")
+    p.add_argument(
+        "--no-bundle", action="store_true", help="stop after the checks and report (no curate or bundle)"
+    )
     return parser
 
 

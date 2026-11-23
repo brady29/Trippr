@@ -11,15 +11,25 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .layout import latest_json, matched_dir, raw_dir, raw_sources, report_json, report_md, staging_dir
+from .layout import (
+    bundle_dir,
+    curated_dir,
+    latest_json,
+    matched_dir,
+    raw_dir,
+    raw_sources,
+    report_json,
+    report_md,
+    staging_dir,
+)
 
 log = logging.getLogger(__name__)
 
 
 def run_paths(out: Path, date: str) -> list[Path]:
-    """Everything one run wrote: raw/<source>/<date>/, staging/<date>/, matched/<date>/ and its reports."""
+    """Everything one run wrote: raw/<source>/<date>/, staging/, matched/, curated/ and bundles/<date>/ and its reports."""
     paths = [raw_dir(out, s, date) for s in raw_sources(out, date)]
-    paths += [staging_dir(out, date), matched_dir(out, date)]
+    paths += [staging_dir(out, date), matched_dir(out, date), curated_dir(out, date), bundle_dir(out, date)]
     paths += [report_md(out, date), report_json(out, date)]
     if latest_json(out).is_file():
         paths.append(latest_json(out))

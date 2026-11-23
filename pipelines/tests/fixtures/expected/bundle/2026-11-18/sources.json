@@ -1,0 +1,48 @@
+[
+  {
+    "id": "overture",
+    "name": "Overture Maps Places",
+    "url": "https://docs.overturemaps.org/guides/places/",
+    "licence": "CDLA-Permissive-2.0 AND Apache-2.0 AND CC0-1.0",
+    "licence_detail": "The Places theme is licensed per data provider and each record carries its provider's licence in sources[].license: CDLA Permissive 2.0 (Meta, Microsoft, PinMeTo, Krick, RenderSEO, DAC, BrightQuery, Birdeye, Uberall, OpenTravel Alliance), Apache 2.0 (Foursquare) and CC0 1.0 (AllThePlaces). Places contains no OpenStreetMap data.",
+    "licence_urls": [
+      "https://cdla.dev/permissive-2-0/",
+      "https://www.apache.org/licenses/LICENSE-2.0",
+      "https://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "attribution": "© Overture Maps Foundation, overturemaps.org. Places data from Meta, Microsoft, Foursquare, AllThePlaces and other providers under CDLA Permissive 2.0, Apache 2.0 and CC0 1.0. Includes data Copyright 2024 Foursquare Labs, Inc. All rights reserved (Apache 2.0).",
+    "terms_checked_on": "2026-11-22",
+    "allowed_uses": [
+      "Read, transform and combine with other data (permissive licences; no share-alike)",
+      "Show places and derived fields in the app with the attribution above",
+      "Keep raw and staged copies in our own bucket"
+    ],
+    "enabled": true,
+    "version": "2026-11-18.0",
+    "fetched_at": "2026-11-18T00:00:00Z",
+    "staged_rows": 138,
+    "places": 80
+  },
+  {
+    "id": "foursquare",
+    "name": "Foursquare Open Source Places",
+    "url": "https://docs.foursquare.com/data-products/docs/access-fsq-os-places",
+    "licence": "Apache-2.0",
+    "licence_detail": null,
+    "licence_urls": [
+      "https://www.apache.org/licenses/LICENSE-2.0"
+    ],
+    "attribution": "Foursquare Open Source Places, Copyright 2024 Foursquare Labs, Inc. All rights reserved. Licensed under the Apache License, Version 2.0.",
+    "terms_checked_on": "2026-11-22",
+    "allowed_uses": [
+      "Read, transform and combine with other data (Apache 2.0; keep the copyright and licence notice)",
+      "Show places and derived fields in the app with the attribution above",
+      "Keep raw and staged copies in our own bucket"
+    ],
+    "enabled": true,
+    "version": "fixture",
+    "fetched_at": "2026-11-18T00:00:00Z",
+    "staged_rows": 10,
+    "places": 10
+  }
+]

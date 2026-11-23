@@ -1,0 +1,49 @@
+# Curation settings (docs/data-platform-spec.md, "Ranking and curation"). Read by `trippr_data curate`.
+# Changes show up in review like the taxonomy and category CSVs; per-category weights are in
+# category_weight.csv.
+
+# The graph budget: about 8,000 curated activities in total (the FalkorDB VM has 1 GB of memory).
+# CURATE_BUDGET overrides total.
+budget:
+  total: 8000
+  floor: 20      # every city gets at least this many (or all it has)
+  cap: 300       # and at most this many
+
+# A city's share of the budget is proportional to  log(1 + eligible places) * (1 + nights / nights_divisor),
+# where nights is the total number of nights the seeded routes spend there (0 for a city on no route).
+# The share is then clamped to [floor, cap] and the rest re-shared (see allocate_budgets).
+size:
+  nights_divisor: 5.0
+
+# score = agree + notability + voyage + confidence + category weight + website - chain penalty
+score:
+  agree: 0.8              # per extra source that agrees (up to agree_max_sources sources)
+  agree_max_sources: 4
+  notability: 1.0         # times ln(1 + Wikidata sitelinks)
+  voyage: 1.5             # listed in Wikivoyage
+  confidence: 1.0         # times the best source confidence (0..1)
+  default_confidence: 0.5 # for sources that have none (Foursquare, OSM)
+  website: 0.2            # has a website
+  chain_penalty: 1.0      # a branded chain (Overture brand wikidata) in a chain-sensitive category
+
+# Places whose best source confidence is below this are not candidates (sources without one are kept).
+min_confidence: 0.5
+
+# Category mix inside each city's budget, so a city is not 76% food. First each colour tag gets its target
+# share of the city's budget (the best places of that tag, with no category over its max_share). Whatever
+# is left (a tag with too few places) is filled with the best of the rest, with no tag over its max share;
+# if that is still not enough the limits are eased, category shares first, then tag shares.
+mix:
+  default_category_max_share: 0.12
+  tag_target_share:
+    culture: 0.30
+    nature: 0.25
+    food: 0.20
+    sport: 0.05
+    tech: 0.05
+    other: 0.15
+  tag_max_share:
+    food: 0.30
+    other: 0.25
+  # The whole bundle fails its checks if one colour tag's share is over its tag_max_share by more than this.
+  tag_share_slack: 0.10

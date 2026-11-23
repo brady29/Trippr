@@ -1,0 +1,236 @@
+{
+  "format": 1,
+  "bundle_date": "2026-11-18",
+  "run_date": "2026-11-18",
+  "created_at": "2026-11-18T12:00:00Z",
+  "pipeline_version": "0.1.0",
+  "input": "staged",
+  "settings": {
+    "budget": {
+      "total": 80,
+      "floor": 10,
+      "cap": 60
+    },
+    "min_confidence": 0.5,
+    "mix": {
+      "default_category_max_share": 0.12,
+      "tag_target_share": {
+        "culture": 0.3,
+        "nature": 0.25,
+        "food": 0.2,
+        "sport": 0.05,
+        "tech": 0.05,
+        "other": 0.15
+      },
+      "tag_max_share": {
+        "food": 0.3,
+        "other": 0.25
+      },
+      "tag_share_slack": 0.1
+    }
+  },
+  "files": [
+    {
+      "name": "places.jsonl.gz",
+      "sha256": "e25517eaadb46a0fc5444d342b0e4ff78702027b644deb754a2ad87d28a23857",
+      "bytes": 12788,
+      "rows": 80
+    },
+    {
+      "name": "sources.json",
+      "sha256": "99bc21b88b20e8e206b2b2108e8ba5a8d1df72983cdd4dcf1a84907fc74e2cbb",
+      "bytes": 2329,
+      "rows": 2
+    }
+  ],
+  "counts": {
+    "places": 80,
+    "cities": 2,
+    "by_city": {
+      "OSA": 27,
+      "TYO": 53
+    },
+    "by_category": {
+      "aquarium_zoo": 8,
+      "arcade_gaming": 2,
+      "bar": 4,
+      "cafe": 3,
+      "castle_palace": 4,
+      "electronics": 1,
+      "gallery": 2,
+      "hike": 5,
+      "historic_site": 6,
+      "market": 4,
+      "monument": 1,
+      "museum": 7,
+      "nature_spot": 1,
+      "nightlife": 2,
+      "onsen_spa": 5,
+      "park_garden": 5,
+      "performance": 1,
+      "restaurant": 4,
+      "sports_venue": 3,
+      "temple_shrine": 8,
+      "theme_park": 2,
+      "tour": 2
+    },
+    "by_tag": {
+      "culture": 29,
+      "food": 15,
+      "nature": 19,
+      "other": 11,
+      "sport": 3,
+      "tech": 3
+    },
+    "by_source": {
+      "foursquare": 10,
+      "overture": 80
+    },
+    "with_licence": 80,
+    "with_sources": 80
+  },
+  "checks": {
+    "passed": true,
+    "results": [
+      {
+        "name": "places.not_empty",
+        "status": "pass",
+        "detail": "80 places in 2 cities",
+        "data": {}
+      },
+      {
+        "name": "places.unique_ids",
+        "status": "pass",
+        "detail": "every place id is unique",
+        "data": {}
+      },
+      {
+        "name": "provenance.licence",
+        "status": "pass",
+        "detail": "all 80 places keep their source ids and a licence for each",
+        "data": {}
+      },
+      {
+        "name": "provenance.registered",
+        "status": "pass",
+        "detail": "every source and licence is in sources.yaml",
+        "data": {}
+      },
+      {
+        "name": "categories.in_taxonomy",
+        "status": "pass",
+        "detail": "22 taxonomy categories in use",
+        "data": {}
+      },
+      {
+        "name": "coordinates.city_radius",
+        "status": "pass",
+        "detail": "all places inside their city's radius",
+        "data": {}
+      },
+      {
+        "name": "coordinates.country_bbox",
+        "status": "pass",
+        "detail": "all places inside their country's bounding box",
+        "data": {}
+      },
+      {
+        "name": "duplicates.name_50m",
+        "status": "pass",
+        "detail": "no two places with the same name within 50 m",
+        "data": {}
+      },
+      {
+        "name": "budget.total",
+        "status": "pass",
+        "detail": "80 places within the graph budget of 80",
+        "data": {}
+      },
+      {
+        "name": "budget.per_city",
+        "status": "pass",
+        "detail": "every city within its floor of 10 and cap of 60",
+        "data": {}
+      },
+      {
+        "name": "mix.tag_share",
+        "status": "pass",
+        "detail": "share by colour tag: culture 36%, food 19%, nature 24%, other 14%, sport 4%, tech 4%",
+        "data": {}
+      },
+      {
+        "name": "places.vs_previous",
+        "status": "info",
+        "detail": "no previous bundle; counts recorded as the baseline",
+        "data": {}
+      },
+      {
+        "name": "staging.checks",
+        "status": "pass",
+        "detail": "the staging quality checks passed",
+        "data": {}
+      },
+      {
+        "name": "staging.schema",
+        "status": "pass",
+        "detail": "19 columns match staged_place",
+        "data": {}
+      },
+      {
+        "name": "staging.row_counts.vs_previous",
+        "status": "info",
+        "detail": "no previous run; counts recorded as the baseline",
+        "data": {}
+      },
+      {
+        "name": "staging.null_rates.required",
+        "status": "pass",
+        "detail": "no nulls in source, source_id, name, category_source, category, lat, lon, city_code, licence, fetched_at, raw_ref",
+        "data": {}
+      },
+      {
+        "name": "staging.null_rates.optional",
+        "status": "info",
+        "detail": "null share: overture: name_local 9%, name_en 86%, address 0%, website 45%, phone 30%; foursquare: name_local 0%, name_en 100%, address 0%, website 0%, phone 10%",
+        "data": {}
+      },
+      {
+        "name": "staging.coordinates.city_radius",
+        "status": "pass",
+        "detail": "all 148 rows inside their city's radius",
+        "data": {}
+      },
+      {
+        "name": "staging.coordinates.country_bbox",
+        "status": "pass",
+        "detail": "0 rows (0.000%) outside the country's bounding box (limit 0.1%)",
+        "data": {}
+      },
+      {
+        "name": "staging.licence.present",
+        "status": "pass",
+        "detail": "every row has a licence",
+        "data": {}
+      },
+      {
+        "name": "staging.licence.registered",
+        "status": "pass",
+        "detail": "licences in use: Apache-2.0, CC0-1.0, CDLA-Permissive-2.0",
+        "data": {}
+      },
+      {
+        "name": "staging.duplicates.source_id",
+        "status": "pass",
+        "detail": "no duplicate source ids",
+        "data": {}
+      },
+      {
+        "name": "staging.categories.in_taxonomy",
+        "status": "pass",
+        "detail": "25 taxonomy categories in use",
+        "data": {}
+      }
+    ]
+  },
+  "evals": {}
+}

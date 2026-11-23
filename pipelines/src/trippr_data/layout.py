@@ -98,6 +98,27 @@ def staged_sources(out: Path, date: str) -> list[str]:
     return sorted(p.stem for p in staging_dir(out, date).glob("*.parquet"))
 
 
+def curated_dir(out: Path, date: str) -> Path:
+    return out / "curated" / date
+
+
+def curated_file(out: Path, date: str) -> Path:
+    return curated_dir(out, date) / "curated_place.parquet"
+
+
+def curate_stats_file(out: Path, date: str) -> Path:
+    return curated_dir(out, date) / "curate.stats.json"
+
+
+def bundle_dir(out: Path, date: str) -> Path:
+    return out / "bundles" / date
+
+
+def latest_curated_date(out: Path) -> str | None:
+    dates = [d for d in dated_dirs(out / "curated") if curated_file(out, d).is_file()]
+    return dates[-1] if dates else None
+
+
 def read_json(path: Path) -> Any:
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)

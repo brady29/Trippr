@@ -1,0 +1,36 @@
+# Ranking weight per taxonomy category (sights outrank chain cafes), the most any one category may take
+# of a city's budget (blank: the default in curation.yaml) and whether a branded chain is penalised.
+category,weight,max_share,chain_sensitive
+viewpoint,3.0,,false
+landmark,3.0,,false
+castle_palace,3.0,,false
+museum,2.8,,false
+temple_shrine,2.8,0.15,false
+nature_spot,2.6,,false
+aquarium_zoo,2.6,,false
+historic_site,2.4,0.15,false
+theme_park,2.4,,false
+beach,2.4,,false
+science_tech,2.4,,false
+hike,2.2,,false
+monument,2.0,,false
+park_garden,2.0,0.15,false
+market,2.0,0.06,false
+gallery,1.8,0.08,false
+onsen_spa,1.8,0.05,false
+performance,1.6,0.06,false
+sports_venue,1.6,0.06,false
+cultural_centre,1.4,0.05,false
+sport_activity,1.4,0.06,false
+tour,1.4,0.05,false
+place_of_worship,1.2,0.05,false
+arcade_gaming,1.2,0.04,false
+street_food,1.2,0.08,true
+nightlife,1.0,0.05,true
+bar,0.6,0.06,true
+restaurant,0.4,0.12,true
+electronics,0.4,0.03,true
+cafe,0.2,0.06,true
+dessert_bakery,0.2,0.04,true
+cinema,0.2,0.02,true
+shopping,0.0,0.05,true
