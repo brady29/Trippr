@@ -17,7 +17,7 @@ from .run import MANIFEST_FILE, embeddings_dir, latest_embeddings_date, run_embe
 
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "multilingual-e5-small"
+DEFAULT_MODEL = "bge-m3-q8"
 EVAL_DIR = PIPELINE_ROOT / "eval" / "search"
 
 

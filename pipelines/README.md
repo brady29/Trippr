@@ -273,7 +273,7 @@ It is not part of `run`: it reads the curated bundle and is run on a laptop (see
 
 ```sh
 uv sync --extra embed                       # onnxruntime + tokenizers + huggingface-hub (no PyTorch)
-uv run python -m trippr_data embed --input path/to/places.parquet --model multilingual-e5-small
+uv run python -m trippr_data embed [--input path/to/places.parquet] [--model bge-m3-q8]
 uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labelled queries
 ```
 
@@ -289,7 +289,11 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
 - `eval-search` uses `eval/search/` (a 2,263-place corpus drawn from the staged Overture and Foursquare
   data and 68 labelled queries in English, Japanese, Chinese, Korean, Vietnamese and Thai) and
   brute-force cosine; it writes `reports/<date>.search-eval.json` and takes `--min-mrr` and
-  `--min-recall10` thresholds. `eval/search/model_spike.py` is the spike's measuring script.
+  `--min-recall10` thresholds. For the real bundle use `--corpus out/bundles/<date>/places.parquet
+  --queries eval/search/queries_bundle.yaml` (89 queries with rule-based labels). `model_spike.py` is
+  the spike's measuring script and `parity_check.py` checks that a hosted endpoint serves the same model.
+- Default model: `bge-m3-q8` (8-bit BGE-M3, 1024 dims, about 24 minutes for 8,000 places on 4 CPU
+  threads; first use downloads 570 MB). The query side must use the same model (see the spike).
 - Tests use a fake hashing embedder; CI installs no model dependency and downloads nothing.
 
 ## Scheduled runs

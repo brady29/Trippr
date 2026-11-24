@@ -11,7 +11,7 @@ small hosted call or tiny service, so the 512 MiB Cloud Run API never loads a mo
 | Question | Answer |
 |---|---|
 | Which model? | **BGE-M3** (`BAAI/bge-m3`, 1024 dims). On the 8,000-place bundle it beats `multilingual-e5-small` by 30% MRR (0.67 against 0.52) and by 45% recall@10 (0.56 against 0.39), most of it on Japanese, Chinese and Vietnamese queries and on place names. |
-| Can the place vectors be made locally? | Yes. About 53 minutes for all 8,000 places on 4 CPU threads with PyTorch (2.5 places/s), once a month or when places change; a content-hash cache means later runs only embed what changed. Needs about 2.4 GB of memory. |
+| Can the place vectors be made locally? | Yes. About 24 minutes for all 8,000 places on 4 CPU threads with the 8-bit ONNX build (5.6 places/s; 53 minutes with PyTorch), once a month or when places change; a content-hash cache means later runs only embed what changed. Needs about 1.4 GB of memory. No GPU, no PyTorch. |
 | Can the query be embedded hosted? | Yes, **only if the hosted service serves the same model.** Cloudflare Workers AI serves `@cf/baai/bge-m3` for $0.012 per million tokens with a free 10,000 neurons a day (about 9 million tokens), so search costs nothing at this scale. A parity check (`eval/search/parity_check.py`) must pass before the app uses it: the cosine between the local and the hosted vector of the same query must be above 0.98. It has **not been run**: no hosted account exists and nothing was spent. |
 | What if no hosted service is acceptable? | A tiny Cloud Run service running the same model (BGE-M3 8-bit ONNX, 570 MB), or the `multilingual-e5-small` fallback (see "Options"). |
 | What breaks it? | A query vector from a different model. Measured: place vectors from E5-small queried with another 384-dimension model give MRR 0.007 (chance), against 0.517 with the right model. The manifest records the model; the loader and the API must compare it before use. |
@@ -46,7 +46,7 @@ quality among relevant places* beyond what the metrics show.
 | `multilingual-e5-small` (ONNX 8-bit) | 384 | 0.506 | 0.449 | 0.385 | 0.407 | 50/s (2.7 min) | 4.4 ms | 0.5 / 1.0 GB |
 | `multilingual-e5-base` (PyTorch) | 768 | 0.594 | 0.517 | 0.431 | 0.467 | 8.4/s (16 min) | 48 ms | 1.8 / 2.2 GB |
 | **`bge-m3`** (PyTorch) | 1024 | **0.673** | **0.584** | **0.558** | **0.588** | 2.5/s (53 min) | 153 ms | 1.9 / 2.4 GB |
-| `bge-m3` (ONNX 8-bit) | 1024 | BGE_Q8_MRR | BGE_Q8_S1 | BGE_Q8_R10 | BGE_Q8_NDCG | BGE_Q8_SPEED | BGE_Q8_QUERY | BGE_Q8_MEM |
+| **`bge-m3` (ONNX 8-bit)** | 1024 | **0.680** | 0.584 | 0.563 | 0.594 | 5.6/s (24 min) | 20.6 ms | 0.9 / 1.4 GB |
 
 Single-process memory numbers include about 60 MB of Python and DuckDB. The "peak" column for ONNX
 Runtime includes its arena allocator and is higher than the model file suggests. On a 12-thread laptop the
@@ -83,9 +83,13 @@ Place vectors from one build of a model, queries from another (bundle set, E5-sm
 | E5-small fp32 | E5-small **8-bit** | 0.487 | 0.381 |
 | E5-small 8-bit | E5-small fp32 | 0.510 | 0.391 |
 | E5-small fp32 | **a different 384-dim model** (MiniLM) | **0.007** | 0.001 |
+| BGE-M3 fp32 (PyTorch) | BGE-M3 **8-bit** (ONNX) | 0.682 | 0.554 |
+| BGE-M3 8-bit | BGE-M3 8-bit | 0.680 | 0.563 |
 
-So the queries must come from the same model; a quantised build of it costs about 6% MRR in one
-direction and nothing in the other, and a different model gives noise. `trippr-data embed` records the
+So the queries must come from the same model; a quantised build of it costs about 6% MRR for E5-small in
+one direction and nothing in the other, and **nothing for BGE-M3** (0.682 with fp32 places and 8-bit
+queries against 0.673 all fp32). That tolerance is what makes a hosted copy of the weights, whose numerics
+may differ a little, safe to use. A different model gives noise. `trippr-data embed` records the
 model, the exact weights version (`intfloat/multilingual-e5-small/onnx/model.onnx@614241f622f5`) and the
 dimensions in `manifest.json`, so a mismatch can be detected rather than guessed.
 
@@ -98,7 +102,8 @@ A search query is a few to 30 tokens. Measured, one query at a time, warm:
 | Node, `@huggingface/transformers` 4.3.2 (ONNX Runtime) | E5-small 8-bit | 21 / 46 ms | process 460 MB (57 MB bare Node) | first load 2 s from a warm disk cache, 9 s with the download |
 | Node | E5-small fp32 | 9 / 13 ms | process 770 MB | load 15 s |
 | Python, ONNX Runtime | E5-small 8-bit | 4.4 / 5.3 ms | process 490 MB | |
-| Python, PyTorch | BGE-M3 | 153 / 174 ms | process 1.9 GB | 4 threads, 26 s load |
+| Python, ONNX Runtime | BGE-M3 8-bit | 21 / 26 ms | process 0.94 GB loaded (1.4 GB at the batch peak) | 4 threads, 25 s load; this is what the tiny service would run |
+| Python, PyTorch | BGE-M3 fp32 | 153 / 174 ms | process 1.9 GB | 4 threads, 26 s load |
 | Hosted (Cloudflare Workers AI, BGE-M3) | | not measured; no account | none in the API | one HTTPS call, typically tens of ms to a few hundred; the parity check also prints latency once run |
 
 The API runs with `--memory 512Mi`, so **even the smallest model in the API process does not fit**
@@ -113,7 +118,7 @@ price pages read on Nov 24, 2026; confirm before turning anything on.
 | Option | Place vectors | Query path | Quality (bundle MRR) | Cost | Cons |
 |---|---|---|---|---|---|
 | **A. BGE-M3 local, Cloudflare Workers AI for queries** (recommended) | BGE-M3 on the laptop, 1024 dims, 33 MB | `@cf/baai/bge-m3` over HTTPS from the API | 0.67 | Free tier covers it: 10,000 neurons a day is about 9 million tokens at 1,075 neurons per million, and the whole group makes a few hundred queries a day (about 10,000 tokens). Above the allowance $0.012 per million tokens | Needs a Cloudflare account and an API token in Secret Manager (a new vendor); the hosted weights must match (parity check); one more network hop and a third party seeing the query text. Place vectors cannot be recomputed in CI |
-| **B. BGE-M3 local, tiny Cloud Run service for queries** | same | A separate container (`trippr-embed`) with BGE-M3 8-bit ONNX (570 MB), 2 GiB, 1 vCPU, called by the API | 0.67 minus the 8-bit loss (being measured: BGE_Q8_MRR above) | Scale to zero: free within Cloud Run's free tier, but a **cold start of 10 to 30 s** on the first search of a session. `--min-instances 1` removes it for roughly **$19 a month** (1 vCPU and 2 GiB at idle rates of about $0.0000075 a second; the Cloud Run price page could not be read in full, so this uses remembered rates) | The cost and the cold start; another image to build and deploy; the API must reach it (Direct VPC or public with auth) |
+| **B. BGE-M3 local, tiny Cloud Run service for queries** | same | A separate container (`trippr-embed`) with BGE-M3 8-bit ONNX (570 MB), 2 GiB, 1 vCPU, called by the API | 0.68 measured (8-bit, no loss) | Scale to zero: free within Cloud Run's free tier, but a **cold start of 10 to 30 s** on the first search of a session. `--min-instances 1` removes it for roughly **$19 a month** (1 vCPU and 2 GiB at idle rates of about $0.0000075 a second; the Cloud Run price page could not be read in full, so this uses remembered rates) | The cost and the cold start; another image to build and deploy; the API must reach it (Direct VPC or public with auth) |
 | **C. E5-small local, 8-bit in a tiny service** | E5-small, 384 dims, 12 MB, 5 minutes to compute | A small service (or Cloudflare Workers/transformers.js) with the 118 MB model | 0.52 | 1 GiB service: about half of B's idle price | Weak on Chinese and Japanese queries |
 | **D. Hosted for both sides** (Voyage `voyage-4-lite`, Vertex `text-multilingual-embedding-002`, Cloudflare BGE-M3) | the provider embeds the 8,000 places | the same provider | **not measured** (no spend) | One-off: the bundle is 398,000 E5 tokens (1.46 million characters), so about $0.008 at Voyage's $0.02 per million (200 million free tokens), $0.005 at Cloudflare, about $0.04 at Vertex's $0.000025 per 1,000 characters | Needs a key in the pipeline workflow; changing provider or model means re-embedding; place vectors depend on a vendor. Cheap enough that measuring it on the same 89 queries costs under 5 cents, if the owner approves |
 
@@ -130,8 +135,8 @@ hosted by the providers checked and takes 16 minutes to embed with no change in 
 
 ## Recommendation
 
-1. **Model: BGE-M3, 1024 dimensions.** Place vectors computed with `trippr-data embed --model bge-m3-q8`
-   (or `bge-m3`, fp32 ONNX, for the reference weights) on the laptop, monthly. The place text already
+1. **Model: BGE-M3, 1024 dimensions.** Place vectors computed with `trippr-data embed` (default model
+   `bge-m3-q8`, the 8-bit ONNX build; `bge-m3` is the fp32 ONNX reference) on the laptop, monthly. The place text already
    carries both scripts and the Wikivoyage description, which is where BGE-M3's lead is largest.
 2. **Query path: option A**, with **B as the fallback** if the parity check fails or the owner would rather
    not add a vendor. Both use the same weights; the API reads the model name and dimensions from the
