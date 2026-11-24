@@ -11,6 +11,7 @@ import type {
   LibraryActivity,
   PathResult,
   RouteView,
+  SearchResponse,
   TripDetail,
 } from "@trippr/contracts";
 import { distanceKm, type Itinerary } from "@trippr/rules";
@@ -526,4 +527,39 @@ export function historyMessages(turns: AssistantTurn[], max = HISTORY_TURNS): An
   // The new question follows, so the history must end with an answer.
   if (out.at(-1)?.role === "user") out.pop();
   return out;
+}
+
+/** Most places a semantic search hands the model: it reads each one, so fewer and better than a list. */
+export const MAX_SEARCH_HITS = 15;
+
+/**
+ * A semantic search result as the model reads it: why each place matched, where it is, whether the group planned
+ * it. Records the ids so the answer can cite them. `mode` says whether meaning-based ranking was used.
+ */
+export function trimSearch(result: SearchResponse, routeId: string | null, seen: Seen) {
+  const hits = result.hits.slice(0, MAX_SEARCH_HITS);
+  for (const h of hits) {
+    seen.activity(h.activity.id, h.activity.title);
+    seen.city(h.activity.cityCode, h.activity.cityName);
+  }
+  return {
+    mode: result.mode,
+    note: result.notice?.message ?? null,
+    total: result.hits.length,
+    results: hits.map((h) => ({
+      id: h.activity.id,
+      title: h.activity.title,
+      city: h.activity.cityCode,
+      category: h.activity.category,
+      tags: h.activity.tags,
+      why: h.reason,
+      distanceKm: h.distanceKm,
+      votes: h.activity.votes || null,
+      plannedOnCurrentRoute: h.activity.plannedIn.some((p) => !routeId || p.routeId === routeId) || null,
+      address: h.activity.address,
+      lat: h.activity.lat == null ? null : Math.round(h.activity.lat * 1e5) / 1e5,
+      lon: h.activity.lon == null ? null : Math.round(h.activity.lon * 1e5) / 1e5,
+      website: h.activity.website,
+    })),
+  };
 }

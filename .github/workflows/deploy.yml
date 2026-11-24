@@ -24,6 +24,11 @@ name: Deploy
 #   (questions per member per day, default 30). ASSISTANT_MODEL defaults to claude-opus-5-5.
 #   Data load job (optional): CATALOGUE_LOAD_JOB, the name of an existing Cloud Run Job made from this image;
 #   its image is updated on each deploy (see docs/data-platform.md and load-catalogue.yml)
+#   Semantic search query embedding (optional): CLOUDFLARE_QUERY_EMBEDDING (true to map the Cloudflare Workers AI
+#   credentials into the API; without it search matches words only). Requires the Secret Manager secrets
+#   trippr-cloudflare-account-id and trippr-cloudflare-api-token to exist in the project: the deploy replaces
+#   the whole secret list each time, so mapping a missing secret fails the deploy. Their values are never in the repo.
+#   Secret names can be overridden with CLOUDFLARE_ACCOUNT_ID_SECRET and CLOUDFLARE_API_TOKEN_SECRET.
 # Repository secrets (optional web job): VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 #   Flight prices (optional): FLIGHT_PRICES_ENABLED (true to show prices in the app; default false),
 #   FLIGHT_PRICES_PROVIDER (travelpayouts or demo; default travelpayouts)
@@ -63,10 +68,14 @@ jobs:
         env:
           ANTHROPIC_KEY_SECRET: ${{ vars.ANTHROPIC_KEY_SECRET }}
           INBOX_WEBHOOK_SECRET_NAME: ${{ vars.INBOX_WEBHOOK_SECRET_NAME }}
+          CLOUDFLARE_QUERY_EMBEDDING: ${{ vars.CLOUDFLARE_QUERY_EMBEDDING }}
+          CLOUDFLARE_ACCOUNT_ID_SECRET: ${{ vars.CLOUDFLARE_ACCOUNT_ID_SECRET || 'trippr-cloudflare-account-id' }}
+          CLOUDFLARE_API_TOKEN_SECRET: ${{ vars.CLOUDFLARE_API_TOKEN_SECRET || 'trippr-cloudflare-api-token' }}
         run: |
           SECRETS="APP_JWT_SECRET=trippr-app-jwt-secret:latest,FALKORDB_URL=trippr-falkordb-url:latest"
           if [ -n "$ANTHROPIC_KEY_SECRET" ]; then SECRETS="$SECRETS,ANTHROPIC_API_KEY=$ANTHROPIC_KEY_SECRET:latest"; fi
           if [ -n "$INBOX_WEBHOOK_SECRET_NAME" ]; then SECRETS="$SECRETS,INBOX_WEBHOOK_SECRET=$INBOX_WEBHOOK_SECRET_NAME:latest"; fi
+          if [ "$CLOUDFLARE_QUERY_EMBEDDING" = "true" ]; then SECRETS="$SECRETS,CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID_SECRET:latest,CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN_SECRET:latest"; fi
           gcloud run deploy trippr-api \
             --image "$IMAGE" \
             --region "$REGION" \

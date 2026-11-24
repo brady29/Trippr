@@ -1,8 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { BookingsResult, CompareResult, Hotel, LibraryActivity, PathResult, RouteView } from "@trippr/contracts";
+import type { BookingsResult, CompareResult, Hotel, LibraryActivity, PathResult, RouteView, SearchResponse } from "@trippr/contracts";
 import { buildItinerary } from "@trippr/rules";
 import { z } from "zod/v4";
-import { nearby, trimActivities, trimBookings, trimCompare, trimItinerary, trimPaths, trimRoute, type Seen } from "./helpers";
+import { nearby, trimActivities, trimBookings, trimCompare, trimItinerary, trimPaths, trimRoute, trimSearch, type Seen } from "./helpers";
 
 /** A read-only GET against this API as the asking member. */
 export type CallAs = <T>(url: string) => Promise<T>;
@@ -150,6 +150,32 @@ export const TOOLS = [
       const b = pickRoute(ctx, input.b);
       if (a === b) throw new ToolError("Pick two different routes.");
       return trimCompare(await ctx.call<CompareResult>(`/compare?${new URLSearchParams({ a, b })}`), ctx.seen);
+    },
+  }),
+  tool({
+    name: "semantic_search",
+    description:
+      "Find places by what they are like, not just by their words: 'quiet viewpoints at sunset', 'cheap ramen near the hotel', 'temples with gardens'. Searches the whole place catalogue and the group's own ideas together, ranked by meaning and name match, in any language. Optional filters: city code, tag (sport, tech, nature, culture, food), category (viewpoint, temple_shrine, ...), and a point with a radius in km (take the point from a hotel or activity's lat/lon). Returns at most 15 places with why each matched, and says in mode whether meaning-based ranking was used or only words. Use search_activities instead to list the group's own ideas by vote.",
+    schema: z.object({
+      query: z.string().min(1).max(200).describe("What the person is looking for, in their own words"),
+      cityCode: code.optional(),
+      tag: z.string().min(1).max(24).optional(),
+      category: z.string().min(1).max(40).optional(),
+      near: z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }).optional(),
+      km: z.number().min(0.1).max(50).optional().describe("Radius around near, default 5"),
+      limit: z.number().int().min(1).max(15).optional().describe("How many places, default 10"),
+    }),
+    label: (input) => (input.cityCode ? `Searching for "${input.query.slice(0, 40)}" in ${input.cityCode.toUpperCase()}…` : `Searching for "${input.query.slice(0, 40)}"…`),
+    async run(input, ctx) {
+      const params = new URLSearchParams({ q: input.query, limit: String(input.limit ?? 10) });
+      if (input.cityCode) params.set("city", input.cityCode.toUpperCase());
+      if (input.tag) params.set("tag", input.tag);
+      if (input.category) params.set("category", input.category);
+      if (input.near) {
+        params.set("near", `${input.near.lat},${input.near.lon}`);
+        if (input.km) params.set("km", String(input.km));
+      }
+      return trimSearch(await ctx.call<SearchResponse>(`/trips/${encodeURIComponent(ctx.tripId)}/search?${params}`), ctx.currentRouteId, ctx.seen);
     },
   }),
 ];

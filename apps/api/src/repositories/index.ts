@@ -10,6 +10,7 @@ import { graphRepository } from "./graph";
 import { inboxRepository } from "./inbox";
 import { placesRepository } from "./places";
 import { routesRepository } from "./routes";
+import { searchRepository } from "./search";
 import { tripsRepository } from "./trips";
 import { accessRepository, usersRepository } from "./users";
 
@@ -30,6 +31,7 @@ export function createRepositories(db: GraphClient) {
     flights: flightsRepository(db),
     catalogue: catalogueRepository(db),
     data: dataRepository(db),
+    search: searchRepository(db),
   };
 }
 

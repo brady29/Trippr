@@ -271,7 +271,7 @@ describe("tools", () => {
 
   it("describes every tool for the API with eager input streaming and no $schema key", () => {
     const defs = toolDefinitions();
-    expect(defs.map((d) => d.name)).toEqual(["get_route", "get_itinerary", "search_activities", "get_bookings", "find_paths", "near", "compare_routes"]);
+    expect(defs.map((d) => d.name)).toEqual(["get_route", "get_itinerary", "search_activities", "get_bookings", "find_paths", "near", "compare_routes", "semantic_search"]);
     for (const d of defs) {
       expect(d.input_schema.type).toBe("object");
       expect(d.input_schema).not.toHaveProperty("$schema");

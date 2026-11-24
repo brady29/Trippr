@@ -20,6 +20,7 @@ import { bookingsRoutes } from "./routes/bookings";
 import { calendarRoutes } from "./routes/calendar";
 import { inboxRoutes } from "./routes/inbox";
 import type { AssistantModel } from "./services/assistant/model";
+import type { QueryEmbedder } from "./services/search/embedder";
 import { createInbox, type Inbox } from "./services/inbox/service";
 import { createNominatim, noGeocoder, type Geocoder } from "./services/places/geocoder";
 import { createPlaces, type Places } from "./services/places/service";
@@ -27,6 +28,7 @@ import { basicReader, createClaudeReader, type InboxReader } from "./services/in
 import { createClaudeLookup, type PlaceLookup } from "./services/inbox/lookup";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
+import { searchRoutes } from "./routes/search";
 import { tripRoutes } from "./routes/trips";
 import { createGuards, type Guards } from "./services/guards";
 import { createFlightPrices, type FlightPrices, type FlightPricesOptions } from "./services/flights/service";
@@ -84,6 +86,8 @@ export interface BuildOptions {
   assistantModel?: AssistantModel;
   /** Overrides the flight price provider and the clock (tests). */
   flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
+  /** Overrides the search query embedder (tests); null means none. Otherwise it comes from the SEARCH_* / CLOUDFLARE_* settings. */
+  queryEmbedder?: QueryEmbedder | null;
 }
 
 export async function buildApp({
@@ -97,6 +101,7 @@ export async function buildApp({
   resolveShortLink,
   assistantModel,
   flightPrices,
+  queryEmbedder,
 }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
@@ -211,6 +216,7 @@ export async function buildApp({
     calendarRoutes(scope, ctx);
     flightRoutes(scope, ctx);
     assistantRoutes(scope, ctx, { model: assistantModel });
+    searchRoutes(scope, ctx, { embedder: queryEmbedder });
   });
 
   return app;

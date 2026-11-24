@@ -72,6 +72,27 @@ const envSchema = z.object({
   /** Questions each member can ask per day (UTC), across trips. */
   ASSISTANT_DAILY_LIMIT: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(30)),
 
+  /**
+   * Semantic search (docs/data-platform.md, "Semantic search"). The query embedder turns a question into a vector with
+   * the model that embedded the places (BGE-M3). Unset: Cloudflare Workers AI when CLOUDFLARE_ACCOUNT_ID and
+   * CLOUDFLARE_API_TOKEN are both set, otherwise none and search matches words only. "fake" is for tests and
+   * the end-to-end run. The token is a secret: environment only, never a file.
+   */
+  SEARCH_EMBEDDER: optional(z.enum(["cloudflare", "fake", "off"])),
+  CLOUDFLARE_ACCOUNT_ID: optional(z.string()),
+  CLOUDFLARE_API_TOKEN: optional(z.string()),
+  CLOUDFLARE_EMBED_MODEL: z.string().default("@cf/baai/bge-m3"),
+  /** Vector size of the fake embedder (it must match the fake vectors that were loaded). */
+  SEARCH_FAKE_DIMS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(2).max(4096).default(64)),
+  /** The question's embedding must arrive within this, or the answer falls back to words only. */
+  SEARCH_EMBED_TIMEOUT_MS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(100).default(2500)),
+  /** auto: the database's vector index, the exact in-memory scan when filtered or if the index fails; or force one. */
+  SEARCH_VECTOR_PATH: z.enum(["auto", "index", "exact"]).default("auto"),
+  /** Searches per member per minute (429 above this). */
+  SEARCH_RATE_PER_MINUTE: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(1).default(30)),
+  /** Meaning-based searches (the ones that call the embedder) per member per UTC day; above it, words only. */
+  SEARCH_DAILY_LIMIT: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(150)),
+
   /** Sentry project DSN; errors are only reported when it is set. */
   SENTRY_DSN: optional(z.string().url()),
   /** Release name sent with errors (the deploy sets the commit SHA). */
@@ -119,6 +140,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const config = parsed.data;
   if (config.NODE_ENV === "production" && config.AUTH_DEV_LOGIN) {
     throw new Error("AUTH_DEV_LOGIN must be off in production");
+  }
+  if (config.NODE_ENV === "production" && config.SEARCH_EMBEDDER === "fake") {
+    throw new Error("SEARCH_EMBEDDER=fake must not be used in production");
   }
   if (config.AUTH_JWKS_URL && !config.AUTH_ISSUER) {
     throw new Error("AUTH_ISSUER is required when AUTH_JWKS_URL is set");
