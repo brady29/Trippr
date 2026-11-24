@@ -12,6 +12,7 @@ import { applySchema, createGraphClient, type AdminGraphClient } from "../src/db
 import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/explorer-migration";
 import { seedDatabase, type SeedResult } from "../src/db/seed";
 import type { FlightPricesOptions } from "../src/services/flights/service";
+import type { QueryEmbedder } from "../src/services/search/embedder";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 export const SEED_DIR = resolve(ROOT, "seed");
@@ -43,6 +44,8 @@ export async function startHarness(
     assistantModel?: AssistantModel;
     /** Flight price provider and clock; the feature itself is on only with FLIGHT_PRICES_ENABLED in env. */
     flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
+    /** The search query embedder; none unless a test passes one (a test run never reads CLOUDFLARE_* from the environment). */
+    queryEmbedder?: QueryEmbedder | null;
   } = {},
 ): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
@@ -57,6 +60,9 @@ export async function startHarness(
     INBOX_LINK_PREVIEWS: "false",
     GEOCODER: "none",
     ANTHROPIC_API_KEY: "",
+    SEARCH_EMBEDDER: "off",
+    CLOUDFLARE_ACCOUNT_ID: "",
+    CLOUDFLARE_API_TOKEN: "",
     INBOX_LOOKUP: "off",
     ...options.env,
   });
@@ -76,6 +82,7 @@ export async function startHarness(
     ...(options.resolveShortLink ? { resolveShortLink: options.resolveShortLink } : {}),
     ...(options.assistantModel ? { assistantModel: options.assistantModel } : {}),
     ...(options.flightPrices ? { flightPrices: options.flightPrices } : {}),
+    ...(options.queryEmbedder !== undefined ? { queryEmbedder: options.queryEmbedder } : {}),
   });
   return {
     app,

@@ -128,7 +128,7 @@ export function searchRepository(db: GraphClient) {
         await db.query(q("search/index-drop"));
       } catch (error) {
         // Nothing to drop is the state we want.
-        if (error instanceof Error && /no such index|not indexed|does not exist|unable to drop|not found/i.test(error.message)) return;
+        if (error instanceof Error && /no such index|not indexed|does not exist|unable to drop|not found|failed to find|no index/i.test(error.message)) return;
         throw error;
       }
     },

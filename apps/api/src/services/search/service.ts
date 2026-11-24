@@ -126,7 +126,10 @@ export function createSearch(deps: SearchDeps) {
     const index = async () => ({ rows: await repos.search.nearest(vector, k), engine: "index" as const, k });
 
     try {
-      return await (exactFirst ? exact() : index());
+      const answer = await (exactFirst ? exact() : index());
+      // An index that answers nothing although vectors are loaded is a broken index (dropped, or still empty).
+      if (!exactFirst && preference === "auto" && answer.rows.length === 0 && state.count > 0) throw new Error("the vector index returned no rows");
+      return answer;
     } catch (first) {
       log.warn({ path: exactFirst ? "exact" : "index", error: first instanceof Error ? first.message : String(first) }, "vector search failed");
       if (preference !== "auto") return null;

@@ -25,7 +25,8 @@ export async function createFalkorClient(options: FalkorOptions): Promise<AdminG
   async function query<T>(cypher: string, params: Params = {}, opts: QueryOptions = {}): Promise<T[]> {
     const run = opts.readOnly ? graph.roQuery.bind(graph) : graph.query.bind(graph);
     const reply = await run<T>(cypher, {
-      params: params as never,
+      // No parameters, no CYPHER header: an index statement must reach the server as it is written.
+      ...(Object.keys(params).length ? { params: params as never } : {}),
       TIMEOUT: opts.timeoutMs ?? options.timeoutMs,
     });
     return (reply.data ?? []) as T[];
