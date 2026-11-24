@@ -42,7 +42,7 @@ The job reads the newest bundle that passed its checks and verifies (checksums, 
 pnpm db:up && pnpm db:reset
 pnpm db:load-bundle --bundle pipelines/out/bundles --dry-run   # what would change; writes nothing
 pnpm db:load-bundle --bundle pipelines/out/bundles             # load it
-pnpm db:load-bundle --bundle gs://trippr-data/bundles          # or from Cloud Storage
+pnpm db:load-bundle --bundle gs://trippr-bucket-data/bundles          # or from Cloud Storage
 ```
 
 Options: `--bundle` (folder or `gs://bucket/prefix`; default `$BUNDLE_LOCATION`, else `gs://$DATA_BUCKET/bundles`), `--date` (a specific bundle), `--trip` (default `$CATALOGUE_TRIP_ID`, else the only trip), `--dry-run`, `--json`. Reading from Cloud Storage uses `@google-cloud/storage` with the job's default credentials; the tests use local folders only.
@@ -83,7 +83,7 @@ gcloud run jobs create trippr-load-bundle \
   --command node --args dist/load-bundle.js \
   --network default --subnet default --vpc-egress private-ranges-only \
   --memory 512Mi --task-timeout 600 --max-retries 1 \
-  --set-env-vars "DB_DIALECT=falkordb,SCHEMA_DIR=/app/db/schema,DATA_BUCKET=trippr-data" \
+  --set-env-vars "DB_DIALECT=falkordb,SCHEMA_DIR=/app/db/schema,DATA_BUCKET=trippr-bucket-data" \
   --set-secrets "FALKORDB_URL=trippr-falkordb-url:latest"
 # The job's service account needs roles/storage.objectViewer on the bucket.
 ```

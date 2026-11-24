@@ -275,13 +275,14 @@ variable exists. It signs in to Google Cloud with workload identity federation (
 fails the workflow; the data is still uploaded for inspection, but `reports/latest.json` (the next
 run's baseline) only moves on a passed run.
 
-One-time setup for the owner (nothing here is created by the code):
+The owner has created the bucket `trippr-bucket-data` (private, US) and set `DATA_BUCKET=trippr-bucket-data`.
+For reference, a setup like it (nothing here is created by the code):
 
 ```sh
-gcloud storage buckets create gs://trippr-data --project "$GCP_PROJECT_ID" --location us-central1 \
+gcloud storage buckets create gs://trippr-bucket-data --project "$GCP_PROJECT_ID" --location us-central1 \
   --uniform-bucket-level-access --public-access-prevention
-gcloud storage buckets add-iam-policy-binding gs://trippr-data \
+gcloud storage buckets add-iam-policy-binding gs://trippr-bucket-data \
   --member "serviceAccount:$GCP_SERVICE_ACCOUNT" --role roles/storage.objectAdmin
 ```
 
-Then add the repository variable `DATA_BUCKET=trippr-data`.
+Then add the repository variable `DATA_BUCKET=trippr-bucket-data`.
