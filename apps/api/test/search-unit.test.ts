@@ -122,6 +122,14 @@ describe("combining the signals", () => {
     expect(wordsOnly.score).toBeCloseTo(0.95 + 0.05 / (1 + Math.log2(30)), 5);
   });
 
+  it("puts a place whose name is the question first even with no vector, ahead of a very close but different place", () => {
+    const named = combine(cand({ id: "n", title: "Hidden Ramen Alley", rank: 9 }), { similarity: null, lexical: 1, distanceKm: null }, true);
+    const close = combine(cand({ id: "c", title: "Meiji Shrine", rank: 1 }), { similarity: 0.7, lexical: 0, distanceKm: null }, true);
+    expect(named.score).toBeGreaterThan(close.score);
+    const partial = combine(cand({ id: "p", title: "Ichiran Ramen", rank: 1 }), { similarity: 0.5, lexical: 0.27, distanceKm: null }, true);
+    expect(named.score).toBeGreaterThan(partial.score);
+  });
+
   it("weights add up to one", () => {
     expect(WEIGHTS.semantic + WEIGHTS.lexical + WEIGHTS.prior).toBeCloseTo(1, 10);
   });

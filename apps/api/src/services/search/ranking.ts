@@ -11,6 +11,12 @@ export const WEIGHTS = { semantic: 0.55, lexical: 0.4, prior: 0.05 } as const;
 /** Cosine below FLOOR counts for nothing; at CEIL it counts in full. BGE-M3's unrelated pairs sit near 0.3. */
 export const SIM_FLOOR = 0.3;
 export const SIM_CEIL = 0.75;
+/**
+ * Added when the question is, or sits inside, the place's name (lexical >= 0.9): someone who types a place's name wants
+ * that place first, even when its vector is missing or an unrelated place happens to be close to the question.
+ */
+export const NAME_BONUS = 0.2;
+export const NAME_EXACT = 0.9;
 /** A lexical score at or above this is "the words match this place's name". */
 export const NAME_MATCH = 0.6;
 
@@ -106,7 +112,7 @@ export function combine(
   const semantic = vectors ? semanticPart(signals.similarity) : 0;
   const p = prior(candidate.rank);
   const score = vectors
-    ? WEIGHTS.semantic * semantic + WEIGHTS.lexical * signals.lexical + WEIGHTS.prior * p
+    ? WEIGHTS.semantic * semantic + WEIGHTS.lexical * signals.lexical + WEIGHTS.prior * p + (signals.lexical >= NAME_EXACT ? NAME_BONUS : 0)
     : 0.95 * signals.lexical + 0.05 * p;
   const byName = signals.lexical >= NAME_MATCH;
   const byMeaning = semantic >= 0.3;
