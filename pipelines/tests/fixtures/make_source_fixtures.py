@@ -82,7 +82,7 @@ def derive_rows(con: duckdb.DuckDBPyConnection, city: str) -> dict[str, list[dic
             ORDER BY hash(id) LIMIT 9"""
     ).fetchall()
     out: dict[str, list[dict]] = {"osm": [], "wikidata": [], "wikivoyage": []}
-    for i, (pid, name, label, lat, lon, english) in enumerate(found):
+    for i, (_pid, name, label, lat, lon, english) in enumerate(found):
         tags, cls, listing = DERIVE[label]
         qid = f"Q9{10000 + i + (0 if city == 'TYO' else 100)}"
         latin = name.isascii()

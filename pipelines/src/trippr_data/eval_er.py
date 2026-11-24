@@ -34,7 +34,7 @@ from .settings import CONFIG_DIR
 
 log = logging.getLogger(__name__)
 
-EVAL_CITIES = ("TYO", "SHA", "SEL", "HAN", "CNX", "TPE")
+EVAL_CITIES = ("UKY", "SHA", "PUS", "HAN", "CNX", "RMQ")
 PAIRS_PER_CITY = 68
 SWEEP = (0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
 CSV_COLUMNS = (

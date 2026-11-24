@@ -111,13 +111,39 @@ def wait_for_slot(client: PoliteClient, status_url: str, sleep: Callable[[float]
         sleep(wait)
 
 
+# Tags whose features dominate the volume (restaurants and cafes are most of what OSM holds in a big
+# city). They go in their own query so a busy server failing it does not lose the sights.
+FOOD_TAGS = frozenset(
+    {
+        "amenity=restaurant",
+        "amenity=fast_food",
+        "amenity=cafe",
+        "amenity=bar",
+        "amenity=pub",
+        "amenity=biergarten",
+        "amenity=ice_cream",
+        "amenity=food_court",
+        "shop=bakery",
+        "shop=pastry",
+        "shop=confectionery",
+        "shop=coffee",
+        "shop=tea",
+    }
+)
+
+
 def query_groups(fetch: dict[str, list[str]]) -> dict[str, dict[str, list[str]]]:
     """Split the tag filters into lighter queries: sights (tourism, historic, natural, leisure ...),
-    amenities (restaurants and bars dominate) and shops. A busy public server completes small queries
-    far more often than one query for everything."""
-    groups: dict[str, dict[str, list[str]]] = {"sights": {}, "amenity": {}, "shop": {}}
+    other amenities (worship, theatres, markets ...), food and drink, and other shops. A busy public
+    server completes small queries far more often than one query for everything."""
+    groups: dict[str, dict[str, list[str]]] = {"sights": {}, "amenity": {}, "shop": {}, "food": {}}
     for key, values in fetch.items():
-        groups["amenity" if key == "amenity" else "shop" if key == "shop" else "sights"][key] = values
+        for value in values:
+            if f"{key}={value}" in FOOD_TAGS:
+                name = "food"
+            else:
+                name = key if key in ("amenity", "shop") else "sights"
+            groups[name].setdefault(key, []).append(value)
     return {name: tags for name, tags in groups.items() if tags}
 
 
@@ -163,8 +189,8 @@ def fetch_city(
     client: PoliteClient,
     fetch: dict[str, list[str]],
     endpoints: tuple[tuple[str, str], ...] = ENDPOINTS,
-) -> tuple[list[Path], bool, list[str]]:
-    """All cached responses for a city: (paths, all from cache, endpoints used).
+) -> tuple[list[Path], bool, list[str], list[str]]:
+    """All cached responses for a city: (paths, all from cache, endpoints used, groups still missing).
 
     A single-file response from an earlier run (<CITY>.overpass.json.gz, everything in one query) is
     accepted as is. Finished groups stay cached when a later group fails, so a re-run only repeats the
@@ -172,22 +198,20 @@ def fetch_city(
     """
     legacy = directory / f"{city.code}.overpass.json.gz"
     if legacy.is_file():
-        return [legacy], True, []
-    paths, cached, used = [], True, []
-    failure: HttpError | None = None
+        return [legacy], True, [], []
+    paths, cached, used, missing = [], True, [], []
     for group, tags in query_groups(fetch).items():
         try:
             path, from_cache, endpoint = fetch_group(city, group, tags, directory, client, endpoints)
         except HttpError as err:
-            failure = err
+            log.error("osm %s: group %s not fetched: %s", city.code, group, err)
+            missing.append(group)
             continue
         paths.append(path)
         cached = cached and from_cache
         if endpoint:
             used.append(endpoint)
-    if failure:
-        raise failure
-    return paths, cached, used
+    return paths, cached, used, missing
 
 
 def merge_responses(paths: list[Path]) -> dict[str, Any]:
@@ -242,14 +266,15 @@ def extract(
     con = connect()
     files: dict[str, dict[str, Any]] = {}
     failed: list[str] = []
+    incomplete: list[str] = []
     for city in cities:
         started = time.monotonic()
-        try:
-            caches, cached, endpoints_used = fetch_city(city, directory, client, fetch)
-        except HttpError as err:
-            log.error("osm %s skipped: %s", city.code, err)
+        caches, cached, endpoints_used, missing = fetch_city(city, directory, client, fetch)
+        if not caches:
             failed.append(city.code)
             continue
+        if missing:
+            incomplete.append(city.code)
         response = merge_responses(caches)
         lines = elements_to_ndjson(response)
         nd = directory / f"{city.code}.ndjson.tmp"
@@ -264,13 +289,16 @@ def extract(
         info["cache_files"] = [c.name for c in caches]
         info["from_cache"] = cached
         info["endpoints"] = sorted(set(endpoints_used))
+        info["missing_groups"] = missing
         info["osm_base"] = (response.get("osm3s") or {}).get("timestamp_osm_base")
         info["seconds"] = round(time.monotonic() - started, 1)
         files[f"{city.code}.parquet"] = info
     con.close()
     meta = job.write_meta(files) if files else {}
-    if failed:
+    if failed or incomplete:
         raise OverpassIncompleteError(
-            failed, f"Overpass could not serve {len(failed)} cities: {', '.join(failed)}"
+            failed + incomplete,
+            f"Overpass could not serve every query: no data for {failed or 'none'}, "
+            f"some groups missing for {incomplete or 'none'}; the rest is cached, run the command again",
         )
     return meta

@@ -69,13 +69,20 @@ class MatchConfig:
     w_cat: float = 0.15
     contact_bonus: float = 0.15
     threshold: float = 0.78
-    name_floor: float = 0.5
+    name_floor: float = 0.6
     full_score_m: float = 75.0
     zero_score_m: float = 500.0
     max_spread_m: float = 500.0
     strong_website_m: float = 300.0
     chain_max_per_source: int = 3
     high_score: float = 0.92
+    tie_margin: float = 0.12  # a pair also stays when within this of both records' best partner
+    strong_name_floor: float = (
+        0.3  # a shared website (a hotel's, a mall's) needs a little name similarity too
+    )
+    chain_name_min: int = 4  # a name used by this many places of one source in a city is a chain
+    chain_full_m: float = 30.0
+    chain_zero_m: float = 150.0
     other_family_category_score: float = 0.5
     jw_floor: float = 0.7  # Jaro-Winkler below this is noise; above it is rescaled to 0..1
 
@@ -138,7 +145,8 @@ def prepare_city(con: duckdb.DuckDBPyConnection, city: str, cfg: MatchConfig) ->
         f"""CREATE OR REPLACE TABLE recs_g AS
             SELECT *,
               count(*) OVER (PARTITION BY source, qid) > {cfg.chain_max_per_source} AS qid_chain,
-              count(*) OVER (PARTITION BY source, wkey) > {cfg.chain_max_per_source} AS web_chain
+              count(*) OVER (PARTITION BY source, wkey) > {cfg.chain_max_per_source} AS web_chain,
+              count(*) OVER (PARTITION BY source, name_key(name)) >= {cfg.chain_name_min} AS name_chain
             FROM recs""",
     )
     run(con, "DROP TABLE recs")
@@ -199,8 +207,11 @@ def score_candidates(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
         con,
         f"""CREATE OR REPLACE TABLE scored AS
            SELECT c.ra, c.rb, c.dist_m, coalesce(n.name_sim, 0.0) AS name_sim,
-             greatest(0.0, least(1.0, ({cfg.zero_score_m} - c.dist_m) / ({cfg.zero_score_m} - {cfg.full_score_m})))
-               AS dist_score,
+             CASE WHEN a.name_chain OR b.name_chain THEN
+               greatest(0.0, least(1.0, ({cfg.chain_zero_m} - c.dist_m) / ({cfg.chain_zero_m} - {cfg.chain_full_m})))
+             ELSE
+               greatest(0.0, least(1.0, ({cfg.zero_score_m} - c.dist_m) / ({cfg.zero_score_m} - {cfg.full_score_m})))
+             END AS dist_score,
              CASE WHEN a.category = b.category THEN 1.0 ELSE {cfg.other_family_category_score} END AS cat_score,
              (a.pkey IS NOT NULL AND a.pkey = b.pkey) AS phone_match,
              (a.akey IS NOT NULL AND a.akey = b.akey) AS addr_match,
@@ -231,8 +242,10 @@ def strong_links(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
             UNION ALL
             SELECT a.rid, b.rid, 'strong_website', 1000 * hav_km(a.lat, a.lon, b.lat, b.lon)
             FROM recs a JOIN recs b ON a.wkey = b.wkey AND a.source < b.source
+            LEFT JOIN scored s ON s.ra = a.rid AND s.rb = b.rid
             WHERE a.wkey IS NOT NULL AND NOT a.web_chain AND NOT b.web_chain
-              AND 1000 * hav_km(a.lat, a.lon, b.lat, b.lon) <= {cfg.strong_website_m}""",
+              AND 1000 * hav_km(a.lat, a.lon, b.lat, b.lon) <= {cfg.strong_website_m}
+              AND coalesce(s.name_sim, 1.0) >= {cfg.strong_name_floor}""",
     )
 
 
@@ -251,7 +264,9 @@ def accepted_edges(
         """CREATE OR REPLACE TABLE ranked AS
             SELECT *,
               row_number() OVER (PARTITION BY ra, sb ORDER BY score DESC, rb) AS rank_a,
-              row_number() OVER (PARTITION BY rb, sa ORDER BY score DESC, ra) AS rank_b
+              row_number() OVER (PARTITION BY rb, sa ORDER BY score DESC, ra) AS rank_b,
+              max(score) OVER (PARTITION BY ra, sb) AS best_a,
+              max(score) OVER (PARTITION BY rb, sa) AS best_b
             FROM ok""",
     )
     result = run(
@@ -263,7 +278,8 @@ def accepted_edges(
                         ELSE 'scored' END,
                    dist_m
             FROM ranked
-            WHERE (rank_a = 1 AND rank_b = 1 OR score >= {cfg.high_score})
+            WHERE (rank_a = 1 AND rank_b = 1 OR score >= {cfg.high_score}
+                   OR (score >= best_a - {cfg.tie_margin} AND score >= best_b - {cfg.tie_margin}))
               AND NOT EXISTS (SELECT 1 FROM strong s WHERE s.ra = ranked.ra AND s.rb = ranked.rb)""",
     )
     return result

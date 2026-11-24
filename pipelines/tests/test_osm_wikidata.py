@@ -68,7 +68,11 @@ def test_the_overpass_query_comes_from_the_category_map(osm_map):
     min_lon, min_lat, max_lon, max_lat = tokyo.bbox
     assert f"({min_lat},{min_lon},{max_lat},{max_lon})" in query
     groups = osm.query_groups(fetch)
-    assert set(groups) == {"sights", "amenity", "shop"}
+    assert set(groups) == {"sights", "amenity", "shop", "food"}
+    assert (
+        groups["food"]["amenity"].count("restaurant") == 1
+        and "restaurant" not in groups["amenity"]["amenity"]
+    )
     assert sum(len(v) for g in groups.values() for v in g.values()) == sum(len(v) for v in fetch.values())
 
 
@@ -118,7 +122,7 @@ def test_osm_extract_queries_once_per_group_and_caches(tmp_path):
     client = FakeClient(overpass_handler)
     meta = osm.extract(tokyo, out=tmp_path, date="2026-11-22", registry=load_registry(), client=client)
     queries = [c for c in client.calls if c[0].endswith("interpreter")]
-    assert len(queries) == 3  # sights, amenity, shop
+    assert len(queries) == 4  # sights, amenity, shop, food
     # the "sights" and "shop" answers return the same museum way: it is stored once
     assert meta["files"]["TYO.parquet"]["rows"] == 2
     assert meta["licence"] == "ODbL-1.0" and "OpenStreetMap contributors" in meta["attribution"]
@@ -160,7 +164,7 @@ def test_polite_client_retries_and_identifies_itself(monkeypatch):
     attempts = []
 
     class Response:
-        headers = {}
+        headers: dict = {}  # noqa: RUF012
 
         def __enter__(self):
             return self

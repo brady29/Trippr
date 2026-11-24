@@ -30,7 +30,10 @@ def raw_rows(source: str, select: str) -> list[dict]:
     return [dict(zip(names, r, strict=True)) for r in cur.fetchall()]
 
 
-@pytest.mark.parametrize("source", ["overture", "foursquare"])
+ALL_SOURCES = ["overture", "foursquare", "osm", "wikidata", "wikivoyage"]
+
+
+@pytest.mark.parametrize("source", ALL_SOURCES)
 def test_staged_rows_match_the_schema(staged_out, source):
     staged = staged_rows(staged_out, source)
     assert staged
@@ -91,7 +94,7 @@ def test_closed_duplicate_and_wrong_country_rows_are_dropped(staged_out):
 
 
 def test_stats_add_up(staged_out):
-    for source in ("overture", "foursquare"):
+    for source in ALL_SOURCES:
         s = read_json(stage_stats_file(staged_out, FIXTURE_DATE, source))
         assert s["unique_rows"] == s["raw_rows"] - s["duplicate_rows"]
         assert (
@@ -116,3 +119,45 @@ def test_disabled_source_is_refused(tmp_path, staged_out):
 def test_missing_raw_data_is_an_error(tmp_path, registry):
     with pytest.raises(FileNotFoundError):
         stage(tmp_path, FIXTURE_DATE, registry=registry)
+
+
+def test_osm_fields_come_from_tags(staged_out):
+    staged = {r["source_id"]: r for r in staged_rows(staged_out, "osm")}
+    raw = {f"{r['osm_type']}/{r['osm_id']}": r for r in raw_rows("osm", "osm_type, osm_id, tags")}
+    assert staged and all(sid in raw for sid in staged)
+    for sid, row in staged.items():
+        tags = dict(raw[sid]["tags"]) if not isinstance(raw[sid]["tags"], dict) else raw[sid]["tags"]
+        assert row["name"] == tags["name"] or row["name"].replace(" ", "") == tags["name"].replace(" ", "")
+        assert row["licence"] == "ODbL-1.0" and row["opening_hours"] == tags.get("opening_hours")
+        assert row["wikidata_qid"] == (
+            tags.get("wikidata") if str(tags.get("wikidata", "")).startswith("Q") else None
+        )
+        assert row["category_source"].split("|")[0].count("=") == 1
+    synthetic = [r for r in staged.values() if r["source_id"].startswith("node/9000")]
+    assert synthetic and any(r["wikidata_qid"] for r in synthetic)
+    with_english = [(row, raw[sid]["tags"]) for sid, row in staged.items() if "name:en" in raw[sid]["tags"]]
+    assert with_english
+    assert all(row["name_en"] == tags["name:en"] for row, tags in with_english)
+
+
+def test_wikidata_items_carry_sitelinks_and_a_cc0_description(staged_out):
+    staged = staged_rows(staged_out, "wikidata")
+    assert staged and all(r["wikidata_qid"] == r["source_id"] for r in staged)
+    assert all(r["signals"]["wikidata_sitelinks"] is not None for r in staged)
+    described = [r for r in staged if r["signals"]["description"]]
+    assert described and all(r["signals"]["description_licence"] == "CC0-1.0" for r in described)
+    assert all(r["licence"] == "CC0-1.0" for r in staged)
+    assert any(r["name_local"] for r in staged)  # labels in both scripts
+    aux = staged_file(staged_out, FIXTURE_DATE, "wikidata").parent / "aux" / "wikidata_qids.parquet"
+    assert aux.is_file()  # every fetched item, for sitelink lookups by QID
+
+
+def test_wikivoyage_listings_are_flagged_and_keep_their_text_licence(staged_out):
+    staged = staged_rows(staged_out, "wikivoyage")
+    assert staged and all(r["signals"]["wikivoyage_listed"] is True for r in staged)
+    assert all(r["licence"] == "CC-BY-SA-4.0" for r in staged)
+    texts = [r for r in staged if r["signals"]["description"]]
+    assert texts and all(r["signals"]["description_licence"] == "CC-BY-SA-4.0" for r in texts)
+    assert {r["category"] for r in staged} <= {"landmark", "tour", "restaurant", "bar", "shopping"}
+    stats = read_json(stage_stats_file(staged_out, FIXTURE_DATE, "wikivoyage"))
+    assert stats["excluded"] >= 0 and stats["unmapped_share"] == 0

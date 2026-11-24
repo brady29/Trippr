@@ -40,6 +40,7 @@ ignore = ["E501"]
 # Full-width and CJK characters are the point of the name normalisation code and its tests.
 "src/trippr_data/names.py" = ["RUF001"]
 "tests/test_names.py" = ["RUF001"]
+"tests/test_similarity.py" = ["RUF001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

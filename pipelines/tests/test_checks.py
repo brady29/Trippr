@@ -20,6 +20,8 @@ from trippr_data.taxonomy import load_taxonomy
 
 from .conftest import FIXTURE_DATE
 
+ALL_SOURCES = ("overture", "foursquare", "osm", "wikidata", "wikivoyage")
+
 
 @pytest.fixture()
 def cctx(registry):
@@ -34,7 +36,7 @@ def cctx(registry):
 @pytest.fixture()
 def con(staged_out: Path):
     """A writable copy of the staged fixture rows, so each test can break something."""
-    con = open_staged([staged_file(staged_out, FIXTURE_DATE, s) for s in ("overture", "foursquare")])
+    con = open_staged([staged_file(staged_out, FIXTURE_DATE, s) for s in ALL_SOURCES])
     run(con, "CREATE TABLE staged_copy AS SELECT * FROM staged")
     run(con, "DROP VIEW staged")
     run(con, "ALTER TABLE staged_copy RENAME TO staged")

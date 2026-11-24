@@ -27,9 +27,19 @@ _NO_SPACE_RANGES = (
     (0x20000, 0x2FA1F),  # CJK extensions B and later
 )
 _LATIN_FIXES = {"đ": "d", "ø": "o", "ł": "l", "ß": "ss", "æ": "ae", "œ": "oe"}
-# Words that carry no identity ("the", "of"); category words stay, so "Tokyo Tower" and "Tokyo Skytree"
-# keep different tokens.
-STOPWORDS = frozenset({"the", "of", "and", "a", "an", "de", "la", "le", "du", "di", "da", "no", "at"})
+# Words that carry no identity: articles, and generic words for the kind of place ("coffee", "temple",
+# "神社"). They still count in the Jaro-Winkler comparison but not in the token-set measure, so "Firefly
+# Coffee" and "Aries Coffee" do not match on "coffee" and "Sensoji" matches "Sensoji Temple". Names whose
+# only distinguishing part is a place word ("Tokyo Tower" and "Tokyo Skytree") keep their tokens.
+STOPWORDS = frozenset(
+    {
+        "the", "of", "and", "a", "an", "de", "la", "le", "du", "di", "da", "no", "at",
+        "coffee", "cafe", "restaurant", "bar", "pub", "hotel", "shop", "store", "temple", "shrine", "museum",
+        "park", "garden", "bakery", "kitchen", "house", "food", "noodle", "noodles", "pizza", "branch",
+        "神社", "寺院", "公園", "公园", "食堂", "本店", "支店", "分店", "咖啡", "餐廳", "餐厅", "酒店", "カフェ",
+        "ラーメン", "居酒", "酒屋", "식당", "카페", "분점", "본점",
+    }
+)  # fmt: skip
 
 
 def _no_space_script(ch: str) -> bool:

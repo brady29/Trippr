@@ -9,6 +9,23 @@ foursquare,58ce4339f7f8dd6a2df49c50,町屋二丁目公園,町屋二丁目公園,
 foursquare,5c36e032fdb9a7002c292bb5,六本木ミュージアム,六本木ミュージアム,,Arts and Entertainment > Museum > History Museum,museum,35.659538,139.7341,TYO,"六本木5-6-20, 港区, 106-0032",https://roppongimuseum.jp/s/A01/?ima=1707,+81363283005,Apache-2.0,2026-11-18T00:00:00Z,raw/foursquare/2026-11-18/TYO.parquet
 foursquare,693cf58be52f0a23f0b94431,銀座さいしょ,銀座さいしょ,,Dining and Drinking > Restaurant > Asian Restaurant > Japanese Restaurant,restaurant,35.678974,139.740509,TYO,"千代田区平河町2丁目7-2, 千代田区, 102-0093",https://saisho.net,+81343613185,Apache-2.0,2026-11-18T00:00:00Z,raw/foursquare/2026-11-18/TYO.parquet
 foursquare,6c0f2412038345bb6b8a3797,グラシアス,グラシアス,,"Dining and Drinking > Cafe, Coffee, and Tea House > Café",cafe,34.676037,135.544128,OSA,"東成区東中本3丁目16-15 103, 大阪市, 537-0021",https://gracias-cafe.crayonsite.net,+81669740141,Apache-2.0,2026-11-18T00:00:00Z,raw/foursquare/2026-11-18/OSA.parquet
+osm,node/13964169049,Japanese Art Gallery,,Japanese Art Gallery,tourism=gallery,gallery,35.671181,139.705035,TYO,,https://japanime-art.jp/,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/1601179486,デニーズ,デニーズ,Denny's,amenity=restaurant,restaurant,35.70461,139.507625,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/1772555182,南臺寺,南臺寺,Nandai-ji,amenity=place_of_worship|religion=buddhist,temple_shrine,35.643745,139.738239,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/4930663006,ブルーバード,ブルーバード,,amenity=restaurant,restaurant,35.706568,139.565481,TYO,"1, 武蔵野市, 180-0006",,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/5487630694,苺大福の専門店 苺庵,苺大福の専門店 苺庵,Ichigo-an,shop=confectionery,dessert_bakery,35.7031,139.771471,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/5964037556,龍雲禅寺,龍雲禅寺,,amenity=place_of_worship|religion=buddhist,temple_shrine,35.632808,139.672226,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/6585809387,Vitaflavone,,Vitaflavone,amenity=cafe,cafe,35.616875,139.675787,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000000,町屋二丁目公園,町屋二丁目公園,,leisure=park,park_garden,35.74438,139.778595,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000001,谷口不動尊,谷口不動尊,,amenity=place_of_worship|religion=buddhist,temple_shrine,35.824283,139.86615,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000003,妙見堂,妙見堂,,amenity=place_of_worship|religion=buddhist,temple_shrine,35.57643,139.706802,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000004,物流博物館,物流博物館,,tourism=museum,museum,35.629458,139.7323,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000006,東京墨田区日本 ( Japao Tokyo Sumida Ku),東京墨田区日本 ( Japao Tokyo Sumida Ku),,tourism=museum,museum,35.718555,139.810806,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,node/9000007,松岡美術館,松岡美術館,,tourism=museum,museum,35.640323,139.721817,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,way/495157972,下井草いど公園,下井草いど公園,,leisure=park,park_garden,35.718718,139.631023,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,way/495679055,美しが丘第三公園,美しが丘第三公園,,leisure=park,park_garden,35.584952,139.548723,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,way/566768834,鬼子母神堂,鬼子母神堂,,building=temple,temple_shrine,35.751043,139.578414,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
+osm,way/642559027,給田4丁目緑地,給田4丁目緑地,,leisure=park,park_garden,35.671645,139.590896,TYO,,,,ODbL-1.0,2026-11-18T00:00:00Z,raw/osm/2026-11-18/TYO.parquet
 overture,007193d0-5095-4d39-82e9-3f7f000fe07e,桃ケ池公園市民活動センター,桃ケ池公園市民活動センター,,park,park_garden,34.628012,135.520515,OSA,"大阪府大阪市阿倍野区桃ケ池町1丁目13−4, 大阪市阿倍野区, 545-0012",,+81666289045,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/OSA.parquet
 overture,00a18dea-3b62-41b8-86af-a0099319093e,ロペ 小顔コルギ&表情筋ケア専門店,ロペ 小顔コルギ&表情筋ケア専門店,,spa,onsen_spa,35.628708,139.679955,TYO,"荏原六丁目, 品川区, 1420063",http://lope.tokyo/,+19085690157,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/TYO.parquet
 overture,031a6bcc-da55-4a5f-b18e-df9e017011e2,武庫川河川敷 ランニングコース,武庫川河川敷 ランニングコース,,hiking_trail,hike,34.743296,135.376671,OSA,尼崎市,,,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/OSA.parquet
@@ -147,3 +164,57 @@ overture,f823e885-0855-4ad6-b9f5-af003ea119b5,藤田美術館,藤田美術館,,a
 overture,f8b153d5-4149-440d-9d1f-d11863958145,Seeed,,Seeed,music_and_dvd_store,shopping,34.704111,135.504601,OSA,"北区神山町2-7, 大阪市北区, 530-0026",,+81675014587,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/OSA.parquet
 overture,fc21556b-48e2-4efb-b6b5-961f15962d60,Bijudo Grand Marble Suocho Store,,Bijudo Grand Marble Suocho Store,bakery,dessert_bakery,34.671825,135.504013,OSA,"中央区東心斎橋2丁目5-31, 大阪市中央区, 542-0083",http://www.grandmarble.com/pickupshop/suoumachi.html,+81662131450,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/OSA.parquet
 overture,fff2708b-95c2-44fc-9a3b-384696a4c0c4,ユトリート東大阪,ユトリート東大阪,,music_venue,performance,34.659098,135.592277,OSA,"大阪府東大阪市中小阪5丁目14−30, 東大阪市, 577-0804",http://www.yutori-to.or.jp/sisetsu.html,,CDLA-Permissive-2.0,2026-11-18T00:00:00Z,raw/overture/2026-11-18/OSA.parquet
+wikidata,Q11362202,World Money Box Museum,世界の貯金箱博物館,World Money Box Museum,Q33506,museum,34.716694,135.413417,OSA,,https://www.amashin.co.jp/sekai/,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q113636886,Ayase Inari Shrine,綾瀬稲荷神社,Ayase Inari Shrine,Q514480|Q845945,temple_shrine,35.76308,139.82271,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q11378773,Itami City Museum of Art,伊丹市立美術館,Itami City Museum of Art,Q207694,museum,34.782556,135.417194,OSA,,https://artmuseum-itami.jp/,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q11418971,Zenpuku-ji Temple,善福寺,Zenpuku-ji Temple,Q5393308,temple_shrine,34.84778,135.502167,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q11512577,Mount Myōjin,明神山 (奈良県),Mount Myōjin,Q54050|Q8502,hike,34.573889,135.675833,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q11552241,Ikebukuro-mitake Shrine,池袋御嶽神社,Ikebukuro-mitake Shrine,Q11488964|Q845945,temple_shrine,35.736389,139.706389,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q11557532,Hama Nakatsu Bridge,浜中津橋,Hama Nakatsu Bridge,Q12280|Q158218,landmark,34.711288,135.488312,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q11574575,Ikune Shrine,生根神社,Ikune Shrine,Q134917286|Q135009132|Q845945,temple_shrine,34.615438,135.493889,OSA,,http://ikune.a.la9.jp/,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q11618761,Kōson-ji Temple,荒村寺,Kōson-ji Temple,Q5393308,temple_shrine,34.779861,135.421389,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q116909510,Rendai-ji Temple,蓮台寺,Rendai-ji Temple,Q5393308,temple_shrine,35.808306,139.82825,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q118013750,Mitsujō-in Temple,密乗院,Mitsujō-in Temple,Q5393308,temple_shrine,35.826972,139.856222,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q124496615,One Dōjima Project,ONE DOJIMA PROJECT,One Dōjima Project,Q11303|Q41176,landmark,34.696884,135.491378,OSA,,https://www.one-dojima.com/,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q128866196,Jōraku-in Temple,常楽院,Jōraku-in Temple,Q5393308,temple_shrine,35.656417,139.573972,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q131274429,Daikō-ji Temple,大光寺,Daikō-ji Temple,Q5393308,temple_shrine,34.660139,135.511278,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q133807670,ららテラス川口,ららテラス川口,,Q11315,shopping,35.803056,139.718556,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q136919861,Bar lupin,バー・ルパン,Bar lupin,Q187456,bar,35.671097,139.76334,TYO,,http://home.u06.itscom.net/lupin/,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q138316977,Fukae Heritage Museum,深江郷土資料館,Fukae Heritage Museum,Q33506,museum,34.669951,135.560921,OSA,,https://fukae-heritage-museum.or.jp,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q43594170,Chōnichi-ji Temple,朝日寺,Chōnichi-ji Temple,Q5393308,temple_shrine,34.562333,135.482,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q4666750,Abeno Cues Town,あべのキューズタウン,Abeno Cues Town,Q11315,shopping,34.644972,135.511583,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q55526537,Chōshō-ji Temple,長勝寺,Chōshō-ji Temple,Q5393308,temple_shrine,35.69,139.877778,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910000,町屋二丁目公園,町屋二丁目公園,,Q22698,park_garden,35.74403,139.778945,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910002,Jr小岩駅北口駅前広場,Jr小岩駅北口駅前広場,,Q22698,park_garden,35.733334,139.881942,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910003,妙見堂,妙見堂,,Q5393308,temple_shrine,35.57608,139.707152,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910005,六本木ミュージアム,六本木ミュージアム,,Q33506,museum,35.659538,139.73445,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910006,東京墨田区日本 ( Japao Tokyo Sumida Ku),東京墨田区日本 ( Japao Tokyo Sumida Ku),,Q207694,museum,35.718204,139.811156,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910008,ソラマチ すみだ水族館,ソラマチ すみだ水族館,,Q2281788,aquarium_zoo,35.708,139.784987,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q910100,善永寺,善永寺,,Q5393308,temple_shrine,34.841412,135.569457,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q910102,以楽公園,以楽公園,,Q22698,park_garden,34.796055,135.649093,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q910103,藤井寺市梅が園,藤井寺市梅が園,,Q22698,park_garden,34.573338,135.62123,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q910105,西光寺,西光寺,,Q5393308,temple_shrine,34.826523,135.424972,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q910106,Bohemia Crystal Museum & Shop,,Bohemia Crystal Museum & Shop,Q33506,museum,34.739586,135.499206,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q910108,小林一三記念館,小林一三記念館,,Q33506,museum,34.826073,135.431136,OSA,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/OSA.parquet
+wikidata,Q97189129,Suwa Shrine (Nishi-Ōizumi),諏訪神社,Suwa Shrine (Nishi-Ōizumi),Q2370082|Q845945,temple_shrine,35.755889,139.580361,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q97200123,Hōshō-ji Temple,法照寺,Hōshō-ji Temple,Q5393308,temple_shrine,35.668513,139.642972,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q97210884,Henjō-ji Temple,遍照寺,Henjō-ji Temple,Q5393308,temple_shrine,35.752806,139.710639,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikidata,Q97310690,Tōfuku-ji Temple,東福寺,Tōfuku-ji Temple,Q5393308,temple_shrine,35.727389,139.668,TYO,,,,CC0-1.0,2026-11-18T00:00:00Z,raw/wikidata/2026-11-18/TYO.parquet
+wikivoyage,168090:833bc3a986,GLICO Museum,,GLICO Museum,see,landmark,34.718278,135.46125,OSA,,https://www.glico.com/jp/enjoy/experience/ezakikinenkan/,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,17828:a4c6311b3a,Sawa-no-Tsuru Museum,沢の鶴資料館,Sawa-no-Tsuru Museum,see,landmark,34.7036,135.2329,OSA,,http://www.sawanotsuru.co.jp/site/,+81 78-882-7788,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,180584:7fe9af1f2b,Toshima-ku tokiwa-sou manga museum,豊島区立トキワ荘マンガミュージアム,Toshima-ku tokiwa-sou manga museum,see,landmark,35.724239,139.686116,TYO,,https://tokiwasomm.jp/,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,182745:6e4cf27cd4,Ōnomatsu stable,"阿武松部屋, Ōnomatsu-beya",Ōnomatsu stable,see,landmark,35.670472,140.034778,TYO,5-15-14 Saginuma,http://ounomatsu.com/,+81 47-452-1621,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,195335:ea89826131,Playing with Curious George,,Playing with Curious George,do,tour,34.665591,135.434456,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,26160:1966f643ca,Endo Sushi,ゑんどう寿司,Endo Sushi,eat,restaurant,34.684195,135.479544,OSA,"1 Chome-1-86 Noda, Fukushima Ward",http://www.endo-sushi.com/english.html,+81 6-6469-7108,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,26160:ef92aace87,Osaka Tenmangū Shrine,大阪天満宮,Osaka Tenmangū Shrine,see,landmark,34.697423,135.51301,OSA,2 Chome-1-8 Tenjinbashi,https://osakatemmangu.or.jp/,+81 6-6353-0025,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,36219:ee19dbf2ab,Preece Premium,,Preece Premium,eat,restaurant,35.66561,139.72994,TYO,Tokyo Midtown Basement,http://www.tokyo-midtown.com/jp/restaurants/SOP0000136/,+81 3 5413-5109,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,36225:d0c7310830,Kitanomaru Park,"北の丸公園, kita-no-maru kōen",Kitanomaru Park,see,landmark,35.691528,139.751059,TYO,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,36228:c3c5e0570f,Basho Museum,,Basho Museum,see,landmark,35.68611,139.79409,TYO,"1-6-3 Tokiwa, Koto-ku",https://www.kcf.or.jp/basho/,+81 03-3631-1448,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,36269:31101694ad,Asakura Museum of Sculpture,朝倉彫塑館,Asakura Museum of Sculpture,see,landmark,35.726894,139.76854,TYO,7-16-10 Yanaka,https://www.taitocity.net/zaidan/asakura/,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,36273:6c7e638f05,Yoshinoya,,Yoshinoya,eat,restaurant,35.71238,139.77782,TYO,,https://www.yoshinoya.com/,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/TYO.parquet
+wikivoyage,91:fixture1,桃ケ池公園市民活動センター,桃ケ池公園市民活動センター,,see,landmark,34.62766,135.520508,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,92:fixture2,以楽公園,以楽公園,,see,landmark,34.795705,135.648743,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,94:fixture4,宝塚市山本界隈,宝塚市山本界隈,,see,landmark,34.825032,135.384582,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,95:fixture5,西光寺,西光寺,,see,landmark,34.826173,135.424622,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,97:fixture7,ボディーアートジャパン,ボディーアートジャパン,,do,tour,34.681741,135.515137,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet
+wikivoyage,98:fixture8,小林一三記念館,小林一三記念館,,see,landmark,34.825723,135.430786,OSA,,,,CC-BY-SA-4.0,2026-11-18T00:00:00Z,raw/wikivoyage/2026-11-18/OSA.parquet

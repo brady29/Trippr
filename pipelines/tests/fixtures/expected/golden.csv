@@ -1,0 +1,186 @@
+golden_id,city_code,name,name_en,name_local,category,lat,lon,website,opening_hours,wikidata_qid,wikidata_sitelinks,wikivoyage_listed,n_sources,n_records,sources,licences,description_source,description_licence
+OSA-011c04ee24,OSA,Gallery Hiyori,Gallery Hiyori,,gallery,34.633684,135.629723,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-05431188b0,OSA,Sawa-no-Tsuru Museum,Sawa-no-Tsuru Museum,沢の鶴資料館,landmark,34.7036,135.2329,http://www.sawanotsuru.co.jp/site/,"10:00-16:00, closed Wed",Q11553106,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+OSA-05d0187624,OSA,千里川土手,,千里川土手,historic_site,34.771124,135.453163,https://www.city.toyonaka.osaka.jp/machi/kukou/kukou_topics/access.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-0de8e0d786,OSA,以楽公園,,以楽公園,park_garden,34.796059,135.64875,,,Q910102,5,True,3,3,overture+wikidata+wikivoyage,CC-BY-SA-4.0+CC0-1.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-0e1c9c7311,OSA,Hama Nakatsu Bridge,Hama Nakatsu Bridge,浜中津橋,landmark,34.711288,135.488312,,,Q11557532,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-12fbbf5ea5,OSA,あいがわゴルフコース,,あいがわゴルフコース,sport_activity,34.867624,135.557899,http://www.golfnet.ne.jp/course/h3003.htm,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-1603922112,OSA,Seeed,Seeed,,shopping,34.704111,135.504601,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-1736c1ea2e,OSA,武庫川河川敷西宮側 山手大橋下,,武庫川河川敷西宮側 山手大橋下,sports_venue,34.742792,135.377006,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-1980f70481,OSA,長居植物園,,長居植物園,park_garden,34.61023,135.521553,https://botanical-garden.nagai-park.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-1d2f3b6a8a,OSA,仲村ぶどう園,,仲村ぶどう園,market,34.536276,135.640816,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-249737a2ea,OSA,ユトリート東大阪,,ユトリート東大阪,performance,34.659098,135.592277,http://www.yutori-to.or.jp/sisetsu.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-25f214a4ef,OSA,Daikō-ji Temple,Daikō-ji Temple,大光寺,temple_shrine,34.660139,135.511278,,,Q131274429,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-29c4e1b789,OSA,ピーターパン,,ピーターパン,cafe,34.696022,135.5355,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-2a3894e303,OSA,段ヶ峰,,段ヶ峰,hike,34.65486,135.496285,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-2f2b598229,OSA,スシロー,Akindo Sushiro,あきんどスシロー,restaurant,34.783918,135.496818,https://www.akindo-sushiro.co.jp/shop/detail.php?id=2839,,,0,False,1,1,overture,CC0-1.0,,
+OSA-308f2c62d0,OSA,アンゴン,,アンゴン,restaurant,34.67663,135.498268,https://s.tabelog.com/osaka/A2701/A270201/27000933/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-34f8417d6b,OSA,Kōson-ji Temple,Kōson-ji Temple,荒村寺,temple_shrine,34.779861,135.421389,,,Q11618761,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-35f4201f49,OSA,アドプト・リバー・糸田川,,アドプト・リバー・糸田川,hike,34.757196,135.504417,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-3646c34b74,OSA,アークテック,,アークテック,electronics,34.725611,135.616844,http://www.archtech.co.jp,,,0,False,1,1,overture,Apache-2.0,,
+OSA-36572eed64,OSA,Mount Myōjin,Mount Myōjin,明神山 (奈良県),hike,34.573889,135.675833,,,Q11512577,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-3733b276dc,OSA,天美中温泉,,天美中温泉,onsen_spa,34.588118,135.528297,https://osaka268.com/sento/%E5%A4%A9%E7%BE%8E%E4%B8%AD%E6%B8%A9%E6%B3%89,,,0,False,1,1,overture,Apache-2.0,,
+OSA-3b8a2e7a28,OSA,M2 Mansion,M2 Mansion,,historic_site,34.672493,135.508171,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-40ba85798a,OSA,グラシアス,,グラシアス,cafe,34.676039,135.544136,https://gracias-cafe.crayonsite.net,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+OSA-427826d217,OSA,天保山動物館,,天保山動物館,aquarium_zoo,34.655914,135.431007,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-4590ab1168,OSA,カラオケライブスタジオ ライムライト,,カラオケライブスタジオ ライムライト,nightlife,34.730753,135.383644,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-45e090ae22,OSA,かつや,Katsuya,かつや,restaurant,34.678644,135.506645,https://shop.arclandservice.co.jp/ae-shop/spot/detail?code=2511,,,0,False,1,1,overture,CC0-1.0,,
+OSA-4760f3b2ae,OSA,Sikaya,Sikaya,,restaurant,34.509756,135.44326,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-490aa0d895,OSA,五月山,,五月山,hike,34.833292,135.434975,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-493ca76905,OSA,止止呂支比賣命神社(若松宮),,止止呂支比賣命神社(若松宮),temple_shrine,34.604784,135.497673,http://wakamatsujinja.sakura.ne.jp/index.html,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+OSA-4ae0acaffc,OSA,Endo Sushi,Endo Sushi,ゑんどう寿司,restaurant,34.684195,135.479544,http://www.endo-sushi.com/english.html,,,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+OSA-5038731e3a,OSA,肉の鶴々亭,,肉の鶴々亭,restaurant,34.665682,135.5299,https://www.niku-tsuru.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-522b672418,OSA,信太森葛葉稲荷神社,,信太森葛葉稲荷神社,temple_shrine,34.509314,135.438637,http://www.kuzunohainari.com,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+OSA-5234d68621,OSA,Chōnichi-ji Temple,Chōnichi-ji Temple,朝日寺,temple_shrine,34.562333,135.482,,,Q43594170,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-5a54ad762b,OSA,L&L Golf Clinic,L&L Golf Clinic,,sport_activity,34.67927,135.50515,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-5e0a6dc25b,OSA,大衆酒処 うみさちひこ,,大衆酒処 うみさちひこ,bar,34.690191,135.516258,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-6779567653,OSA,Osaka Tenmangū Shrine,Osaka Tenmangū Shrine,大阪天満宮,landmark,34.697423,135.51301,https://osakatemmangu.or.jp/,09:00-17:00 daily,Q385793,0,True,1,1,wikivoyage,CC-BY-SA-4.0,,
+OSA-6e04b59c2c,OSA,おやじすし一喜 185出張所,,おやじすし一喜 185出張所,bar,34.656565,135.541588,http://www.sushi-ikuno.com/Otoiawase.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-6fd8182497,OSA,오사카여행,,오사카여행,tour,34.672064,135.503227,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-6fec8894f1,OSA,ガチャガチャ仕入れ本舗,,ガチャガチャ仕入れ本舗,theme_park,34.645914,135.514313,https://gacha-gacha.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-70d6a5a2ae,OSA,Kissho Matoba,Kissho Matoba,,cafe,34.65027,135.513893,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-74bba9eb0d,OSA,みやび亭,,みやび亭,restaurant,34.694239,135.515083,http://miyabitei.owst.jp,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-756f681a59,OSA,姫松温泉,,姫松温泉,onsen_spa,34.612597,135.480446,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-7673ba64cf,OSA,東大阪市六万寺町,,東大阪市六万寺町,historic_site,34.651899,135.639259,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-76ca553ef0,OSA,海月銀河,,海月銀河,aquarium_zoo,34.654825,135.428886,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-84c380c075,OSA,藤田美術館,,藤田美術館,museum,34.695067,135.525147,http://fujita-museum.or.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-874f9fc013,OSA,武庫川河川敷 ランニングコース,,武庫川河川敷 ランニングコース,hike,34.743296,135.376671,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-8bd6bae9db,OSA,天然露天溫泉 スパ住之江,,天然露天溫泉 スパ住之江,tour,34.610376,135.469414,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-8d2d8bd61b,OSA,サーティワンアイスクリーム,Baskin-Robbins,サーティワンアイスクリーム,dessert_bakery,34.794626,135.566421,https://store.br31.jp/br31/spot/detail?code=0000000362,,,0,False,1,1,overture,CC0-1.0,,
+OSA-91560432e3,OSA,Fukae Heritage Museum,Fukae Heritage Museum,深江郷土資料館,museum,34.669951,135.560921,https://fukae-heritage-museum.or.jp,,Q138316977,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-920b8b3acc,OSA,都市緑化植物園,,都市緑化植物園,park_garden,34.749388,135.423866,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-9293322757,OSA,小林一三記念館,,小林一三記念館,museum,34.826075,135.430794,http://www.hankyu-bunka.or.jp/kinenkan,,Q910108,11,True,3,3,overture+wikidata+wikivoyage,CC-BY-SA-4.0+CC0-1.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-963b7d5634,OSA,タイトーFステーション イオンフードスタイル摂津富田店,,タイトーFステーション イオンフードスタイル摂津富田店,arcade_gaming,34.837549,135.589485,https://www.taito.co.jp/store/00204580,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-98125013d0,OSA,Bijudo Grand Marble Suocho Store,Bijudo Grand Marble Suocho Store,,dessert_bakery,34.671825,135.504013,http://www.grandmarble.com/pickupshop/suoumachi.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-9b2ae16f51,OSA,宇宙家族,,宇宙家族,gallery,34.695284,135.511711,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-9ef94b479d,OSA,西光寺,,西光寺,temple_shrine,34.826525,135.424629,https://akiling.wixsite.com/mysite,,Q910105,8,True,3,3,overture+wikidata+wikivoyage,CC-BY-SA-4.0+CC0-1.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-a05d06b918,OSA,One Dōjima Project,One Dōjima Project,ONE DOJIMA PROJECT,landmark,34.696884,135.491378,https://www.one-dojima.com/,,Q124496615,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-a7763af3d3,OSA,飯盛城 高櫓郭跡,,飯盛城 高櫓郭跡,castle_palace,34.726492,135.653603,https://ja.wikipedia.org/wiki/飯盛山城,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-a8b0da9674,OSA,Bohemia Crystal Museum & Shop,Bohemia Crystal Museum & Shop,,museum,34.739588,135.498863,,,Q910106,9,False,2,2,overture+wikidata,CC0-1.0+CDLA-Permissive-2.0,wikidata,CC0-1.0
+OSA-a8d9a70a8b,OSA,ボディーアートジャパン,,ボディーアートジャパン,theme_park,34.682093,135.515144,http://www.rakuten.co.jp/bodyart,,Q910107,0,True,2,2,overture+wikivoyage,CC-BY-SA-4.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-ab9a1c5772,OSA,藤井寺市梅が園,,藤井寺市梅が園,park_garden,34.57334,135.620888,,,Q910103,6,False,2,2,overture+wikidata,CC0-1.0+CDLA-Permissive-2.0,wikidata,CC0-1.0
+OSA-ac2493ee15,OSA,見山の郷,,見山の郷,market,34.906134,135.53614,http://miyamanosato.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-aca59ad76a,OSA,善永寺,,善永寺,temple_shrine,34.841414,135.569122,,,Q910100,3,False,2,2,overture+wikidata,CC0-1.0+CDLA-Permissive-2.0,wikidata,CC0-1.0
+OSA-b32b10bd75,OSA,宝塚市山本界隈,,宝塚市山本界隈,park_garden,34.825384,135.38459,,,Q910104,0,True,2,2,overture+wikivoyage,CC-BY-SA-4.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-b3ae417b3c,OSA,王子動物園,,王子動物園,aquarium_zoo,34.650816,135.507332,http://www.kobe-ojizoo.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-b417ecd9c0,OSA,Abeno Cues Town,Abeno Cues Town,あべのキューズタウン,shopping,34.644972,135.511583,,,Q4666750,3,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-b52ff24487,OSA,イオシス 日本橋4丁目店,,イオシス 日本橋4丁目店,electronics,34.658957,135.505882,https://iosys.co.jp,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-b708a452b6,OSA,Zenpuku-ji Temple,Zenpuku-ji Temple,善福寺,temple_shrine,34.84778,135.502167,,,Q11418971,1,False,1,1,wikidata,CC0-1.0,,
+OSA-b82fb6deec,OSA,a.can.g.osaka,a.can.g.osaka,,cafe,34.672773,135.498199,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-b8ecf2eef1,OSA,World Money Box Museum,World Money Box Museum,世界の貯金箱博物館,museum,34.716694,135.413417,https://www.amashin.co.jp/sekai/,,Q11362202,1,False,1,1,wikidata,CC0-1.0,,
+OSA-be4866ba99,OSA,桃の湯跡,,桃の湯跡,onsen_spa,34.672297,135.503624,http://momonoyu.tripod.co.jp,,,0,False,1,1,overture,Apache-2.0,,
+OSA-be732f853e,OSA,ラウンドワン豊中店,,ラウンドワン豊中店,arcade_gaming,34.757401,135.465523,http://www.round1.co.jp/shop/tenpo/osaka-toyonaka.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-be87f25cd9,OSA,桃ケ池公園市民活動センター,,桃ケ池公園市民活動センター,park_garden,34.628012,135.520515,,,Q910101,0,True,2,2,overture+wikivoyage,CC-BY-SA-4.0+CDLA-Permissive-2.0,wikivoyage,CC-BY-SA-4.0
+OSA-c1f5eb6c95,OSA,Playing with Curious George,Playing with Curious George,,tour,34.665591,135.434456,,,,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+OSA-c3c4d42863,OSA,大阪・夕陽丘,,大阪・夕陽丘,historic_site,34.660708,135.510025,https://kaimotu-hatuji.hatenablog.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-c82b005238,OSA,ちひろ菓子店焙煎所,,ちひろ菓子店焙煎所,dessert_bakery,34.694183,135.487816,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-d2e0e03435,OSA,犬島精練所美術館,,犬島精練所美術館,museum,34.680506,135.507538,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-d2ec1d56f6,OSA,まねきねこ なんばHips店,,まねきねこ なんばHips店,nightlife,34.667662,135.50074,http://karaokemanekineko.jp,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-d58c5fe91c,OSA,Itami City Museum of Art,Itami City Museum of Art,伊丹市立美術館,museum,34.782556,135.417194,https://artmuseum-itami.jp/,,Q11378773,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-d6e705e13c,OSA,Ikune Shrine,Ikune Shrine,生根神社,temple_shrine,34.615438,135.493889,http://ikune.a.la9.jp/,,Q11574575,3,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+OSA-d792a28c75,OSA,摂津温泉,,摂津温泉,onsen_spa,34.830538,135.598473,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-dd72bbe60f,OSA,諏訪高島城跡,,諏訪高島城跡,castle_palace,34.751722,135.540962,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-e4634675de,OSA,中崎町ホール,,中崎町ホール,performance,34.707403,135.50486,http://www.nakazakichohall.com/index.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-e61760dc52,OSA,南寝屋川グランド,,南寝屋川グランド,sports_venue,34.744326,135.625786,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-f90b615115,OSA,大阪水族館,,大阪水族館,aquarium_zoo,34.674868,135.501503,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+OSA-fe406e4a1d,OSA,ドトールコーヒーショップ,Doutor Coffee Shop,ドトールコーヒーショップ,cafe,34.55607,135.505524,https://shop.doutor.co.jp/doutor/spot/detail?code=2011915,,,0,False,1,1,overture,CC0-1.0,,
+OSA-fe65571408,OSA,GLICO Museum,GLICO Museum,,landmark,34.718278,135.46125,https://www.glico.com/jp/enjoy/experience/ezakikinenkan/,,Q117794301,0,True,1,1,wikivoyage,CC-BY-SA-4.0,,
+TYO-01349fcacf,TYO,松岡美術館,,松岡美術館,museum,35.640323,139.721817,http://www.matsuoka-museum.jp/,,,0,False,2,2,osm+overture,CDLA-Permissive-2.0+ODbL-1.0,,
+TYO-0390e2ed1b,TYO,ブルーバード,,ブルーバード,restaurant,35.706568,139.565481,,"Mo-Fr, Su 11:00-21:00",,0,False,1,1,osm,ODbL-1.0,,
+TYO-04d45b0b48,TYO,谷口不動尊,,谷口不動尊,temple_shrine,35.824283,139.86615,,,,0,False,2,2,osm+overture,CDLA-Permissive-2.0+ODbL-1.0,,
+TYO-0562ba707c,TYO,キヤノン ギャラリーS,,キヤノン ギャラリーS,gallery,35.625788,139.740898,https://cweb.canon.jp/gallery/schedule/shinagawa.html,,,0,False,1,1,overture,Apache-2.0,,
+TYO-0a5045399a,TYO,披錦斎,,披錦斎,historic_site,35.66127,139.717674,https://www.nezu-muse.or.jp/jp/event/index.html,,,0,False,1,1,overture,Apache-2.0,,
+TYO-0bcb969d1f,TYO,Ikebukuro-mitake Shrine,Ikebukuro-mitake Shrine,池袋御嶽神社,temple_shrine,35.736389,139.706389,,,Q11552241,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-10cd1ce4e8,TYO,Jōraku-in Temple,Jōraku-in Temple,常楽院,temple_shrine,35.656417,139.573972,,,Q128866196,1,False,1,1,wikidata,CC0-1.0,,
+TYO-11a29ca8a2,TYO,猪之頭林道,,猪之頭林道,hike,35.545416,139.574776,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-129a1ef50d,TYO,谷在家赤城神社,,谷在家赤城神社,temple_shrine,35.785526,139.768349,http://www.hikawajinja.com/yazaike.html,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+TYO-15a934eee8,TYO,マウナケア,,マウナケア,cafe,35.62797,139.736717,https://www.princehotels.co.jp/shinagawa/restaurant/maunakea/,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+TYO-1a37a16ec2,TYO,苺大福の専門店 苺庵,Ichigo-an,苺大福の専門店 苺庵,dessert_bakery,35.7031,139.771471,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-1be44748c9,TYO,石の湯,,石の湯,onsen_spa,35.739862,139.917244,,,,0,False,1,1,overture,Apache-2.0,,
+TYO-1cbc488417,TYO,物流博物館,,物流博物館,museum,35.629458,139.7323,http://www.lmuse.or.jp,,,0,False,2,2,osm+overture,CDLA-Permissive-2.0+ODbL-1.0,,
+TYO-1d1249efef,TYO,給田4丁目緑地,,給田4丁目緑地,park_garden,35.671645,139.590896,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-21ca53ec41,TYO,国立スポーツ科学センターフットサルコート,,国立スポーツ科学センターフットサルコート,sports_venue,35.705576,139.829857,http://www.futsalcourt.info/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-2286b19899,TYO,有限会社フライト,,有限会社フライト,tour,35.717709,139.664589,https://www.flight-ltd.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-23995a5ae2,TYO,桜花亭,,桜花亭,park_garden,35.805952,139.807373,http://www.adachiku-oukatei.jp/about/index.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-2552f89da9,TYO,Mitsujō-in Temple,Mitsujō-in Temple,密乗院,temple_shrine,35.826972,139.856222,,,Q118013750,1,False,1,1,wikidata,CC0-1.0,,
+TYO-27a399efdb,TYO,妙見堂,,妙見堂,temple_shrine,35.57643,139.706802,http://www.shoueiin.jp/myoken/index.html,,Q910003,6,False,3,3,osm+overture+wikidata,CC0-1.0+CDLA-Permissive-2.0+ODbL-1.0,wikidata,CC0-1.0
+TYO-2a7926efcc,TYO,クロマツ林,,クロマツ林,nature_spot,35.680218,139.759056,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-2bad75d26c,TYO,ロペ 小顔コルギ&表情筋ケア専門店,,ロペ 小顔コルギ&表情筋ケア専門店,onsen_spa,35.628708,139.679955,http://lope.tokyo/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-2cad7175ac,TYO,首里城,,首里城,castle_palace,35.732851,139.709724,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-314023b6c0,TYO,Suwa Shrine (Nishi-Ōizumi),Suwa Shrine (Nishi-Ōizumi),諏訪神社,temple_shrine,35.755889,139.580361,,,Q97189129,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-318f358cce,TYO,焼き鳥勇,,焼き鳥勇,bar,35.626621,139.725655,http://r.gnavi.co.jp/gass200/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-356e005d30,TYO,黒目川沿いのウォーキング&ジョキングコース秋,,黒目川沿いのウォーキング&ジョキングコース秋,hike,35.766523,139.545235,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-35f85c2dc1,TYO,Vitaflavone,Vitaflavone,,cafe,35.616875,139.675787,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-36166cc311,TYO,モスバーガー,MOS Burger,モスバーガー,restaurant,35.667883,139.760033,https://www.mos.jp/shop/detail/?shop_cd=02502,,,0,False,1,1,overture,CC0-1.0,,
+TYO-367b892f50,TYO,南臺寺,Nandai-ji,南臺寺,temple_shrine,35.643745,139.738239,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-37e85a08d9,TYO,Preece Premium,Preece Premium,,restaurant,35.66561,139.72994,http://www.tokyo-midtown.com/jp/restaurants/SOP0000136/,24 hours daily,,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+TYO-3beafbd20d,TYO,Asakura Museum of Sculpture,Asakura Museum of Sculpture,朝倉彫塑館,landmark,35.726894,139.76854,https://www.taitocity.net/zaidan/asakura/,Tue Wed Fri-Sun 09:30-16:30,Q11517304,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+TYO-418c584140,TYO,Yoshinoya,Yoshinoya,,restaurant,35.71238,139.77782,https://www.yoshinoya.com/,,,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+TYO-4384da2c80,TYO,熟成寿司専門店 優雅,,熟成寿司専門店 優雅,restaurant,35.699423,139.984093,https://www.sushi-yuga.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-46777bbff4,TYO,東都無線,,東都無線,electronics,35.725393,139.744911,http://www.toutomusen.jp,,,0,False,1,1,overture,Apache-2.0,,
+TYO-471da2582d,TYO,Basho Museum,Basho Museum,,landmark,35.68611,139.79409,https://www.kcf.or.jp/basho/,"9:30-17:00 (last admission 16:30), closed second and fourth Mondays unless a national holiday, closed Dec 29-Jan 1, special openings Jan 2-3",Q809981,0,True,1,1,wikivoyage,CC-BY-SA-4.0,,
+TYO-47dadc8df1,TYO,銀座さいしょ,,銀座さいしょ,restaurant,35.678978,139.740517,https://saisho.net,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+TYO-4a66c7bde9,TYO,Chōshō-ji Temple,Chōshō-ji Temple,長勝寺,temple_shrine,35.69,139.877778,,,Q55526537,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-4b482f9f52,TYO,新橋OCOGE,,新橋OCOGE,nightlife,35.665224,139.756157,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-4d2376a6a7,TYO,Brillia Art Gallery,Brillia Art Gallery,,gallery,35.675526,139.769127,https://brillia.jp/pdf/211015artgallery.pdf,,,0,False,1,1,overture,Apache-2.0,,
+TYO-54dcd91c64,TYO,上荻一丁目酒場,,上荻一丁目酒場,bar,35.704378,139.616684,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-56df798812,TYO,Ōnomatsu stable,Ōnomatsu stable,"阿武松部屋, Ōnomatsu-beya",landmark,35.670472,140.034778,http://ounomatsu.com/,,Q8081671,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+TYO-634fef8344,TYO,カラオケパワービート,,カラオケパワービート,nightlife,35.6926,139.782021,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-6664985089,TYO,富の湯,,富の湯,onsen_spa,35.737833,139.840508,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-6b21cfba01,TYO,デニーズ,Denny's,デニーズ,restaurant,35.70461,139.507625,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-725c17319e,TYO,Tōfuku-ji Temple,Tōfuku-ji Temple,東福寺,temple_shrine,35.727389,139.668,,,Q97310690,2,False,1,1,wikidata,CC0-1.0,,
+TYO-74cf9dcfff,TYO,キッチンオリジン,Kitchen Origin,キッチンオリジン,restaurant,35.742464,139.680931,https://shop.toshu.co.jp/toshu/spot/detail?code=0000000628,,,0,False,1,1,overture,CC0-1.0,,
+TYO-753c0a6210,TYO,ミスタードーナツ,Mister Donut,ミスタードーナツ,restaurant,35.838236,139.72422,https://md.mapion.co.jp/b/misterdonut/info/1988/,,,0,False,1,1,overture,CC0-1.0,,
+TYO-77f52382cd,TYO,富士山五合目,,富士山五合目,hike,35.670324,139.660744,http://www.fujiyama5.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-7a8d700944,TYO,オルガン堂,,オルガン堂,market,35.653872,139.666794,http://fukushima-yuuki.net/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-800aa8ed8b,TYO,天保飢饉の供養塔,,天保飢饉の供養塔,monument,35.781969,139.644661,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-829a08b177,TYO,姫路城,,姫路城,castle_palace,35.664698,139.70153,http://www.himejicastle.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-841c939a42,TYO,ホタルのお宿,,ホタルのお宿,aquarium_zoo,35.794645,139.557716,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-85ef0c6fd0,TYO,手塚治虫ワールド壁画,,手塚治虫ワールド壁画,performance,35.713592,139.704185,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-86570b1257,TYO,神代湯,,神代湯,onsen_spa,35.654512,139.5662,http://jindaiyu.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-89a4049a4e,TYO,薭田神社,,薭田神社,temple_shrine,35.564695,139.723076,http://hieda.kamatahachiman.org,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+TYO-89ff00d928,TYO,Ayase Inari Shrine,Ayase Inari Shrine,綾瀬稲荷神社,temple_shrine,35.76308,139.82271,,,Q113636886,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-8b5db9a0b4,TYO,Hōshō-ji Temple,Hōshō-ji Temple,法照寺,temple_shrine,35.668513,139.642972,,,Q97200123,2,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-8bfe48e377,TYO,板橋区こども動物園,,板橋区こども動物園,aquarium_zoo,35.782187,139.690178,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-94438d376e,TYO,六本木ミュージアム,,六本木ミュージアム,museum,35.65954,139.734108,https://roppongimuseum.jp/s/A01/?ima=1707,,Q910005,8,False,3,3,foursquare+overture+wikidata,Apache-2.0+CC0-1.0,wikidata,CC0-1.0
+TYO-973ae8fdc7,TYO,Bar lupin,Bar lupin,バー・ルパン,bar,35.671097,139.76334,http://home.u06.itscom.net/lupin/,,Q136919861,2,False,1,1,wikidata,CC0-1.0,,
+TYO-9896621c53,TYO,煮込みビストロ 笑う門,,煮込みビストロ 笑う門,restaurant,35.670706,139.797714,https://www.waraukado-monnaka.jp,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-9c83c0d7cc,TYO,東京台湾,,東京台湾,restaurant,35.643286,139.698067,https://tokyotaiwan.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-a0b92471fa,TYO,Kitanomaru Park,Kitanomaru Park,"北の丸公園, kita-no-maru kōen",landmark,35.691528,139.751059,,,Q1075966,0,True,1,1,wikivoyage,CC-BY-SA-4.0,wikivoyage,CC-BY-SA-4.0
+TYO-a67bd05110,TYO,シーサイドファンタジアハウス,,シーサイドファンタジアハウス,arcade_gaming,35.644148,139.857506,http://www.senyo.co.jp/kasai/seaside_fantasia.html,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-a818a97472,TYO,Japanese Art Gallery,Japanese Art Gallery,,gallery,35.671181,139.705035,https://japanime-art.jp/,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-a81e96d769,TYO,アーバンドック パークシティ豊洲 居住者専用駐車場,,アーバンドック パークシティ豊洲 居住者専用駐車場,historic_site,35.658426,139.791817,http://www.toyosu2.org,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-abcc8c1914,TYO,鬼子母神堂,,鬼子母神堂,temple_shrine,35.751043,139.578414,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-ad100853ed,TYO,笑笑,Warawara,笑笑,bar,35.730055,139.715492,https://shop.monteroza.co.jp/detail/815497/,,,0,False,1,1,overture,CC0-1.0,,
+TYO-aebe88839c,TYO,Yoyogi Stadium #2,Yoyogi Stadium #2,,sports_venue,35.666368,139.698418,http://www.jpnsport.go.jp/yoyogi/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-b069b5a9ab,TYO,町屋二丁目公園,,町屋二丁目公園,park_garden,35.74438,139.778595,https://www.city.arakawa.tokyo.jp/a043/shisetsuannai/koukyoushisetsu/kouenyuuen043.html,,Q910000,3,False,4,4,foursquare+osm+overture+wikidata,Apache-2.0+CC0-1.0+ODbL-1.0,wikidata,CC0-1.0
+TYO-b501608707,TYO,美しが丘第三公園,,美しが丘第三公園,park_garden,35.584952,139.548723,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-b69e3b6713,TYO,ドトールコーヒーショップ 浦和東口店,,ドトールコーヒーショップ 浦和東口店,cafe,35.858336,139.65802,https://www.doutor.co.jp/dcs,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-c186e2ab75,TYO,Henjō-ji Temple,Henjō-ji Temple,遍照寺,temple_shrine,35.752806,139.710639,,,Q97210884,1,False,1,1,wikidata,CC0-1.0,wikidata,CC0-1.0
+TYO-c553406661,TYO,龍雲禅寺,,龍雲禅寺,temple_shrine,35.632808,139.672226,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-ca89463f37,TYO,クリスタル,,クリスタル,performance,35.843283,139.801643,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-cab195a405,TYO,Rendai-ji Temple,Rendai-ji Temple,蓮台寺,temple_shrine,35.808306,139.82825,,,Q116909510,1,False,1,1,wikidata,CC0-1.0,,
+TYO-cc4abca751,TYO,農協観光 首都圏統括支店,,農協観光 首都圏統括支店,tour,35.688692,139.762795,https://ntour.jp,,,0,False,1,1,overture,Apache-2.0,,
+TYO-cc810111ec,TYO,目黒川,,目黒川,historic_site,35.628836,139.714806,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-ccfb18981d,TYO,サボテン温室,,サボテン温室,park_garden,35.844244,139.726402,http://greencenter.1110city.com,,,0,False,1,1,overture,Apache-2.0,,
+TYO-ce8b500edb,TYO,伝統工芸カフェ・アルティザン,,伝統工芸カフェ・アルティザン,cafe,35.705196,139.902672,http://www.shinozaki-bunkaplaza.com/cafe/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-d202808efd,TYO,PokerBar Fratz フラッツ 高田馬場 ポーカー,,PokerBar Fratz フラッツ 高田馬場 ポーカー,theme_park,35.714006,139.705025,https://fratz-poker.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-d7032c196c,TYO,お土産処楽座,,お土産処楽座,historic_site,35.669718,139.767975,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-dacd975084,TYO,Toshima-ku tokiwa-sou manga museum,Toshima-ku tokiwa-sou manga museum,豊島区立トキワ荘マンガミュージアム,landmark,35.724239,139.686116,https://tokiwasomm.jp/,,,0,True,1,1,wikivoyage,CC-BY-SA-4.0,,
+TYO-dbc1401db3,TYO,ダイアローグ・イン・ザ・ダーク Tokyo,,ダイアローグ・イン・ザ・ダーク Tokyo,theme_park,35.672274,139.712639,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-de8b9cbe72,TYO,もんじゃ花菜絵,,もんじゃ花菜絵,restaurant,35.585255,139.593498,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-debc168e38,TYO,東京墨田区日本 ( Japao Tokyo Sumida Ku),,東京墨田区日本 ( Japao Tokyo Sumida Ku),museum,35.718555,139.810806,,,Q910006,9,False,3,3,osm+overture+wikidata,CC0-1.0+CDLA-Permissive-2.0+ODbL-1.0,wikidata,CC0-1.0
+TYO-e0c1c5c5df,TYO,ららテラス川口,,ららテラス川口,shopping,35.803056,139.718556,,,Q133807670,2,False,1,1,wikidata,CC0-1.0,,
+TYO-e495247a79,TYO,Boulangerie Jemeaux,Boulangerie Jemeaux,,dessert_bakery,35.766478,139.808853,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-e73ca443b6,TYO,下井草いど公園,,下井草いど公園,park_garden,35.718718,139.631023,,,,0,False,1,1,osm,ODbL-1.0,,
+TYO-e844b82c97,TYO,Pan屋 K'eat,,Pan屋 K'eat,dessert_bakery,35.721533,139.73365,http://www.panya-keat.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-e92815a1f1,TYO,リトルパラダイス,,リトルパラダイス,aquarium_zoo,35.627909,139.735207,http://www.aqua-park.jp/aqua/,,,0,False,1,1,overture,Apache-2.0,,
+TYO-ebcea49e23,TYO,久清ファーム野菜直売所,,久清ファーム野菜直売所,market,35.565229,139.622414,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-ec4c9280ce,TYO,茶寮 煉,,茶寮 煉,cafe,35.722103,139.927132,http://www.saryouren.com,,,0,False,2,2,foursquare+overture,Apache-2.0,,
+TYO-f12e6f7455,TYO,金春通り煉瓦遺構の碑,,金春通り煉瓦遺構の碑,historic_site,35.667952,139.76075,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-f2cfc99b73,TYO,湯巡り万華郷,,湯巡り万華郷,onsen_spa,35.647104,139.918877,http://urayasu.ooedoonsen.jp/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-f9df234758,TYO,ソラマチ すみだ水族館,,ソラマチ すみだ水族館,aquarium_zoo,35.708004,139.784645,,,Q910008,11,False,2,2,overture+wikidata,CC0-1.0+CDLA-Permissive-2.0,wikidata,CC0-1.0
+TYO-ff19384728,TYO,あかねや,,あかねや,bar,35.745974,139.5429,,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-ffc28a6fc7,TYO,はりきゅうサロン プレフェレ学芸大,,はりきゅうサロン プレフェレ学芸大,onsen_spa,35.627749,139.688408,https://preferegakudai.com/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-ffc7ba75b5,TYO,本多緑道,,本多緑道,hike,35.780729,139.551292,http://www.niiza.net/midokoro/flower/hondaryokudo/,,,0,False,1,1,overture,CDLA-Permissive-2.0,,
+TYO-fff06b90c8,TYO,Jr小岩駅北口駅前広場,,Jr小岩駅北口駅前広場,park_garden,35.733336,139.881599,,,Q910002,5,False,2,2,overture+wikidata,CC0-1.0+CDLA-Permissive-2.0,wikidata,CC0-1.0

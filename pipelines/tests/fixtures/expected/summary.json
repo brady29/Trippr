@@ -6,10 +6,40 @@
     "duplicates.source_id": "pass",
     "licence.present": "pass",
     "licence.registered": "pass",
+    "match.cluster_spread": "pass",
+    "match.duplicate_golden": "pass",
+    "match.eval": "info",
+    "match.golden_licences": "pass",
+    "match.links": "pass",
     "null_rates.optional": "info",
     "null_rates.required": "pass",
     "row_counts.vs_previous": "info",
     "schema": "pass"
+  },
+  "match": {
+    "cluster_size_distribution": {
+      "1": 159,
+      "2": 19,
+      "3": 6,
+      "4": 1
+    },
+    "clusters_by_source_count": {
+      "1": 159,
+      "2": 19,
+      "3": 6,
+      "4": 1
+    },
+    "clusters_out": 185,
+    "links_by_rule": {
+      "scored": 34,
+      "singleton": 159,
+      "strong_qid": 6,
+      "strong_website": 20
+    },
+    "multi_record_clusters": 26,
+    "multi_source_clusters": 26,
+    "records_in": 219,
+    "refused_by_spread": 0
   },
   "stats": {
     "foursquare": {
@@ -44,6 +74,39 @@
       "uncategorised": 0,
       "uncategorised_share": 0.0,
       "unique_rows": 45,
+      "unmapped": 0,
+      "unmapped_share": 0.0
+    },
+    "osm": {
+      "by_category": {
+        "cafe": 1,
+        "dessert_bakery": 1,
+        "gallery": 1,
+        "museum": 3,
+        "park_garden": 4,
+        "restaurant": 2,
+        "temple_shrine": 5
+      },
+      "closed": 0,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded": 0,
+      "excluded_share": 0.0,
+      "located": 17,
+      "no_city": 1,
+      "no_name": 0,
+      "other_city": 0,
+      "per_city": {
+        "TYO": {
+          "raw_rows": 18,
+          "staged_rows": 17
+        }
+      },
+      "raw_rows": 18,
+      "staged_rows": 17,
+      "uncategorised": 0,
+      "uncategorised_share": 0.0,
+      "unique_rows": 18,
       "unmapped": 0,
       "unmapped_share": 0.0
     },
@@ -99,6 +162,77 @@
       "uncategorised": 14,
       "uncategorised_share": 0.052,
       "unique_rows": 300,
+      "unmapped": 0,
+      "unmapped_share": 0.0
+    },
+    "wikidata": {
+      "by_category": {
+        "aquarium_zoo": 1,
+        "bar": 1,
+        "hike": 1,
+        "landmark": 2,
+        "museum": 7,
+        "park_garden": 4,
+        "shopping": 2,
+        "temple_shrine": 18
+      },
+      "closed": 0,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded": 0,
+      "excluded_share": 0.0,
+      "located": 36,
+      "no_city": 0,
+      "no_name": 0,
+      "other_city": 0,
+      "per_city": {
+        "OSA": {
+          "raw_rows": 18,
+          "staged_rows": 18
+        },
+        "TYO": {
+          "raw_rows": 18,
+          "staged_rows": 18
+        }
+      },
+      "raw_rows": 36,
+      "staged_rows": 36,
+      "uncategorised": 0,
+      "uncategorised_share": 0.0,
+      "unique_rows": 36,
+      "unmapped": 0,
+      "unmapped_share": 0.0
+    },
+    "wikivoyage": {
+      "by_category": {
+        "landmark": 13,
+        "restaurant": 3,
+        "tour": 2
+      },
+      "closed": 0,
+      "country_mismatch": 0,
+      "duplicate_rows": 6,
+      "excluded": 8,
+      "excluded_share": 0.3077,
+      "located": 26,
+      "no_city": 2,
+      "no_name": 0,
+      "other_city": 2,
+      "per_city": {
+        "OSA": {
+          "raw_rows": 18,
+          "staged_rows": 11
+        },
+        "TYO": {
+          "raw_rows": 18,
+          "staged_rows": 7
+        }
+      },
+      "raw_rows": 36,
+      "staged_rows": 18,
+      "uncategorised": 0,
+      "uncategorised_share": 0.0,
+      "unique_rows": 30,
       "unmapped": 0,
       "unmapped_share": 0.0
     }
