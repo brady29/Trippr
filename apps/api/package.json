@@ -15,6 +15,8 @@
     "start": "node dist/server.js",
     "flights:snapshot": "tsx --env-file-if-exists=../../.env src/flight-snapshots.ts",
     "load-bundle": "tsx --env-file-if-exists=../../.env src/load-bundle.ts",
+    "eval-search": "tsx --env-file-if-exists=../../.env src/eval-search.ts",
+    "fake-embeddings": "tsx src/fake-embeddings.ts",
     "typecheck": "tsc --noEmit",
     "test:integration": "vitest run"
   },

@@ -23,6 +23,7 @@
     "db:export": "tsx scripts/export.ts",
     "flights:snapshot": "pnpm --filter @trippr/api flights:snapshot",
     "db:load-bundle": "pnpm --filter @trippr/api load-bundle",
+    "eval:search": "pnpm --filter @trippr/api eval-search",
     "eval:inbox": "tsx --env-file-if-exists=.env scripts/eval-inbox.ts"
   },
   "devDependencies": {

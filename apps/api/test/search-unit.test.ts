@@ -14,6 +14,7 @@ import { createCloudflareEmbedder, createFakeEmbedder, EmbedError, embedderFromC
 import { writeFakeRun } from "../src/services/search/fake-run";
 import { Breaker, QueryCache, SearchGovernor } from "../src/services/search/governor";
 import { buildMatrix, MatrixCache } from "../src/services/search/matrix";
+import { renderMarkdown, scoreQuery, summarise } from "../src/services/search/metrics";
 import { combine, dbTokens, haversineKm, lexicalScore, tokens, WEIGHTS } from "../src/services/search/ranking";
 import { createSearch } from "../src/services/search/service";
 import { place } from "./bundle-kit";
@@ -80,6 +81,30 @@ describe("combining the signals", () => {
 
   it("weights add up to one", () => {
     expect(WEIGHTS.semantic + WEIGHTS.lexical + WEIGHTS.prior).toBeCloseTo(1, 10);
+  });
+});
+
+describe("relevance metrics (same definitions as the pipeline's eval)", () => {
+  it("scores the example the Python test uses and summarises by kind and language", () => {
+    const m = scoreQuery(["x", "a", "y", "b", "z"], new Set(["a", "b", "c"]));
+    expect(m["recall@1"]).toBe(0);
+    expect(m["success@5"]).toBe(1);
+    expect(m["recall@5"]).toBeCloseTo(2 / 3, 10);
+    expect(m.mrr).toBe(0.5);
+    const ideal = 1 + 1 / Math.log2(3) + 1 / Math.log2(4);
+    expect(m["ndcg@10"]).toBeCloseTo((1 / Math.log2(3) + 1 / Math.log2(5)) / ideal, 10);
+    expect(scoreQuery(["a"], new Set(["a"]))["ndcg@10"]).toBe(1);
+    const report = summarise(
+      [
+        { id: "1", text: "a", lang: "en", kind: "name", relevant: ["a"] },
+        { id: "2", text: "b", lang: "ja", kind: "name", relevant: ["zzz"] },
+      ],
+      [["a"], ["q"]],
+    );
+    expect(report.overall).toMatchObject({ queries: 2, mrr: 0.5 });
+    expect(report.byLang.en!.mrr).toBe(1);
+    expect(report.byLang.ja!.mrr).toBe(0);
+    expect(renderMarkdown(report, "t")).toContain("| lang: ja | 1 |");
   });
 });
 
@@ -285,6 +310,15 @@ describe("an embeddings run", () => {
     expect(run.matrix).toHaveLength(3 * 16);
     expect(Array.from(run.matrix.subarray(0, 16))).toEqual(Array.from(fakeVector("Alpha Temple · museum", 16)));
     expect(run.manifest).toMatchObject({ model: "fake-16", dims: 16, count: 3 });
+  });
+
+  it("reads a run the real pipeline wrote (fixture made by `trippr-data embed --model fake-16 --limit 5`)", async () => {
+    const run = await readEmbeddingsRun(localStore(join(import.meta.dirname, "fixtures/embeddings")), "2026-11-18");
+    expect(run.manifest).toMatchObject({ stage: "embed", model: "fake-16", dims: 16, count: 5, text_version: "v1" });
+    expect(run.placeIds[0]).toBe("foursquare:20fd0a7fb3924e5eb889ffe2");
+    // Values numpy printed for row 0, so a byte-order or layout mistake in either language shows here.
+    expect(Array.from(run.matrix.subarray(0, 4))).toEqual([0.10949397087097168, -0.15147821605205536, -0.030360594391822815, 0.05595576390624046].map(Math.fround));
+    expect(run.contentHashes[0]).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("refuses a run whose files do not match the manifest", async () => {
