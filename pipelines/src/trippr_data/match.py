@@ -444,13 +444,20 @@ def _prec_case(field: str) -> str:
     return f"CASE {whens} ELSE {len(order)} END"
 
 
-def build_golden(con: duckdb.DuckDBPyConnection, out: Path, date: str) -> None:
-    """Create `golden` from `links` and the staged records, with per-field survivorship."""
+def _has_golden(con: duckdb.DuckDBPyConnection) -> bool:
+    return bool(scalar(con, "SELECT count(*) FROM duckdb_tables() WHERE table_name = 'golden'"))
+
+
+def build_golden(con: duckdb.DuckDBPyConnection, out: Path, date: str, city: str | None = None) -> None:
+    """Add golden records to `golden` from `links` and the staged records, with per-field survivorship.
+
+    One city at a time (the join of every record with its source row would not fit in memory)."""
     run(
         con,
-        """CREATE OR REPLACE TABLE members AS
+        f"""CREATE OR REPLACE TABLE members AS
            SELECT l.cluster_id, l.score AS link_score, l.rule AS link_rule, s.*
-           FROM links l JOIN staged s ON s.source = l.source AND s.source_id = l.source_id""",
+           FROM links l JOIN staged s ON s.source = l.source AND s.source_id = l.source_id
+           WHERE s.city_code = {sql_str(city)}""",
     )
     aux = out / "staging" / date / "aux" / "wikidata_qids.parquet"
     if aux.is_file():
@@ -515,7 +522,7 @@ def build_golden(con: duckdb.DuckDBPyConnection, out: Path, date: str) -> None:
     )
     run(
         con,
-        """CREATE OR REPLACE TABLE golden AS
+        f"""{"INSERT INTO golden" if _has_golden(con) else "CREATE TABLE golden AS"}
            SELECT g.golden_id, g.city_code, g.name, g.name_en, g.name_local, g.category, g.lat, g.lon,
                   g.address, g.website, g.phone, g.opening_hours, g.wikidata_qid,
                   coalesce(g.wikipedia_url, q.wikipedia_url) AS wikipedia_url,
@@ -606,8 +613,9 @@ def match(
     per_city: dict[str, dict[str, Any]] = {}
     for i, city in enumerate(todo, 1):
         per_city[city] = match_city(con, city, cfg)
+        if per_city[city]["records"]:
+            build_golden(con, out, date, city)
         log.info("match %s (%d/%d): %s", city, i, len(todo), per_city[city])
-    build_golden(con, out, date)
     links_path, golden_path = links_file(out, date), golden_file(out, date)
     links_path.parent.mkdir(parents=True, exist_ok=True)
     run(
