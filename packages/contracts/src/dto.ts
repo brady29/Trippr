@@ -1,4 +1,5 @@
 import type { ArriveMode, Budget, Check, CheckLevel, EventCheck, PlaceStatus, VisaRule, VisaSummary, When } from "@trippr/rules";
+import type { BestTime, GoodFor, PriceLevel } from "./catalogue";
 import type { Leg, StopStay } from "./explorer";
 import type { Role } from "./schemas";
 
@@ -159,6 +160,31 @@ export interface Activity extends ActivityRef {
   openingHours?: string | null;
   /** Where a catalogue place comes from: each source record with its licence. */
   sources?: ActivitySource[];
+  /** What the LLM enrichment stage added; absent on hand-written activities and places it has not covered. */
+  enrichment?: ActivityEnrichment;
+}
+
+/** AI-written fields of a catalogue place (pipelines enrich stage). Every field may be null: the model says nothing it cannot support. */
+export interface ActivityEnrichment {
+  /** Taxonomy categories the model chose (museum, viewpoint, ...). Not the colour tags in `tags`. */
+  tags: string[];
+  /** One line; null when there is none. Shown with `aiLabel`. */
+  summary: string | null;
+  /** True when `summary` was written by a model: the app must say so. */
+  summaryAi: boolean;
+  /** The sentence to show beside the summary, e.g. "Summary written by AI from Wikidata and Wikivoyage". */
+  aiLabel: string | null;
+  /** Typical visit, in minutes. */
+  durationMin: number | null;
+  bestTime: BestTime | null;
+  indoor: boolean | null;
+  priceLevel: PriceLevel | null;
+  goodFor: GoodFor[];
+  /** A suggested readable name. Only ever a subtitle, and only when `isGenericName`; never the title. */
+  displayName: string | null;
+  isGenericName: boolean;
+  model: string | null;
+  enrichedAt: string | null;
 }
 
 export interface ActivitySource {

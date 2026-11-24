@@ -11,7 +11,23 @@ import { cityCode } from "./schemas";
 // --- the seed bundle: bundles/<date>/ -------------------------------------------------------------
 
 export const BUNDLE_FORMAT = 1;
-export const BUNDLE_FILES = { places: "places.jsonl.gz", sources: "sources.json", manifest: "manifest.json", parquet: "places.parquet" } as const;
+export const BUNDLE_FILES = {
+  places: "places.jsonl.gz",
+  sources: "sources.json",
+  manifest: "manifest.json",
+  parquet: "places.parquet",
+  /** LLM enrichment, one line per enriched place, keyed by the place id. Optional. */
+  enrichment: "enrichment.jsonl.gz",
+  enrichmentParquet: "enrichment.parquet",
+} as const;
+
+/** What the enrichment stage may say about a place (pipelines/src/trippr_data/enrich/schema.py). */
+export const BEST_TIMES = ["morning", "afternoon", "evening", "night", "any"] as const;
+export const PRICE_LEVELS = ["free", "$", "$$", "$$$"] as const;
+export const GOOD_FOR = ["rain", "families", "nightlife", "views"] as const;
+export type BestTime = (typeof BEST_TIMES)[number];
+export type PriceLevel = (typeof PRICE_LEVELS)[number];
+export type GoodFor = (typeof GOOD_FOR)[number];
 
 const nullable = <T extends z.ZodTypeAny>(schema: T) => schema.nullable();
 const utcTimestamp = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/, "Expected a UTC timestamp like 2026-11-22T18:13:26Z");
@@ -59,6 +75,56 @@ export const bundlePlaceSchema = z
   .strict();
 export type BundlePlace = z.infer<typeof bundlePlaceSchema>;
 export type BundlePlaceSource = z.infer<typeof bundlePlaceSourceSchema>;
+
+/** Where an enriched place's AI-written fields came from. `summary_ai` is what the "Summary written by AI" label hangs on. */
+export const bundleEnrichmentProvenanceSchema = z
+  .object({
+    summary_ai: z.boolean(),
+    model: z.string(),
+    prompt_version: z.string(),
+    enriched_at: utcTimestamp,
+    batch_id: nullable(z.string()),
+    input_sources: z.array(z.string()),
+  })
+  .strict();
+
+/** One line of enrichment.jsonl.gz (pipelines/src/trippr_data/bundle_enrichment.py). `id` is the place's bundle id. */
+export const bundleEnrichmentSchema = z
+  .object({
+    id: z.string().regex(/^cat-[0-9a-z]{1,32}$/),
+    /** Taxonomy categories the model chose (museum, viewpoint, ...), at most four. */
+    tags: z.array(z.string()).max(4),
+    /** One line, at most 140 characters; empty when the model could not say anything the sources support. */
+    summary: z.string().max(140),
+    duration_min: nullable(z.number().int().min(5).max(1440)),
+    best_time: nullable(z.enum(BEST_TIMES)),
+    indoor: nullable(z.boolean()),
+    price_level: nullable(z.enum(PRICE_LEVELS)),
+    good_for: z.array(z.enum(GOOD_FOR)),
+    /** A suggestion only: shown as a subtitle, never as the title, and only when is_generic_name is true. */
+    display_name: nullable(z.string()),
+    is_generic_name: z.boolean(),
+    ai: z.boolean(),
+    /** The sentence shown beside the summary, e.g. "Summary written by AI from Wikidata and Wikivoyage". */
+    ai_label: nullable(z.string()),
+    provenance: bundleEnrichmentProvenanceSchema,
+  })
+  .strict();
+export type BundleEnrichment = z.infer<typeof bundleEnrichmentSchema>;
+
+/** The manifest's `enrichment` section. */
+export const bundleEnrichmentSummarySchema = z
+  .object({
+    places: z.number().int().min(0),
+    with_summary: z.number().int().min(0),
+    models: z.array(z.string()),
+    prompt_versions: z.array(z.string()),
+    enriched_at: nullable(utcTimestamp),
+    /** The enriched/<date> folder the answers came from. */
+    source_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  })
+  .strict();
+export type BundleEnrichmentSummary = z.infer<typeof bundleEnrichmentSummarySchema>;
 
 /** A source registry entry as the Data page shows it (pipelines/sources.yaml plus counts and freshness). */
 export const bundleSourceInfoSchema = z
@@ -114,6 +180,8 @@ export const bundleManifestSchema = z
     checks: z.object({ passed: z.boolean(), results: z.array(bundleCheckSchema) }).strict(),
     /** Evaluation scores (entity matching, enrichment, search) as later pipeline stages add them. */
     evals: z.record(z.unknown()).default({}),
+    /** Present when the bundle carries enrichment.jsonl.gz. */
+    enrichment: nullable(bundleEnrichmentSummarySchema).optional(),
   })
   .strict();
 export type BundleManifest = z.infer<typeof bundleManifestSchema>;
@@ -150,6 +218,14 @@ export const activityPageQuery = z.object({
   fixedDates: z.preprocess((v) => v === "true" || v === "1" || v === true, z.boolean()).default(false),
   /** Include catalogue places the latest bundle no longer lists. */
   includeUnlisted: z.preprocess((v) => v === "true" || v === "1" || v === true, z.boolean()).default(false),
+  /** Enrichment: places best at this time of day (places good at any time always match). */
+  bestTime: optional(z.enum(BEST_TIMES)),
+  /** Enrichment: true = indoor places, false = outdoor places. */
+  indoor: z.preprocess((v) => (v === true || v === "true" || v === "1" ? true : v === false || v === "false" || v === "0" ? false : undefined), z.boolean().optional()),
+  /** Enrichment: places that take at most this many minutes. */
+  durationMax: optional(z.coerce.number().int().min(5).max(1440)),
+  /** Enrichment: exactly this price level. */
+  priceLevel: optional(z.enum(PRICE_LEVELS)),
   sort: z.enum(ACTIVITY_SORTS).default("relevance"),
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
   limit: z.coerce.number().int().min(1).max(100).default(PAGE_SIZE),
@@ -166,6 +242,10 @@ export interface ActivityPageQuery {
   maxRank?: number;
   fixedDates?: boolean;
   includeUnlisted?: boolean;
+  bestTime?: BestTime;
+  indoor?: boolean;
+  durationMax?: number;
+  priceLevel?: PriceLevel;
   sort?: (typeof ACTIVITY_SORTS)[number];
   offset?: number;
   limit?: number;
@@ -188,6 +268,16 @@ export interface ActivityFacets {
   tags: { name: string; count: number }[];
   categories: { name: string; count: number }[];
   sources: { id: string; name: string; count: number }[];
+  /** Counts for the enrichment filters (places with an enrichment only). */
+  enrichment: {
+    enriched: number;
+    bestTimes: { name: BestTime; count: number }[];
+    priceLevels: { name: PriceLevel; count: number }[];
+    indoor: number;
+    outdoor: number;
+    /** Places that take at most `max` minutes. */
+    durations: { max: number; count: number }[];
+  };
   totals: {
     /** The group's own ideas. */
     ideas: number;
@@ -246,15 +336,36 @@ export interface DataLoadView {
     byCategory: Record<string, number>;
   };
   checks: { passed: boolean; results: DataCheckView[] };
+  /** Evaluation scores as the pipeline recorded them in the manifest; `enrich` is an EnrichEvalView. */
   evals: Record<string, unknown>;
+  /** What the bundle's enrichment holds; null when it had none. */
+  enrichment: DataEnrichmentView | null;
+}
+
+export interface DataEnrichmentView {
+  /** Places in the bundle with an enrichment, and how many of them have an AI summary. */
+  places: number;
+  withSummary: number;
+  models: string[];
+  promptVersions: string[];
+  enrichedAt: string | null;
+  sourceDate: string;
+}
+
+/** Enrichment scores from `eval-enrich` for the model (manifest evals.enrich; snake_case as the pipeline wrote them). */
+export interface EnrichEvalView {
+  model: string;
+  judge_model: string | null;
+  metrics: Record<string, number | null>;
+  targets: Record<string, boolean>;
 }
 
 export interface DataSourcesResponse {
   sources: DataSourceView[];
   /** The last bundle the load job put in the graph; null before the first load. */
   latestLoad: DataLoadView | null;
-  /** Activities in the graph by origin. */
-  totals: { catalogue: number; listed: number; unlisted: number; handWritten: number };
+  /** Activities in the graph by origin. `enriched` counts listed places with an AI enrichment. */
+  totals: { catalogue: number; listed: number; unlisted: number; handWritten: number; enriched: number };
   /** How the catalogue is licensed and used, for the page's footer. */
   notes: string[];
 }
