@@ -160,7 +160,9 @@ def check_null_rates(con: duckdb.DuckDBPyConnection, ctx: CheckContext) -> list[
     )
     by_source = {
         r.pop("source_key"): r
-        for r in rows(con, f"SELECT source AS source_key, {exprs} FROM staged GROUP BY source")
+        for r in rows(
+            con, f"SELECT source AS source_key, {exprs} FROM staged GROUP BY source ORDER BY source_key"
+        )
     }
     results = []
     bad = {s: {c: v for c, v in r.items() if c in REQUIRED_FIELDS and v} for s, r in by_source.items()}

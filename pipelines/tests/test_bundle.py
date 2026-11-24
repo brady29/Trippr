@@ -235,7 +235,21 @@ def test_golden_bundle(built):
         shutil.rmtree(EXPECTED_BUNDLE, ignore_errors=True)
         shutil.copytree(path, EXPECTED_BUNDLE)
         pytest.skip("golden bundle updated")
-    assert normalised_manifest(path / MANIFEST_FILE) == normalised_manifest(EXPECTED_BUNDLE / MANIFEST_FILE)
+    actual, expected = (
+        normalised_manifest(path / MANIFEST_FILE),
+        normalised_manifest(EXPECTED_BUNDLE / MANIFEST_FILE),
+    )
+    differing = [
+        r["name"]
+        for r, e in zip(actual["checks"]["results"], expected["checks"]["results"], strict=False)
+        if r != e
+    ]
+    assert not differing, [
+        (r, e)
+        for r, e in zip(actual["checks"]["results"], expected["checks"]["results"], strict=False)
+        if r != e
+    ]
+    assert actual == expected
     assert (path / SOURCES_FILE).read_text(encoding="utf-8") == (EXPECTED_BUNDLE / SOURCES_FILE).read_text(
         encoding="utf-8"
     )

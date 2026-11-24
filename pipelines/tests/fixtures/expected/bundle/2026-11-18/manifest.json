@@ -191,7 +191,7 @@
       {
         "name": "staging.null_rates.optional",
         "status": "info",
-        "detail": "null share: overture: name_local 9%, name_en 86%, address 0%, website 45%, phone 30%; foursquare: name_local 0%, name_en 100%, address 0%, website 0%, phone 10%",
+        "detail": "null share: foursquare: name_local 0%, name_en 100%, address 0%, website 0%, phone 10%; overture: name_local 9%, name_en 86%, address 0%, website 45%, phone 30%",
         "data": {}
       },
       {
