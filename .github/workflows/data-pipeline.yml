@@ -18,9 +18,11 @@ on:
       cities:
         description: "'all' or city codes, e.g. TYO,OSA,CKG"
         default: all
-  schedule:
-    # 06:00 UTC on the 26th: after Overture's monthly release, which has landed between the 18th and 23rd.
-    - cron: "0 6 26 * *"
+  # The monthly schedule is off until the full run (Wikidata about 95 minutes, matching about 110) has been
+  # proven on a hosted runner. Re-enable with:
+  # schedule:
+  #   # 06:00 UTC on the 26th: after Overture's monthly release, which has landed between the 18th and 23rd.
+  #   - cron: "0 6 26 * *"
 
 concurrency:
   group: data-pipeline
