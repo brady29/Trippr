@@ -128,7 +128,9 @@ def score_units(
     """Apply the privacy minimum, then the documented score formulas, to each unit's aggregates."""
     prices: dict[str, list[float]] = defaultdict(list)
     ratings: dict[str, list[float]] = defaultdict(list)
-    for r in rows(con, "SELECT city_code, price_per_person_cad AS price, rating, stats_ok FROM lst WHERE in_radius"):
+    for r in rows(
+        con, "SELECT city_code, price_per_person_cad AS price, rating, stats_ok FROM lst WHERE in_radius"
+    ):
         if r["stats_ok"] and r["price"] is not None:
             prices[r["city_code"]].append(r["price"])
         if r["rating"] is not None:
@@ -275,14 +277,14 @@ def build_summary(
             and not u["low_sample"]
         ]
         scored.sort(key=lambda u: (-u["stay_score"], u["unit_id"]))
-        count = lambda kind: sum(1 for u in units if u["unit_kind"] == kind and u["city_code"] == code)  # noqa: E731
+        in_city = [u for u in units if u["city_code"] == code]
         stats[code] = {
             "name": cities[code].name,
             "snapshot_date": str(city["snapshot_date"]) if city["snapshot_date"] else None,
             **{k: city[k] for k in CITY_SUMMARY_FIELDS},
-            "areas": count("area"),
-            "neighbourhoods": count("neighbourhood"),
-            "h3_cells": count("h3"),
+            "areas": sum(1 for u in in_city if u["unit_kind"] == "area"),
+            "neighbourhoods": sum(1 for u in in_city if u["unit_kind"] == "neighbourhood"),
+            "h3_cells": sum(1 for u in in_city if u["unit_kind"] == "h3"),
             "top_neighbourhoods": [
                 {"name": u["name"], "stay_score": u["stay_score"], "median_price_cad": u["median_price_cad"]}
                 for u in scored[:5]

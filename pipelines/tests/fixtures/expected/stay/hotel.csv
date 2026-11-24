@@ -1,0 +1,22 @@
+hotel_id,name,name_en,kind,stars,wikidata_qid,city_code,lat,lon,sources,n_sources,area_id,area_dist_km
+h_1e241c5f2f24,midi HOTEL,midi HOTEL,hotel,,,OSA,34.65709,135.49485,overture:e1a35073-afe9-461e-9cb9-9fa6c2bfb43e,1,,
+h_497888a92016,おしゃべりダック,,hotel,,,OSA,34.57495,135.47707,overture:4d3663cf-fe14-4913-a0b6-a4614ea86031,1,,
+h_6438a8d937b4,Hello東横イン出口,,hotel,,,OSA,34.59686,135.70686,overture:59f7138b-75f5-4e9f-8b88-156ca2c2780e,1,,
+h_6964fff24674,Shin-Osaka Hotel,Shin-Osaka Hotel,hotel,,,OSA,34.73341,135.50338,foursquare:fsq-shin-osaka;overture:c9e98305-2725-44b8-9b1d-6ef811e14828,2,,
+h_7bd477ef00ea,Fixture B&B Osaka,Fixture B&B Osaka,guest_house,,,OSA,34.69,135.5,foursquare:fsq-bnb,1,,
+h_a3c06588911c,Fixture Motel Osaka,Fixture Motel Osaka,motel,,,OSA,34.7,135.51,osm_lodging:node/402,1,,
+h_b6b213baea93,ホテルシャイン,,hotel,,,OSA,34.73718,135.71131,overture:b9f87219-792b-4798-b236-160fd650d6de,1,,
+h_fbf862a5f357,Lucky's hostel,Lucky's hostel,hostel,,,OSA,34.6988,135.5353,osm_lodging:node/401;overture:d26fc53b-98ea-4584-9048-602d874ab8c4,2,,
+h_15e0d51f937f,Shibuya Fixture Hostel,Shibuya Fixture Hostel,hostel,,,TYO,35.66,139.701,foursquare:fsq-shibuya-hostel,1,area-tyo-shibuya,0.143
+h_19c5a1716021,Asakusa Fixture Ryokan,Asakusa Fixture Ryokan,inn,,,TYO,35.7142,139.7965,overture:fixture-ryokan,1,area-tyo-asakusa,0.1
+h_2f050d6a41bf,1/3rd Residence Group - Tokyo Serviced Apartments,1/3rd Residence Group - Tokyo Serviced Apartments,hotel,,,TYO,35.70191,139.77215,overture:00f5c64b-5921-4a74-a161-2433c40d8c90,1,,
+h_3a407f969793,脇田商店,,hotel,,,TYO,35.52092,139.68424,overture:3be173e1-a350-401c-bcc4-5842cd31f976,1,,
+h_519e09accd2c,東京プリンスホテル,,hotel,,,TYO,35.65903,139.74831,overture:b01a6efb-f1e0-4f2a-9bcf-c03e934614de,1,,
+h_6b9a94a1d96b,ANA Holiday Inn Tokyo Bay,ANA Holiday Inn Tokyo Bay,hotel,4,,TYO,35.69425,139.76457,osm_lodging:way/202;overture:46f4f6a0-d59a-493e-9351-aef1aff3e135,2,,
+h_774a614851a4,Shinjuku Fixture Apartments,Shinjuku Fixture Apartments,apartment,2,,TYO,35.7,139.7,osm_lodging:node/305,1,area-tyo-shinjuku,1.112
+h_a8fbd6453c42,Tokyu Stay Shibuya Shin-Minamiguchi,Tokyu Stay Shibuya Shin-Minamiguchi,hotel,3,Q111,TYO,35.65484,139.70506,foursquare:fsq-tokyu;osm_lodging:node/101;overture:ac1204cb-a733-49f9-b3c0-a5644d9705e6;overture:fixture-tokyu-twin,4,area-tyo-shibuya,0.65
+h_ab4446db03a2,百人町三丁目アパート3,,hotel,,,TYO,35.70556,139.69607,overture:fed3469b-59c8-43a5-8c2d-7b25061b60db,1,,
+h_b373d67f9f8a,浅草ゲストハウス,Asakusa Guest House,guest_house,,,TYO,35.715,139.796,osm_lodging:node/303;osm_lodging:node/304,2,area-tyo-asakusa,0.09
+h_d8070d04d9bc,ビジネスホテル新大久保石亭,,apartment,,,TYO,35.70278,139.69869,overture:6fa5da52-c75a-4728-bc64-eaedab0c23a8,1,area-tyo-shinjuku,1.426
+h_f33389a24fe6,Fixture Lodging,Fixture Lodging,other,,,TYO,35.69,139.72,foursquare:fsq-other,1,,
+h_fb2a8614f86f,Fixture Hostel Sumida,Fixture Hostel Sumida,hostel,,,TYO,35.71,139.81,osm_lodging:node/306,1,area-tyo-asakusa,1.299

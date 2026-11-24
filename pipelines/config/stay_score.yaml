@@ -57,7 +57,7 @@ hotels:
   merge:
     cross_source_km: 0.10
     cross_source_name_similarity: 0.85
-    same_source_km: 0.03
+    same_source_km: 0.05
     same_source_name_similarity: 0.95
     max_cluster_km: 0.20
   source_precedence: [osm_lodging, overture, foursquare]

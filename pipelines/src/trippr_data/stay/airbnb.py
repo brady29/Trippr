@@ -113,14 +113,24 @@ def _column_getter(con: duckdb.DuckDBPyConnection, path: Path):
 
 def find_fx_rates(out: Path, date: str) -> tuple[dict[str, dict[str, float]], str]:
     """The newest Bank of Canada response at or before `date`."""
-    candidates = [d for d in dated_dirs(out / "raw" / "boc_fx") if d <= date and (out / "raw" / "boc_fx" / d / "rates.json").is_file()]
+    candidates = [
+        d
+        for d in dated_dirs(out / "raw" / "boc_fx")
+        if d <= date and (out / "raw" / "boc_fx" / d / "rates.json").is_file()
+    ]
     if not candidates:
         raise FileNotFoundError(f"No Bank of Canada rates under {out / 'raw' / 'boc_fx'}; run stay-extract")
     return load_rates(out / "raw" / "boc_fx" / candidates[-1] / "rates.json"), candidates[-1]
 
 
 def _listing_select(
-    con: duckdb.DuckDBPyConnection, path: Path, city: City, ab: AirbnbCity, snapshot: str, rate: float, cfg: StayConfig
+    con: duckdb.DuckDBPyConnection,
+    path: Path,
+    city: City,
+    ab: AirbnbCity,
+    snapshot: str,
+    rate: float,
+    cfg: StayConfig,
 ) -> str:
     col, _ = _column_getter(con, path)
     for required in ("id", "latitude", "longitude", "room_type", "price"):
@@ -129,32 +139,32 @@ def _listing_select(
     return f"""
         SELECT
           '{city.code}' AS city_code,
-          try_cast({col('id')} AS BIGINT) AS listing_id,
+          try_cast({col("id")} AS BIGINT) AS listing_id,
           DATE '{snapshot}' AS snapshot_date,
-          try_cast({col('latitude')} AS DOUBLE) AS lat,
-          try_cast({col('longitude')} AS DOUBLE) AS lon,
-          nullif(trim({col('neighbourhood_cleansed')}), '') AS neighbourhood,
-          nullif(trim({col('neighbourhood_group_cleansed')}), '') AS neighbourhood_group,
-          {ROOM_TYPE_SQL.format(col=col('room_type'))} AS room_type,
-          nullif(trim({col('property_type')}), '') AS property_type,
-          try_cast({col('accommodates')} AS INTEGER) AS accommodates,
-          try_cast({col('bedrooms')} AS INTEGER) AS bedrooms,
-          try_cast({col('beds')} AS INTEGER) AS beds,
+          try_cast({col("latitude")} AS DOUBLE) AS lat,
+          try_cast({col("longitude")} AS DOUBLE) AS lon,
+          nullif(trim({col("neighbourhood_cleansed")}), '') AS neighbourhood,
+          nullif(trim({col("neighbourhood_group_cleansed")}), '') AS neighbourhood_group,
+          {ROOM_TYPE_SQL.format(col=col("room_type"))} AS room_type,
+          nullif(trim({col("property_type")}), '') AS property_type,
+          try_cast({col("accommodates")} AS INTEGER) AS accommodates,
+          try_cast({col("bedrooms")} AS INTEGER) AS bedrooms,
+          try_cast({col("beds")} AS INTEGER) AS beds,
           '{ab.currency}' AS currency,
-          {PRICE_SQL.format(col=col('price'))} AS price_local,
-          try_cast({col('minimum_nights')} AS INTEGER) AS minimum_nights,
-          try_cast({col('availability_30')} AS INTEGER) AS availability_30,
-          try_cast({col('availability_90')} AS INTEGER) AS availability_90,
-          try_cast({col('availability_365')} AS INTEGER) AS availability_365,
-          try_cast({col('estimated_occupancy_l365d')} AS INTEGER) AS est_occupancy_days,
-          try_cast({col('number_of_reviews')} AS INTEGER) AS number_of_reviews,
-          try_cast({col('number_of_reviews_ltm')} AS INTEGER) AS reviews_ltm,
-          try_cast({col('review_scores_rating')} AS DOUBLE) AS rating,
-          try_cast({col('review_scores_location')} AS DOUBLE) AS rating_location,
-          try_cast({col('review_scores_value')} AS DOUBLE) AS rating_value,
-          try_cast({col('host_id')} AS BIGINT) AS host_id,
-          try_cast({col('calculated_host_listings_count')} AS INTEGER) AS host_listings,
-          coalesce(trim({col('license')}) <> '', false) AS has_licence,
+          {PRICE_SQL.format(col=col("price"))} AS price_local,
+          try_cast({col("minimum_nights")} AS INTEGER) AS minimum_nights,
+          try_cast({col("availability_30")} AS INTEGER) AS availability_30,
+          try_cast({col("availability_90")} AS INTEGER) AS availability_90,
+          try_cast({col("availability_365")} AS INTEGER) AS availability_365,
+          try_cast({col("estimated_occupancy_l365d")} AS INTEGER) AS est_occupancy_days,
+          try_cast({col("number_of_reviews")} AS INTEGER) AS number_of_reviews,
+          try_cast({col("number_of_reviews_ltm")} AS INTEGER) AS reviews_ltm,
+          try_cast({col("review_scores_rating")} AS DOUBLE) AS rating,
+          try_cast({col("review_scores_location")} AS DOUBLE) AS rating_location,
+          try_cast({col("review_scores_value")} AS DOUBLE) AS rating_value,
+          try_cast({col("host_id")} AS BIGINT) AS host_id,
+          try_cast({col("calculated_host_listings_count")} AS INTEGER) AS host_listings,
+          coalesce(trim({col("license")}) <> '', false) AS has_licence,
           CAST({rate} AS DOUBLE) AS fx_cad_per_unit
         FROM {_csv(path)}
     """
@@ -193,9 +203,19 @@ def stage_airbnb(
         ab, city = mapping[code], by_code[code]
         found = rate_on(rates, ab.currency, snapshot)
         if found is None:
-            raise ValueError(f"No Bank of Canada rate for {ab.currency} on or before {snapshot} (raw/boc_fx/{fx_date})")
+            raise ValueError(
+                f"No Bank of Canada rate for {ab.currency} on or before {snapshot} (raw/boc_fx/{fx_date})"
+            )
         rate, rate_date = found
-        fx_rows.append({"city_code": code, "currency": ab.currency, "snapshot": snapshot, "cad_per_unit": rate, "rate_date": rate_date})
+        fx_rows.append(
+            {
+                "city_code": code,
+                "currency": ab.currency,
+                "snapshot": snapshot,
+                "cad_per_unit": rate,
+                "rate_date": rate_date,
+            }
+        )
         select = _listing_select(con, directory / code / "listings.csv.gz", city, ab, snapshot, rate, cfg)
         run(con, ("INSERT INTO lst_raw " if created else "CREATE TABLE lst_raw AS ") + select)
         created = True
@@ -212,7 +232,8 @@ def stage_airbnb(
     )
     run(con, "CREATE TABLE acity (code VARCHAR, lat DOUBLE, lon DOUBLE, radius_km DOUBLE)")
     con.executemany(
-        "INSERT INTO acity VALUES (?, ?, ?, ?)", [[c, by_code[c].lat, by_code[c].lon, by_code[c].radius_km] for c in snapshots]
+        "INSERT INTO acity VALUES (?, ?, ?, ?)",
+        [[c, by_code[c].lat, by_code[c].lon, by_code[c].radius_km] for c in snapshots],
     )
     cols = {
         "city_code": "r.city_code",
@@ -289,7 +310,7 @@ def stage_airbnb(
     run(
         con,
         f"""CREATE TABLE airbnb_listing AS
-            SELECT {', '.join(f'CAST({expr} AS {LISTING_COLUMNS[name]}) AS {name}' for name, expr in cols.items())}
+            SELECT {", ".join(f"CAST({expr} AS {LISTING_COLUMNS[name]}) AS {name}" for name, expr in cols.items())}
             FROM lst_raw r
             JOIN acity c ON c.code = r.city_code
             LEFT JOIN price_limit pl ON pl.city_code = r.city_code
@@ -329,13 +350,27 @@ def stage_airbnb(
     for code in sorted(snapshots):
         geo = directory / code / "neighbourhoods.geojson"
         areas = neighbourhood_areas(geo) if geo.is_file() else {}
-        names = rows(con, f"SELECT neighbourhood_group, neighbourhood FROM {_csv(directory / code / 'neighbourhoods.csv')}")
+        names = rows(
+            con,
+            f"SELECT neighbourhood_group, neighbourhood FROM {_csv(directory / code / 'neighbourhoods.csv')}",
+        )
         con.executemany(
             "INSERT INTO airbnb_neighbourhood VALUES (?, ?, ?, ?)",
-            [[code, n["neighbourhood"], n["neighbourhood_group"] or None, round(areas[n["neighbourhood"]], 4) if n["neighbourhood"] in areas else None] for n in names],
+            [
+                [
+                    code,
+                    n["neighbourhood"],
+                    n["neighbourhood_group"] or None,
+                    round(areas[n["neighbourhood"]], 4) if n["neighbourhood"] in areas else None,
+                ]
+                for n in names
+            ],
         )
 
-    paths = {name: stay_table(out, date, name) for name in ("airbnb_listing", "airbnb_calendar", "airbnb_neighbourhood")}
+    paths = {
+        name: stay_table(out, date, name)
+        for name in ("airbnb_listing", "airbnb_calendar", "airbnb_neighbourhood")
+    }
     paths["airbnb_reviews_monthly"] = stay_table(out, date, "airbnb_reviews_monthly")
     stay_staging_dir(out, date).mkdir(parents=True, exist_ok=True)
     order = {
@@ -346,7 +381,10 @@ def stage_airbnb(
     for name, target in paths.items():
         source_table = "rev_month" if name == "airbnb_reviews_monthly" else name
         order_by = order.get(name, "city_code, month")
-        run(con, f"COPY (SELECT * FROM {source_table} ORDER BY {order_by}) TO {sql_str(target.as_posix())} (FORMAT parquet, COMPRESSION zstd)")
+        run(
+            con,
+            f"COPY (SELECT * FROM {source_table} ORDER BY {order_by}) TO {sql_str(target.as_posix())} (FORMAT parquet, COMPRESSION zstd)",
+        )
 
     stats = _stats(con, meta, snapshots, fx_rows, fx_date, cfg)
     stats["run_date"] = date
@@ -388,14 +426,27 @@ def _stats(
         per_city[code] = r
     for f in fx_rows:
         per_city[f["city_code"]].update(
-            snapshot=f["snapshot"], currency=f["currency"], cad_per_unit=f["cad_per_unit"], rate_date=f["rate_date"]
+            snapshot=f["snapshot"],
+            currency=f["currency"],
+            cad_per_unit=f["cad_per_unit"],
+            rate_date=f["rate_date"],
         )
-    for r in rows(con, "SELECT city_code, count(*) AS calendar_listings, sum(days) AS calendar_days FROM airbnb_calendar GROUP BY 1"):
-        per_city[r["city_code"]].update(calendar_listings=r["calendar_listings"], calendar_days=r["calendar_days"])
+    for r in rows(
+        con,
+        "SELECT city_code, count(*) AS calendar_listings, sum(days) AS calendar_days FROM airbnb_calendar GROUP BY 1",
+    ):
+        per_city[r["city_code"]].update(
+            calendar_listings=r["calendar_listings"], calendar_days=r["calendar_days"]
+        )
     for r in rows(con, "SELECT city_code, max(p_high) AS p_high FROM price_limit GROUP BY 1"):
         per_city[r["city_code"]]["p_high_cad"] = round(r["p_high"], 2)
-    for r in rows(con, "SELECT city_code, count(*) AS neighbourhoods, count(area_km2) AS with_area FROM airbnb_neighbourhood GROUP BY 1"):
-        per_city[r["city_code"]].update(neighbourhoods=r["neighbourhoods"], neighbourhoods_with_area=r["with_area"])
+    for r in rows(
+        con,
+        "SELECT city_code, count(*) AS neighbourhoods, count(area_km2) AS with_area FROM airbnb_neighbourhood GROUP BY 1",
+    ):
+        per_city[r["city_code"]].update(
+            neighbourhoods=r["neighbourhoods"], neighbourhoods_with_area=r["with_area"]
+        )
     unknown_nb = rows(
         con,
         """SELECT l.city_code, count(DISTINCT l.neighbourhood) AS n FROM airbnb_listing l
@@ -414,5 +465,7 @@ def _stats(
         "price_floor_cad": cfg.price.floor_cad,
         "outlier_percentile": cfg.price.outlier_percentile,
         "max_min_nights": cfg.price.max_min_nights,
-        "raw_files": {k: {"sha256": v["sha256"], "snapshot": v["snapshot"]} for k, v in meta["files"].items()},
+        "raw_files": {
+            k: {"sha256": v["sha256"], "snapshot": v["snapshot"]} for k, v in meta["files"].items()
+        },
     }

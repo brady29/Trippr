@@ -262,11 +262,19 @@ def stage_hotel_source(
     resolved = []
     for k in rows(con, "SELECT DISTINCT cat_key, category_primary, category_hierarchy FROM located"):
         kind, status = cmap.resolve(k["category_primary"], k["category_hierarchy"])
-        resolved.append([k["cat_key"], kind if status == "mapped" else ("other" if status != "excluded" else None), status])
+        resolved.append(
+            [
+                k["cat_key"],
+                kind if status == "mapped" else ("other" if status != "excluded" else None),
+                status,
+            ]
+        )
     if resolved:
         con.executemany("INSERT INTO kindmap VALUES (?, ?, ?)", resolved)
 
-    english = "list_filter(p.names_by_lang, lambda x: x.\"language\" = 'en' OR starts_with(x.\"language\", 'en-'))"
+    english = (
+        "list_filter(p.names_by_lang, lambda x: x.\"language\" = 'en' OR starts_with(x.\"language\", 'en-'))"
+    )
     local = 'list_filter(p.names_by_lang, lambda x: list_contains(c.languages, x."language"))'
     exprs = {
         "source": sql_str(source),
@@ -290,7 +298,9 @@ def stage_hotel_source(
         "raw_ref": f"{sql_str(f'raw/{source}/{date}/')} || parse_filename(p.raw_file)",
     }
     assert list(exprs) == list(HOTEL_SOURCE_COLUMNS)
-    columns = ",\n".join(f"CAST({expr} AS {HOTEL_SOURCE_COLUMNS[col]}) AS {col}" for col, expr in exprs.items())
+    columns = ",\n".join(
+        f"CAST({expr} AS {HOTEL_SOURCE_COLUMNS[col]}) AS {col}" for col, expr in exprs.items()
+    )
     run(con, "CREATE TABLE raw_files (file VARCHAR, fetched_at TIMESTAMPTZ)")
     con.executemany(
         "INSERT INTO raw_files VALUES (?, ?)", [[name, f["fetched_at"]] for name, f in meta["files"].items()]
@@ -314,7 +324,9 @@ def stage_hotel_source(
         "country_mismatch": scalar(
             con, "SELECT count(*) FROM assigned WHERE city_code IS NOT NULL AND NOT country_ok"
         ),
-        "excluded_kind": scalar(con, "SELECT count(*) FROM located l JOIN kindmap m USING (cat_key) WHERE m.status = 'excluded'"),
+        "excluded_kind": scalar(
+            con, "SELECT count(*) FROM located l JOIN kindmap m USING (cat_key) WHERE m.status = 'excluded'"
+        ),
         "no_name": scalar(
             con,
             "SELECT count(*) FROM located l JOIN kindmap m USING (cat_key) WHERE m.status <> 'excluded' AND l.name IS NULL",
@@ -337,7 +349,9 @@ def stage_hotel_source(
     tmp.parent.mkdir(parents=True, exist_ok=True)
     run(con, f"COPY staged TO {sql_str(tmp.as_posix())} (FORMAT parquet)")
     con.close()
-    log.info("%s lodging: %s raw, %s staged", source, f"{stats['raw_lodging_rows']:,}", f"{stats['staged_rows']:,}")
+    log.info(
+        "%s lodging: %s raw, %s staged", source, f"{stats['raw_lodging_rows']:,}", f"{stats['staged_rows']:,}"
+    )
     return stats
 
 
@@ -382,9 +396,7 @@ def hotel_id_for(source: str, source_id: str) -> str:
     return "h_" + sha1(f"{source}:{source_id}".encode()).hexdigest()[:12]
 
 
-def merge_hotels(
-    con: duckdb.DuckDBPyConnection, ctx: HotelContext, precedence: list[str]
-) -> dict[str, Any]:
+def merge_hotels(con: duckdb.DuckDBPyConnection, ctx: HotelContext, precedence: list[str]) -> dict[str, Any]:
     """From the table hotel_source build hotel_clustered (record -> hotel) and the table hotel."""
     m = ctx.cfg.hotels.merge
     rank_case = " ".join(f"WHEN {sql_str(s)} THEN {i}" for i, s in enumerate(precedence))
@@ -441,7 +453,8 @@ def merge_hotels(
     ids = rows(con, "SELECT rk, source, source_id FROM hs2 WHERE rk = first_rk")
     run(con, "CREATE TABLE hotel_ids (rep BIGINT, hotel_id VARCHAR)")
     con.executemany(
-        "INSERT INTO hotel_ids VALUES (?, ?)", [[r["rk"], hotel_id_for(r["source"], r["source_id"])] for r in ids]
+        "INSERT INTO hotel_ids VALUES (?, ?)",
+        [[r["rk"], hotel_id_for(r["source"], r["source_id"])] for r in ids],
     )
     return {
         "candidate_pairs": len(candidates),
@@ -462,18 +475,18 @@ def build_hotel_table(con: duckdb.DuckDBPyConnection) -> None:
         f"""CREATE TABLE hotel AS
             SELECT
               hid.hotel_id,
-              {_first('name')} AS name,
-              {_first('name_local')} AS name_local,
-              {_first('name_en')} AS name_en,
-              coalesce({_first('kind', " AND kind <> 'other'")}, 'other') AS kind,
+              {_first("name")} AS name,
+              {_first("name_local")} AS name_local,
+              {_first("name_en")} AS name_en,
+              coalesce({_first("kind", " AND kind <> 'other'")}, 'other') AS kind,
               arg_min(lat, rk) AS lat,
               arg_min(lon, rk) AS lon,
               arg_min(city_code, rk) AS city_code,
-              {_first('address')} AS address,
-              {_first('website')} AS website,
-              {_first('phone')} AS phone,
-              {_first('stars')} AS stars,
-              {_first('wikidata_qid')} AS wikidata_qid,
+              {_first("address")} AS address,
+              {_first("website")} AS website,
+              {_first("phone")} AS phone,
+              {_first("stars")} AS stars,
+              {_first("wikidata_qid")} AS wikidata_qid,
               max(confidence) AS confidence,
               list_sort(list(source || ':' || source_id)) AS sources,
               count(*)::INTEGER AS n_sources,
@@ -547,7 +560,7 @@ def stage_hotels(
     source_cols = ", ".join(HOTEL_SOURCE_COLUMNS)
     run(
         con,
-        f"""COPY (SELECT hs2.source, hs2.source_id, hid.hotel_id, {source_cols.replace('source, source_id, ', '')}
+        f"""COPY (SELECT hs2.source, hs2.source_id, hid.hotel_id, {source_cols.replace("source, source_id, ", "")}
                   FROM hs2 JOIN hotel_ids hid ON hid.rep = hs2.rep ORDER BY city_code, source, source_id)
             TO {sql_str(source_path.as_posix())} (FORMAT parquet, COMPRESSION zstd)""",
     )
@@ -563,7 +576,10 @@ def stage_hotels(
         "by_kind": dict(run(con, "SELECT kind, count(*) FROM hotel_final GROUP BY 1 ORDER BY 1")),
         "per_city": dict(run(con, "SELECT city_code, count(*) FROM hotel_final GROUP BY 1 ORDER BY 1")),
         "per_area": dict(
-            run(con, "SELECT area_id, count(*) FROM hotel_final WHERE area_id IS NOT NULL GROUP BY 1 ORDER BY 1")
+            run(
+                con,
+                "SELECT area_id, count(*) FROM hotel_final WHERE area_id IS NOT NULL GROUP BY 1 ORDER BY 1",
+            )
         ),
         "areas_without_centre": ctx.areas_without_centre,
     }
@@ -571,5 +587,7 @@ def stage_hotels(
     for f in tmp_files:
         f.unlink(missing_ok=True)
     write_json(stay_stats_file(out, date, "hotel"), stats)
-    log.info("hotels: %s merged from %s source records", f"{stats['hotels']:,}", f"{merge_stats['records']:,}")
+    log.info(
+        "hotels: %s merged from %s source records", f"{stats['hotels']:,}", f"{merge_stats['records']:,}"
+    )
     return stats

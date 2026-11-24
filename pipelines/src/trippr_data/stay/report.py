@@ -97,7 +97,8 @@ def stay_section(out: Path, date: str, registry: Registry, *, level: str = "##")
         for code, c in summary["cities"].items():
             if c["top_neighbourhoods"]:
                 best = ", ".join(
-                    f"{_cell(n['name'])} ({n['stay_score']}, CAD {_cad(n['median_price_cad'])})" for n in c["top_neighbourhoods"]
+                    f"{_cell(n['name'])} ({n['stay_score']}, CAD {_cad(n['median_price_cad'])})"
+                    for n in c["top_neighbourhoods"]
                 )
                 lines.append(f"- **{code}** best-scoring neighbourhoods: {best}")
         lines.append("")
@@ -123,17 +124,26 @@ def stay_section(out: Path, date: str, registry: Registry, *, level: str = "##")
             "",
         ]
         if hotel["areas_without_centre"]:
-            lines += [f"{len(hotel['areas_without_centre'])} seeded Areas have no coordinates yet and cannot be scored.", ""]
+            lines += [
+                f"{len(hotel['areas_without_centre'])} seeded Areas have no coordinates yet and cannot be scored.",
+                "",
+            ]
 
     if checks:
         lines += [f"{sub} Stay checks", "", "| Check | Result | Detail |", "|---|---|---|"]
-        lines += [f"| {r['name']} | {STATUS_ICON[r['status']]} | {_cell(r['detail'])} |" for r in checks["results"]]
+        lines += [
+            f"| {r['name']} | {STATUS_ICON[r['status']]} | {_cell(r['detail'])} |" for r in checks["results"]
+        ]
         lines.append("")
 
     lines += [f"{sub} Stay attribution", ""]
     for key in ("insideairbnb", "boc_fx", "osm_lodging"):
         entry = registry.sources.get(key)
-        if entry and ((key == "insideairbnb" and airbnb) or (key == "boc_fx" and airbnb) or (key == "osm_lodging" and hotel and "osm_lodging" in hotel["sources"])):
+        if entry and (
+            (key == "insideairbnb" and airbnb)
+            or (key == "boc_fx" and airbnb)
+            or (key == "osm_lodging" and hotel and "osm_lodging" in hotel["sources"])
+        ):
             lines.append(f"- **{entry.name}**: {entry.attribution.strip()}")
     lines.append("")
     return lines
@@ -142,7 +152,9 @@ def stay_section(out: Path, date: str, registry: Registry, *, level: str = "##")
 def write_stay_report(out: Path, date: str, *, registry: Registry) -> Path:
     lines = stay_section(out, date, registry, level="#")
     if not lines:
-        raise FileNotFoundError(f"No stay results for {date} under {out}; run stay-stage and stay-analyse first")
+        raise FileNotFoundError(
+            f"No stay results for {date} under {out}; run stay-stage and stay-analyse first"
+        )
     target = stay_report_md(out, date)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(lines), encoding="utf-8", newline="\n")

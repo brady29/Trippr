@@ -56,10 +56,10 @@ class Site:
                 self.end_headers()
                 self.wfile.write(body)
 
-            def do_GET(self) -> None:  # noqa: N802
+            def do_GET(self) -> None:
                 self._serve()
 
-            def do_POST(self) -> None:  # noqa: N802
+            def do_POST(self) -> None:
                 n = int(self.headers.get("Content-Length", 0))
                 self._serve(self.rfile.read(n))
 
@@ -99,15 +99,26 @@ def index_html(base: str) -> str:
     links = []
     for (country, region, city), dates in INDEX_LINKS.items():
         for d in dates:
-            links.append(f'<a href="{base}/{country}/{region}/{city}/{d}/data/listings.csv.gz">listings.csv.gz</a>')
-            links.append(f'<a href="{base}/{country}/{region}/{city}/{d}/data/calendar.csv.gz">calendar.csv.gz</a>')
+            links.append(
+                f'<a href="{base}/{country}/{region}/{city}/{d}/data/listings.csv.gz">listings.csv.gz</a>'
+            )
+            links.append(
+                f'<a href="{base}/{country}/{region}/{city}/{d}/data/calendar.csv.gz">calendar.csv.gz</a>'
+            )
     return "<html><body>" + "\n".join(links) + "</body></html>"
 
 
 def serve_airbnb(site: Site) -> None:
-    site.routes["/robots.txt"] = (200, {"Content-Type": "text/plain"}, b"User-agent: ia_archiver\nDisallow: /get-the-data\n")
+    site.routes["/robots.txt"] = (
+        200,
+        {"Content-Type": "text/plain"},
+        b"User-agent: ia_archiver\nDisallow: /get-the-data\n",
+    )
     site.routes["/get-the-data/"] = (200, {"Content-Type": "text/html"}, index_html(site.base).encode())
-    for code, region in (("TYO", "japan/kantō/tokyo/2026-09-25"), ("SIN", "singapore/sg/singapore/2026-09-23")):
+    for code, region in (
+        ("TYO", "japan/kantō/tokyo/2026-09-25"),
+        ("SIN", "singapore/sg/singapore/2026-09-23"),
+    ):
         for name, rel in insideairbnb.SNAPSHOT_FILES.items():
             body = (RAW / code / name).read_bytes()
             site.routes[f"/{region}/{rel}"] = (200, {"Content-Length": str(len(body))}, body)
@@ -117,7 +128,10 @@ def serve_airbnb(site: Site) -> None:
 
 
 def test_parse_index_finds_the_snapshots_of_each_dataset():
-    html = index_html(insideairbnb.DATA_HOST) + '<a href="https://example.com/x/y/z/2026-01-01/data/listings.csv.gz">other host</a>'
+    html = (
+        index_html(insideairbnb.DATA_HOST)
+        + '<a href="https://example.com/x/y/z/2026-01-01/data/listings.csv.gz">other host</a>'
+    )
     index = insideairbnb.parse_index(html)
     assert index[("japan", "kantō", "tokyo")] == ["2026-06-20", "2026-09-25"]
     assert ("x", "y", "z") not in index
@@ -229,10 +243,14 @@ def test_extract_downloads_the_newest_snapshot_of_covered_cities(site, registry,
     assert meta["licence"] == "CC-BY-4.0" and "Inside Airbnb" in meta["attribution"]
     assert meta["row_count"] == 145 and "TrippRData" in meta["user_agent"]
     fixture_meta = read_json(RAW / "_meta.json")
-    assert set(fixture_meta) - {"fixture"} <= set(meta)  # the checked-in fixture manifest is a subset of the extractor manifest
+    assert set(fixture_meta) - {"fixture"} <= set(
+        meta
+    )  # the checked-in fixture manifest is a subset of the extractor manifest
     for rel, f in meta["files"].items():
         assert (tmp_path / "raw/insideairbnb" / FIXTURE_DATE / rel).read_bytes() == (RAW / rel).read_bytes()
-        assert f["sha256"] == fixture_meta["files"][rel]["sha256"] and set(f) == set(fixture_meta["files"][rel])
+        assert f["sha256"] == fixture_meta["files"][rel]["sha256"] and set(f) == set(
+            fixture_meta["files"][rel]
+        )
     assert all(ua.startswith("TrippRData") for _, ua in site.hits)
 
 
@@ -250,7 +268,11 @@ def test_a_second_run_does_not_download_again(site, registry, tmp_path):
 
 def test_a_corrupted_raw_file_is_fetched_again(site, registry, tmp_path):
     serve_airbnb(site)
-    run_extract(site, tmp_path, registry, )
+    run_extract(
+        site,
+        tmp_path,
+        registry,
+    )
     target = tmp_path / "raw/insideairbnb" / FIXTURE_DATE / "SIN" / "neighbourhoods.csv"
     target.write_text("changed", encoding="utf-8")
     run_extract(site, tmp_path, registry)
@@ -273,8 +295,15 @@ def test_extract_and_stage_work_together(site, registry, tmp_path):
     assert needs == (["JPY", "SGD"], "2026-09-23", "2026-09-25")
     rates = (STAY_FIXTURES / "raw/boc_fx" / FIXTURE_DATE / "rates.json").read_bytes()
     site.routes["/valet/observations/FXJPYCAD,FXSGDCAD/json"] = (200, {}, rates)
-    meta = boc_fx.extract(["JPY", "SGD"], "2026-09-23", "2026-09-25", out=tmp_path, date=FIXTURE_DATE, registry=registry,
-                          client=fast_client(check_robots=False))
+    meta = boc_fx.extract(
+        ["JPY", "SGD"],
+        "2026-09-23",
+        "2026-09-25",
+        out=tmp_path,
+        date=FIXTURE_DATE,
+        registry=registry,
+        client=fast_client(check_robots=False),
+    )
     assert meta["currencies"] == ["JPY", "SGD"]
     stats = stage_airbnb(tmp_path, FIXTURE_DATE, registry=registry)
     assert stats["listings"] == 145
@@ -310,9 +339,15 @@ def test_osm_lodging_query_and_extract(site, registry, tmp_path):
 
     site.routes["/api/interpreter"] = overpass
     meta = osm_lodging.extract(
-        [city], out=tmp_path, date=FIXTURE_DATE, registry=registry, client=fast_client(check_robots=False),
+        [city],
+        out=tmp_path,
+        date=FIXTURE_DATE,
+        registry=registry,
+        client=fast_client(check_robots=False),
         endpoint=site.base + "/api/interpreter",
     )
     assert meta["row_count"] == 9 and meta["licence"] == "ODbL-1.0"
     assert b"data=" in seen[0] and meta["files"]["TYO.json"]["osm_base"] == "2026-11-17T22:00:00Z"
-    assert json.loads((tmp_path / "raw/osm_lodging" / FIXTURE_DATE / "TYO.json").read_text(encoding="utf-8"))["elements"]
+    assert json.loads((tmp_path / "raw/osm_lodging" / FIXTURE_DATE / "TYO.json").read_text(encoding="utf-8"))[
+        "elements"
+    ]

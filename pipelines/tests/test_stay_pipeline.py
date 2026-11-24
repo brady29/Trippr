@@ -27,7 +27,9 @@ CFG = load_stay_config()
 
 def table(out: Path, name: str, where: str = "true", cols: str = "*") -> list[dict]:
     con = duckdb.connect()
-    cur = con.execute(f"SELECT {cols} FROM read_parquet('{stay_table(out, FIXTURE_DATE, name).as_posix()}') WHERE {where}")
+    cur = con.execute(
+        f"SELECT {cols} FROM read_parquet('{stay_table(out, FIXTURE_DATE, name).as_posix()}') WHERE {where}"
+    )
     names = [d[0] for d in cur.description]
     return [dict(zip(names, r, strict=True)) for r in cur.fetchall()]
 
@@ -42,7 +44,12 @@ def test_hotels_are_merged_across_and_within_sources(stay_out):
     tokyu = table(stay_out, "hotel", "name LIKE 'Tokyu Stay%'")[0]
     # Foursquare, OSM and two Overture records (one a same-source duplicate 12 m away) are one hotel.
     assert tokyu["n_sources"] == 4
-    assert [s.split(":")[0] for s in tokyu["sources"]] == ["foursquare", "osm_lodging", "overture", "overture"]
+    assert [s.split(":")[0] for s in tokyu["sources"]] == [
+        "foursquare",
+        "osm_lodging",
+        "overture",
+        "overture",
+    ]
     assert tokyu["stars"] == 3 and tokyu["wikidata_qid"] == "Q111"
     assert tokyu["website"] == "https://www.tokyustay.example/shibuya"  # OSM first in the precedence
     assert tokyu["kind"] == "hotel"
@@ -56,9 +63,17 @@ def test_hotel_drops_and_kinds(stay_out):
     fsq, osm, ov = (stats["sources"][s] for s in ("foursquare", "osm_lodging", "overture"))
     assert fsq["closed"] == 1 and ov["closed"] == 1  # closed places never become hotels
     assert osm["no_name"] == 1 and osm["no_city"] == 1  # unnamed; a hotel outside every city
-    assert fsq["excluded_kind"] == 1 and osm["excluded_kind"] == 1 and ov["excluded_kind"] == 1  # campsites, chalet
+    assert (
+        fsq["excluded_kind"] == 1 and osm["excluded_kind"] == 1 and ov["excluded_kind"] == 1
+    )  # campsites, chalet
     names = {h["name"] for h in table(stay_out, "hotel")}
-    assert not names & {"Fixture Campground", "Fixture Chalet", "Closed Fixture Inn", "Too Far Hotel", "Fixture Ramen"}
+    assert not names & {
+        "Fixture Campground",
+        "Fixture Chalet",
+        "Closed Fixture Inn",
+        "Too Far Hotel",
+        "Fixture Ramen",
+    }
     kinds = {h["name"]: h["kind"] for h in table(stay_out, "hotel")}
     assert kinds["Asakusa Fixture Ryokan"] == "inn"
     assert kinds["Fixture Lodging"] == "other"
@@ -74,7 +89,10 @@ def test_cjk_and_english_names_of_one_hotel_are_kept_apart(stay_out):
 
 def test_hotel_source_rows_keep_provenance(stay_out):
     rows = table(stay_out, "hotel_source", "source = 'osm_lodging'")
-    assert {r["raw_ref"] for r in rows} == {"raw/osm_lodging/2026-11-18/TYO.json", "raw/osm_lodging/2026-11-18/OSA.json"}
+    assert {r["raw_ref"] for r in rows} == {
+        "raw/osm_lodging/2026-11-18/TYO.json",
+        "raw/osm_lodging/2026-11-18/OSA.json",
+    }
     assert all(r["licence"] == "ODbL-1.0" for r in rows)
     assert {r["hotel_id"] for r in rows} <= {h["hotel_id"] for h in table(stay_out, "hotel")}
 
@@ -83,7 +101,12 @@ def test_osm_tag_parsing():
     assert [osm_stars(x) for x in ("3", "4S", " 5", "0", "", None, "x")] == [3, 4, 5, None, None, None, None]
     rows = osm_pre_rows(
         [
-            {"type": "way", "id": 1, "center": {"lat": 1.0, "lon": 2.0}, "tags": {"tourism": "hotel", "name": "A", "name:en": "A en", "name:zh-Hans": "x"}},
+            {
+                "type": "way",
+                "id": 1,
+                "center": {"lat": 1.0, "lon": 2.0},
+                "tags": {"tourism": "hotel", "name": "A", "name:en": "A en", "name:zh-Hans": "x"},
+            },
             {"type": "node", "id": 2, "lat": 1.0, "lon": 2.0, "tags": {"name": "no tourism tag"}},
             {"type": "node", "id": 3, "tags": {"tourism": "hotel"}},
         ],
@@ -124,11 +147,18 @@ def test_listings_are_cleaned_and_converted(stay_out):
     row = table(stay_out, "airbnb_listing", "price_status = 'ok' AND listing_id = 1013")[0]
     assert row["price_cad"] == pytest.approx(row["price_local"] * 0.00901, abs=0.006)
     assert row["fx_cad_per_unit"] == 0.00901  # not truncated by the first city's column type
-    assert row["price_per_person_cad"] == pytest.approx(row["price_cad"] / max(row["accommodates"], 1), abs=0.01)
+    assert row["price_per_person_cad"] == pytest.approx(
+        row["price_cad"] / max(row["accommodates"], 1), abs=0.01
+    )
 
 
 def test_price_status_and_stats_flags(stay_out):
-    by_status = {r["price_status"]: r["n"] for r in table(stay_out, "airbnb_listing", "city_code = 'TYO' GROUP BY 1", "price_status, count(*) AS n")}
+    by_status = {
+        r["price_status"]: r["n"]
+        for r in table(
+            stay_out, "airbnb_listing", "city_code = 'TYO' GROUP BY 1", "price_status, count(*) AS n"
+        )
+    }
     assert by_status == {"ok": 112, "missing": 3, "below_floor": 1, "above_p99": 1}
     # Long stays are priced but not used for price statistics.
     long_stay = table(stay_out, "airbnb_listing", "NOT short_stay AND price_status = 'ok'")
@@ -145,9 +175,15 @@ def test_room_types_are_normalised(stay_out):
 def test_calendar_and_reviews_summaries(stay_out):
     cal = table(stay_out, "airbnb_calendar", "city_code = 'TYO'")
     assert len(cal) == 117 and {c["days"] for c in cal} == {40}
-    assert all(0 <= c["unavailable_days"] <= 40 and c["unavailable_30"] <= c["unavailable_90"] <= c["unavailable_days"] for c in cal)
+    assert all(
+        0 <= c["unavailable_days"] <= 40
+        and c["unavailable_30"] <= c["unavailable_90"] <= c["unavailable_days"]
+        for c in cal
+    )
     listings = table(stay_out, "airbnb_listing")
-    assert all(r["reviews_ltm"] == (r["reviews_12m_summary"] or 0) for r in listings)  # fixture reviews are built to agree
+    assert all(
+        r["reviews_ltm"] == (r["reviews_12m_summary"] or 0) for r in listings
+    )  # fixture reviews are built to agree
     monthly = table(stay_out, "airbnb_reviews_monthly", "city_code = 'SIN'")
     assert sum(m["reviews"] for m in monthly) == sum(
         r["number_of_reviews"] for r in table(stay_out, "airbnb_listing", "city_code = 'SIN'")
@@ -158,11 +194,16 @@ def test_neighbourhood_area_from_the_polygon():
     areas = neighbourhood_areas(STAY_FIXTURES / "raw/insideairbnb/2026-11-18/SIN/neighbourhoods.geojson")
     # a 0.01 x 0.01 degree rectangle at 1.3 N is about 1.2395 km2 x cos(1.3 deg)
     assert areas["Kallang"] == pytest.approx(111.32 * 0.01 * 111.32 * 0.01 * 0.9997, rel=0.01)
-    hole = {"type": "Polygon", "coordinates": [
-        [[0, 0], [0.1, 0], [0.1, 0.1], [0, 0.1], [0, 0]],
-        [[0.02, 0.02], [0.04, 0.02], [0.04, 0.04], [0.02, 0.04], [0.02, 0.02]],
-    ]}
-    assert geometry_area_km2(hole) == pytest.approx(geometry_area_km2({"type": "Polygon", "coordinates": [hole["coordinates"][0]]}) * (1 - 0.04), rel=0.01)
+    hole = {
+        "type": "Polygon",
+        "coordinates": [
+            [[0, 0], [0.1, 0], [0.1, 0.1], [0, 0.1], [0, 0]],
+            [[0.02, 0.02], [0.04, 0.02], [0.04, 0.04], [0.02, 0.04], [0.02, 0.02]],
+        ],
+    }
+    assert geometry_area_km2(hole) == pytest.approx(
+        geometry_area_km2({"type": "Polygon", "coordinates": [hole["coordinates"][0]]}) * (1 - 0.04), rel=0.01
+    )
     assert geometry_area_km2({"type": "Point", "coordinates": [0, 0]}) == 0.0
 
 
@@ -176,9 +217,14 @@ def unit(out: Path, kind: str, unit_id: str) -> dict:
 def test_unit_kinds_and_counts(stay_out):
     summary = read_json(stay_stats_file(stay_out, FIXTURE_DATE, "airbnb"))  # stats exist
     assert summary
-    kinds = {r["unit_kind"]: r["n"] for r in table(stay_out, "stay_unit", "true GROUP BY 1", "unit_kind, count(*) AS n")}
+    kinds = {
+        r["unit_kind"]: r["n"]
+        for r in table(stay_out, "stay_unit", "true GROUP BY 1", "unit_kind, count(*) AS n")
+    }
     assert kinds["city"] == 2 and kinds["neighbourhood"] == 7 and kinds["area"] == 19
-    assert all(u["n_listings"] >= CFG.privacy.min_listings for u in table(stay_out, "stay_unit", "unit_kind = 'h3'"))
+    assert all(
+        u["n_listings"] >= CFG.privacy.min_listings for u in table(stay_out, "stay_unit", "unit_kind = 'h3'")
+    )
 
 
 def test_area_aggregates_match_an_independent_computation(stay_out):
@@ -188,13 +234,21 @@ def test_area_aggregates_match_an_independent_computation(stay_out):
     assert area["n_listings"] == len(inside) == 40
     used = [r for r in inside if r["stats_ok"]]
     assert area["n_priced"] == len(used)
-    assert area["median_price_cad"] == pytest.approx(statistics.median(r["price_cad"] for r in used), abs=0.01)
-    assert area["median_price_pp_cad"] == pytest.approx(statistics.median(r["price_per_person_cad"] for r in used), abs=0.01)
+    assert area["median_price_cad"] == pytest.approx(
+        statistics.median(r["price_cad"] for r in used), abs=0.01
+    )
+    assert area["median_price_pp_cad"] == pytest.approx(
+        statistics.median(r["price_per_person_cad"] for r in used), abs=0.01
+    )
     entire = [r["price_cad"] for r in used if r["room_type"] == "entire_home"]
     assert area["median_price_entire_cad"] == pytest.approx(statistics.median(entire), abs=0.01)
-    assert area["entire_home_share"] == pytest.approx(sum(r["room_type"] == "entire_home" for r in inside) / len(inside), abs=1e-4)
+    assert area["entire_home_share"] == pytest.approx(
+        sum(r["room_type"] == "entire_home" for r in inside) / len(inside), abs=1e-4
+    )
     rated = [r["rating"] for r in inside if r["rating"] is not None]
-    assert area["n_rated"] == len(rated) and area["median_rating"] == pytest.approx(statistics.median(rated), abs=0.001)
+    assert area["n_rated"] == len(rated) and area["median_rating"] == pytest.approx(
+        statistics.median(rated), abs=0.001
+    )
     assert area["n_reviewed10"] == sum(r["number_of_reviews"] >= 10 for r in inside)
     assert area["reviews_ltm"] == sum(r["reviews_ltm"] for r in inside)
     assert area["listing_density_km2"] == pytest.approx(40 / (3.141592653589793 * 1.5**2), abs=0.01)
@@ -216,7 +270,11 @@ def test_host_concentration_and_availability(stay_out):
 def test_privacy_minimum_empties_small_units(stay_out):
     island = unit(stay_out, "neighbourhood", "TYO/Ogasawara Mura")
     assert island["n_listings"] == 2
-    assert island["median_price_cad"] is None and island["median_rating"] is None and island["multi_host_share"] is None
+    assert (
+        island["median_price_cad"] is None
+        and island["median_rating"] is None
+        and island["multi_host_share"] is None
+    )
     assert island["n_places"] is None  # centred far outside Tokyo's radius: no place data, not "zero places"
     assert island["stay_score"] is None
 
@@ -225,9 +283,7 @@ def test_scores_follow_the_formula(stay_out):
     asakusa, shibuya = unit(stay_out, "area", "area-tyo-asakusa"), unit(stay_out, "area", "area-tyo-shibuya")
     for u in (asakusa, shibuya):
         assert u["score_parts"] == ["value", "reviews", "walkability", "quiet"]
-        expected = sum(
-            w * u[f"score_{k}"] for k, w in CFG.weights.model_dump().items()
-        )
+        expected = sum(w * u[f"score_{k}"] for k, w in CFG.weights.model_dump().items())
         assert u["stay_score"] == pytest.approx(expected, abs=0.15)  # parts are rounded to 0.1
         assert u["weight_coverage"] == 1.0
         assert u["explanation"].startswith("Cheaper than")
@@ -245,7 +301,9 @@ def test_a_city_with_no_places_gets_only_listing_parts(stay_out):
     assert kallang["n_places"] is None and kallang["score_walkability"] is None
     assert kallang["score_value"] is None  # 7 priced listings, under the minimum of 10
     assert kallang["score_reviews"] is not None
-    assert kallang["stay_score"] is None and kallang["score_parts"] == ["reviews"]  # 10% of the weight is not enough
+    assert kallang["stay_score"] is None and kallang["score_parts"] == [
+        "reviews"
+    ]  # 10% of the weight is not enough
 
 
 def test_areas_without_data_are_listed_unscored(stay_out):
@@ -260,7 +318,10 @@ def test_summary_headlines(stay_out):
     assert summary["coverage"]["inside_airbnb_cities"] == ["SIN", "TYO"]
     assert summary["coverage"]["no_inside_airbnb"] == 106
     assert summary["cities"]["TYO"]["areas"] == 3
-    assert summary["cities"]["TYO"]["top_neighbourhoods"][0]["stay_score"] >= summary["cities"]["TYO"]["top_neighbourhoods"][-1]["stay_score"]
+    assert (
+        summary["cities"]["TYO"]["top_neighbourhoods"][0]["stay_score"]
+        >= summary["cities"]["TYO"]["top_neighbourhoods"][-1]["stay_score"]
+    )
 
 
 # --- checks ------------------------------------------------------------------------------------------
@@ -313,7 +374,7 @@ def test_duplicate_nearby_hotels_fail(stay_out, registry, tmp_path):
         f"""COPY (SELECT * FROM read_parquet('{hotel.as_posix()}')
                   UNION ALL SELECT * REPLACE ('h_dup' AS hotel_id, lat + 0.0001 AS lat)
                   FROM read_parquet('{hotel.as_posix()}') WHERE name LIKE 'Tokyu%')
-               TO '{hotel.with_suffix('.new').as_posix()}' (FORMAT parquet)"""
+               TO '{hotel.with_suffix(".new").as_posix()}' (FORMAT parquet)"""
     ).fetchall()
     hotel.with_suffix(".new").replace(hotel)
     passed, results = run_checks(out, registry, verify_raw=False)
@@ -323,7 +384,10 @@ def test_duplicate_nearby_hotels_fail(stay_out, registry, tmp_path):
 
 def test_counts_are_compared_with_the_previous_run():
     current = {"hotel": {"TYO": 1000, "OSA": 10}, "airbnb_listing": {"TYO": 500}}
-    base = {"run_date": "2026-10-01", "counts": {"hotel": {"TYO": 1000, "OSA": 40}, "airbnb_listing": {"TYO": 1000}}}
+    base = {
+        "run_date": "2026-10-01",
+        "counts": {"hotel": {"TYO": 1000, "OSA": 40}, "airbnb_listing": {"TYO": 1000}},
+    }
     results = {r.name: r for r in stay_checks.check_counts(current, base)}
     assert results["stay.counts.vs_previous"].status == "fail"  # Airbnb halved
     assert results["stay.counts.small_cities"].status == "warn"  # a small city moved a lot
@@ -337,7 +401,10 @@ def test_report_section(stay_out, registry):
     passed, _ = run_checks(stay_out, registry)
     assert passed
     text = "\n".join(stay_section(stay_out, FIXTURE_DATE, registry))
-    assert "## Stay analytics" in text and "Inside Airbnb has data for 2 of Trippr's 108 cities (SIN, TYO)" in text
+    assert (
+        "## Stay analytics" in text
+        and "Inside Airbnb has data for 2 of Trippr's 108 cities (SIN, TYO)" in text
+    )
     assert "| TYO | 2026-09-25 | JPY |" in text
     assert "21 hotels after merging 28 source records" in text
     assert "Data from Inside Airbnb (insideairbnb.com), CC BY 4.0" in text

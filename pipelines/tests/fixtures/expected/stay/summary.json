@@ -1,0 +1,286 @@
+{
+  "airbnb_per_city": {
+    "SIN": {
+      "above_p99": 1,
+      "below_floor": 1,
+      "cad_per_unit": 1.1054,
+      "calendar_days": 1120,
+      "calendar_listings": 28,
+      "currency": "SGD",
+      "duplicate_ids": 0,
+      "geo_ok": 28,
+      "in_radius": 28,
+      "listings": 28,
+      "long_stay": 4,
+      "median_price_cad": 129.33,
+      "neighbourhoods": 4,
+      "neighbourhoods_with_area": 3,
+      "no_neighbourhood": 0,
+      "other_room_type": 1,
+      "p_high_cad": 76670.32,
+      "price_missing": 3,
+      "price_ok": 23,
+      "rate_date": "2026-09-23",
+      "rated": 23,
+      "reviews_12m_summary": 66,
+      "reviews_ltm": 66,
+      "snapshot": "2026-09-23",
+      "stats_ok": 19,
+      "stats_ok_in_radius": 19
+    },
+    "TYO": {
+      "above_p99": 1,
+      "below_floor": 1,
+      "cad_per_unit": 0.00901,
+      "calendar_days": 4680,
+      "calendar_listings": 117,
+      "currency": "JPY",
+      "duplicate_ids": 0,
+      "geo_ok": 117,
+      "in_radius": 115,
+      "listings": 117,
+      "long_stay": 4,
+      "median_price_cad": 135.15,
+      "neighbourhoods": 5,
+      "neighbourhoods_with_area": 4,
+      "no_neighbourhood": 0,
+      "other_room_type": 1,
+      "p_high_cad": 355.9,
+      "price_missing": 3,
+      "price_ok": 112,
+      "rate_date": "2026-09-25",
+      "rated": 94,
+      "reviews_12m_summary": 255,
+      "reviews_ltm": 255,
+      "snapshot": "2026-09-25",
+      "stats_ok": 108,
+      "stats_ok_in_radius": 106
+    }
+  },
+  "checks": {
+    "stay.airbnb.calendar": "pass",
+    "stay.airbnb.checksums": "pass",
+    "stay.airbnb.coordinates": "pass",
+    "stay.airbnb.country_bbox": "pass",
+    "stay.airbnb.fx": "pass",
+    "stay.airbnb.in_city_radius": "pass",
+    "stay.airbnb.licence": "pass",
+    "stay.airbnb.neighbourhoods": "pass",
+    "stay.airbnb.price_coverage": "pass",
+    "stay.airbnb.price_sanity": "pass",
+    "stay.airbnb.required": "pass",
+    "stay.airbnb.reviews_consistency": "pass",
+    "stay.airbnb.room_types": "warn",
+    "stay.airbnb.schema": "pass",
+    "stay.airbnb.snapshot_age": "pass",
+    "stay.airbnb.unique_ids": "pass",
+    "stay.counts.vs_previous": "info",
+    "stay.hotel.city_radius": "pass",
+    "stay.hotel.country_bbox": "pass",
+    "stay.hotel.duplicates": "pass",
+    "stay.hotel.kinds": "pass",
+    "stay.hotel.licence": "pass",
+    "stay.hotel.required": "pass",
+    "stay.hotel.schema": "pass",
+    "stay.hotel.unique_id": "pass",
+    "stay.unit.coverage": "info",
+    "stay.unit.explained": "pass",
+    "stay.unit.privacy": "pass",
+    "stay.unit.schema": "pass",
+    "stay.unit.scores_in_range": "pass",
+    "stay.unit.shares_in_range": "pass",
+    "stay.unit.unique_ids": "pass"
+  },
+  "hotel": {
+    "by_kind": {
+      "apartment": 2,
+      "guest_house": 2,
+      "hostel": 3,
+      "hotel": 11,
+      "inn": 1,
+      "motel": 1,
+      "other": 1
+    },
+    "hotels": 21,
+    "merge": {
+      "accepted_pairs": 10,
+      "candidate_pairs": 11,
+      "clusters": 21,
+      "records": 28
+    },
+    "multi_source": 5,
+    "per_area": {
+      "area-tyo-asakusa": 3,
+      "area-tyo-shibuya": 2,
+      "area-tyo-shinjuku": 2
+    },
+    "per_city": {
+      "OSA": 8,
+      "TYO": 13
+    },
+    "with_area": 7,
+    "with_stars": 3
+  },
+  "hotel_sources": {
+    "foursquare": {
+      "by_kind": {
+        "guest_house": 1,
+        "hostel": 1,
+        "hotel": 2,
+        "other": 1
+      },
+      "closed": 1,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded_kind": 1,
+      "no_city": 0,
+      "no_name": 0,
+      "other_kind": 1,
+      "per_city": {
+        "OSA": 2,
+        "TYO": 3
+      },
+      "raw_lodging_rows": 7,
+      "source": "foursquare",
+      "staged_rows": 5,
+      "version": "fixture"
+    },
+    "osm_lodging": {
+      "by_kind": {
+        "apartment": 1,
+        "guest_house": 2,
+        "hostel": 2,
+        "hotel": 2,
+        "motel": 1
+      },
+      "closed": 0,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded_kind": 1,
+      "no_city": 1,
+      "no_name": 1,
+      "other_kind": 0,
+      "per_city": {
+        "OSA": 2,
+        "TYO": 6
+      },
+      "raw_lodging_rows": 11,
+      "source": "osm_lodging",
+      "staged_rows": 8,
+      "version": "2026-11-17T22:00:00Z"
+    },
+    "overture": {
+      "by_kind": {
+        "apartment": 1,
+        "hotel": 13,
+        "inn": 1
+      },
+      "closed": 1,
+      "country_mismatch": 0,
+      "duplicate_rows": 0,
+      "excluded_kind": 1,
+      "no_city": 0,
+      "no_name": 0,
+      "other_kind": 0,
+      "per_city": {
+        "OSA": 6,
+        "TYO": 9
+      },
+      "raw_lodging_rows": 17,
+      "source": "overture",
+      "staged_rows": 15,
+      "version": "2026-11-18.0"
+    }
+  },
+  "summary": {
+    "cities": {
+      "SIN": {
+        "areas": 0,
+        "entire_home_share": 0.5357,
+        "est_occupancy_share": 0.2822,
+        "h3_cells": 2,
+        "licensed_share": 0.0,
+        "median_price_cad": 129.33,
+        "median_price_entire_cad": 119.38,
+        "median_price_pp_cad": 46.59,
+        "median_price_private_cad": 129.33,
+        "median_rating": 4.61,
+        "multi_host_share": 0.0,
+        "n_hotels": 0,
+        "n_listings": 28,
+        "n_priced": 19,
+        "name": "Singapore",
+        "neighbourhoods": 3,
+        "private_room_share": 0.3214,
+        "reviews_ltm": 66,
+        "snapshot_date": "2026-09-23",
+        "top_hosts_share": 0.1786,
+        "top_neighbourhoods": [],
+        "unavailable_share": 0.408
+      },
+      "TYO": {
+        "areas": 3,
+        "entire_home_share": 0.6261,
+        "est_occupancy_share": 0.4548,
+        "h3_cells": 9,
+        "licensed_share": 0.5826,
+        "median_price_cad": 137.41,
+        "median_price_entire_cad": 144.16,
+        "median_price_pp_cad": 38.29,
+        "median_price_private_cad": 118.93,
+        "median_rating": 4.415,
+        "multi_host_share": 0.0957,
+        "n_hotels": 13,
+        "n_listings": 115,
+        "n_priced": 106,
+        "name": "Tokyo",
+        "neighbourhoods": 4,
+        "private_room_share": 0.2522,
+        "reviews_ltm": 249,
+        "snapshot_date": "2026-09-25",
+        "top_hosts_share": 0.1304,
+        "top_neighbourhoods": [
+          {
+            "median_price_cad": 139.66,
+            "name": "Shinjuku Ku",
+            "stay_score": 62.0
+          },
+          {
+            "median_price_cad": 112.63,
+            "name": "Taito Ku",
+            "stay_score": 61.5
+          },
+          {
+            "median_price_cad": 197.32,
+            "name": "Shibuya Ku",
+            "stay_score": 51.2
+          }
+        ],
+        "unavailable_share": 0.4165
+      }
+    },
+    "coverage": {
+      "cities_with_staged_places": 2,
+      "inside_airbnb_cities": [
+        "SIN",
+        "TYO"
+      ],
+      "no_inside_airbnb": 106,
+      "trippr_cities": 108
+    },
+    "run_date": "2026-11-18",
+    "scored_units": 15,
+    "units": {
+      "area": 19,
+      "city": 2,
+      "h3": 11,
+      "neighbourhood": 7
+    },
+    "weights": {
+      "quiet": 0.2,
+      "reviews": 0.1,
+      "value": 0.4,
+      "walkability": 0.3
+    }
+  }
+}

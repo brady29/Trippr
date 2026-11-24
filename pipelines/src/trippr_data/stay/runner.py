@@ -1,11 +1,11 @@
 """Command line wiring for the stay stages (registered from cli.py):
 
-    stay-extract  download Inside Airbnb snapshots (+ Bank of Canada rates) and, optionally, OSM lodging
-    stay-stage    stage hotels and Inside Airbnb listings into staging/<date>/stay/
-    stay-analyse  aggregate by Area, neighbourhood and H3 cell, compute the stay scores
-    stay-check    data quality checks for the stay tables; exits 1 on a failure
-    stay-report   write the stay report section (reports/<date>.stay.md)
-    stay          stage, analyse, check and report from the raw data already extracted
+stay-extract  download Inside Airbnb snapshots (+ Bank of Canada rates) and, optionally, OSM lodging
+stay-stage    stage hotels and Inside Airbnb listings into staging/<date>/stay/
+stay-analyse  aggregate by Area, neighbourhood and H3 cell, compute the stay scores
+stay-check    data quality checks for the stay tables; exits 1 on a failure
+stay-report   write the stay report section (reports/<date>.stay.md)
+stay          stage, analyse, check and report from the raw data already extracted
 """
 
 from __future__ import annotations
@@ -50,7 +50,9 @@ def cmd_stay_extract(args: argparse.Namespace, registry: Registry, out: Path) ->
         raise SystemExit(f"Unknown stay source(s) {unknown}. Known: {', '.join(EXTRACT_SOURCES)}")
     if "insideairbnb" in wanted:
         client = PoliteClient(min_interval_s=args.pause)
-        meta = insideairbnb.extract(cities, out=out, date=date, registry=registry, client=client, force=args.force)
+        meta = insideairbnb.extract(
+            cities, out=out, date=date, registry=registry, client=client, force=args.force
+        )
         log.info(
             "insideairbnb: %d covered cities %s; %d requests",
             len(meta["coverage"]["covered"]),
@@ -116,9 +118,13 @@ def cmd_stay(args: argparse.Namespace, registry: Registry, out: Path) -> int:
 def add_commands(add: Callable[[str, Callable, str], argparse.ArgumentParser]) -> None:
     """Register the stay commands on cli.py's parser (add is its local helper)."""
     p = add("stay-extract", cmd_stay_extract, "download Inside Airbnb (and optionally OSM lodging) into raw/")
-    p.add_argument("--source", default="insideairbnb", help="insideairbnb, osm_lodging, a comma list or 'all'")
+    p.add_argument(
+        "--source", default="insideairbnb", help="insideairbnb, osm_lodging, a comma list or 'all'"
+    )
     p.add_argument("--cities", default="all", help="'all' or city codes (Inside Airbnb covers only some)")
-    p.add_argument("--force", action="store_true", help="download snapshot files again even if already in raw/")
+    p.add_argument(
+        "--force", action="store_true", help="download snapshot files again even if already in raw/"
+    )
     p.add_argument("--pause", type=float, default=2.0, help="seconds between Inside Airbnb requests")
     p.add_argument("--osm-pause", type=float, default=10.0, help="seconds between Overpass queries")
 
@@ -131,7 +137,9 @@ def add_commands(add: Callable[[str, Callable, str], argparse.ArgumentParser]) -
     ):
         p = add(name, fn, text)
         if name in ("stay-analyse", "stay"):
-            p.add_argument("--places-date", help="date of the matched/staged places for walkability (default: --date)")
+            p.add_argument(
+                "--places-date", help="date of the matched/staged places for walkability (default: --date)"
+            )
             p.add_argument(
                 "--places",
                 type=Path,

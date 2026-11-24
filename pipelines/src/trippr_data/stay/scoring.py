@@ -57,7 +57,9 @@ def value_score(price: float | None, city_prices_sorted: Sequence[float]) -> flo
     return None if share is None else 100.0 * share
 
 
-def shrunk_rating(rating: float | None, n_rated: int, city_rating: float | None, prior_weight: float) -> float | None:
+def shrunk_rating(
+    rating: float | None, n_rated: int, city_rating: float | None, prior_weight: float
+) -> float | None:
     if rating is None or n_rated <= 0:
         return None
     if city_rating is None or prior_weight <= 0:

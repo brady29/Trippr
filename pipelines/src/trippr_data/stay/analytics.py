@@ -22,16 +22,17 @@ from typing import Any
 import duckdb
 
 from ..cities import City, load_cities
-from ..duck import connect, rows, run, scalar, sql_str
+from ..duck import connect, rows, run, sql_str
 from ..layout import staging_dir, write_json
 from ..settings import CONFIG_DIR, SEED_DIR
 from .areas import load_areas
 from .config import StayConfig, load_stay_config
 from .geo import circle_area_km2, h3_area_km2, h3_centre
-from .unit_scores import build_summary, score_units, write_units
 from .layout import stay_summary_file, stay_table
+from .unit_scores import build_summary, score_units, write_units
 
 log = logging.getLogger(__name__)
+
 
 def _hubs_stations(seed_dir: Path) -> list[dict[str, Any]]:
     with open(seed_dir / "hubs.json", encoding="utf-8") as fh:
@@ -65,7 +66,9 @@ def build_units(
         new.append(["city", code, code, c.name, c.lat, c.lon, c.radius_km, circle_area_km2(c.radius_km)])
     areas, _ = load_areas(cfg.areas.default_radius_km, seed_dir)
     for a in areas:
-        new.append(["area", a.id, a.city_code, a.name, a.lat, a.lon, a.radius_km, circle_area_km2(a.radius_km)])
+        new.append(
+            ["area", a.id, a.city_code, a.name, a.lat, a.lon, a.radius_km, circle_area_km2(a.radius_km)]
+        )
     con.executemany("INSERT INTO unit VALUES (?, ?, ?, ?, ?, ?, ?, ?)", new)
     # Inside Airbnb neighbourhoods that have listings; the centre is the median listing location.
     run(
@@ -85,7 +88,9 @@ def build_units(
     # An H3 cell belongs to the city of most of its listings.
     best: dict[str, str] = {}
     counts: dict[str, int] = {}
-    for r in rows(con, "SELECT h3, city_code, count(*) AS n FROM lst WHERE geo_ok AND h3 IS NOT NULL GROUP BY 1, 2"):
+    for r in rows(
+        con, "SELECT h3, city_code, count(*) AS n FROM lst WHERE geo_ok AND h3 IS NOT NULL GROUP BY 1, 2"
+    ):
         if r["n"] > counts.get(r["h3"], 0):
             best[r["h3"]], counts[r["h3"]] = r["city_code"], r["n"]
     hex_rows = []
@@ -174,11 +179,12 @@ def build_metrics(con: duckdb.DuckDBPyConnection, cfg: StayConfig) -> None:
     )
 
 
-def build_place_counts(
-    con: duckdb.DuckDBPyConnection, cfg: StayConfig, places_files: list[Path]
-) -> set[str]:
+def build_place_counts(con: duckdb.DuckDBPyConnection, cfg: StayConfig, places_files: list[Path]) -> set[str]:
     """Places and nightlife venues near each unit centre; returns the cities that have staged places."""
-    run(con, "CREATE TABLE place_count (unit_kind VARCHAR, unit_id VARCHAR, n_places INTEGER, n_nightlife INTEGER)")
+    run(
+        con,
+        "CREATE TABLE place_count (unit_kind VARCHAR, unit_id VARCHAR, n_places INTEGER, n_nightlife INTEGER)",
+    )
     if not places_files:
         return set()
     files = ", ".join(sql_str(f.as_posix()) for f in places_files)
@@ -226,9 +232,15 @@ def analyse(
     cfg = cfg or load_stay_config(config_dir)
     cities = {c.code: c for c in load_cities(seed_dir, config_dir)}
     con = connect()
-    run(con, f"CREATE TABLE lst AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, 'airbnb_listing').as_posix())}) WHERE geo_ok")
+    run(
+        con,
+        f"CREATE TABLE lst AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, 'airbnb_listing').as_posix())}) WHERE geo_ok",
+    )
     for name in ("airbnb_calendar", "airbnb_neighbourhood"):
-        run(con, f"CREATE TABLE {name} AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, name).as_posix())})")
+        run(
+            con,
+            f"CREATE TABLE {name} AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, name).as_posix())})",
+        )
     hotel_path = stay_table(out, date, "hotel")
     run(
         con,
@@ -246,10 +258,14 @@ def analyse(
     stations = _hubs_stations(seed_dir)
     run(con, "CREATE TABLE station (city_code VARCHAR, lat DOUBLE, lon DOUBLE)")
     if stations:
-        con.executemany("INSERT INTO station VALUES (?, ?, ?)", [[s["city"], s["lat"], s["lon"]] for s in stations])
+        con.executemany(
+            "INSERT INTO station VALUES (?, ?, ?)", [[s["city"], s["lat"], s["lon"]] for s in stations]
+        )
 
     run(con, "CREATE TABLE city_ref (code VARCHAR, lat DOUBLE, lon DOUBLE)")
-    con.executemany("INSERT INTO city_ref VALUES (?, ?, ?)", [[c.code, c.lat, c.lon] for c in cities.values()])
+    con.executemany(
+        "INSERT INTO city_ref VALUES (?, ?, ?)", [[c.code, c.lat, c.lon] for c in cities.values()]
+    )
     base = rows(
         con,
         """SELECT u.*, m.* EXCLUDE (unit_kind, unit_id), h.top_hosts_share, pc.n_places, pc.n_nightlife, hc.n_hotels,

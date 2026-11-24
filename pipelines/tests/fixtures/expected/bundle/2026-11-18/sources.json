@@ -113,5 +113,68 @@
     "fetched_at": "2026-11-18T00:00:00Z",
     "staged_rows": 18,
     "places": 17
+  },
+  {
+    "id": "insideairbnb",
+    "name": "Inside Airbnb",
+    "url": "https://insideairbnb.com/get-the-data/",
+    "licence": "CC-BY-4.0",
+    "licence_detail": null,
+    "licence_urls": [
+      "https://creativecommons.org/licenses/by/4.0/"
+    ],
+    "attribution": "Data from Inside Airbnb (insideairbnb.com), CC BY 4.0. Location and snapshot date are shown with every figure.",
+    "terms_checked_on": "2026-11-23",
+    "allowed_uses": [
+      "Aggregate (medians, counts, shares by area, neighbourhood and map cell) and show the aggregates with the attribution above",
+      "Keep the downloaded snapshot in our own private bucket for reproducibility"
+    ],
+    "enabled": true,
+    "version": null,
+    "fetched_at": null,
+    "staged_rows": null,
+    "places": 0
+  },
+  {
+    "id": "osm_lodging",
+    "name": "OpenStreetMap lodging (tourism=hotel|hostel|guest_house|apartment|motel)",
+    "url": "https://wiki.openstreetmap.org/wiki/Key:tourism",
+    "licence": "ODbL-1.0",
+    "licence_detail": null,
+    "licence_urls": [
+      "https://opendatacommons.org/licenses/odbl/1-0/"
+    ],
+    "attribution": "© OpenStreetMap contributors, available under the Open Database Licence (openstreetmap.org/copyright).",
+    "terms_checked_on": "2026-11-23",
+    "allowed_uses": [
+      "Read, transform and combine with other data with attribution; a public database derived from it must be offered under ODbL",
+      "Keep OSM-derived fields traceable per record (sources) and do not publish the curated bundle as a dataset"
+    ],
+    "enabled": true,
+    "version": null,
+    "fetched_at": null,
+    "staged_rows": null,
+    "places": 0
+  },
+  {
+    "id": "boc_fx",
+    "name": "Bank of Canada exchange rates (Valet API)",
+    "url": "https://www.bankofcanada.ca/valet/docs",
+    "licence": "Bank of Canada Terms of Use (free use with attribution)",
+    "licence_detail": null,
+    "licence_urls": [
+      "https://www.bankofcanada.ca/terms/"
+    ],
+    "attribution": "Exchange rates from the Bank of Canada (bankofcanada.ca), daily average rates; converted prices are approximations.",
+    "terms_checked_on": "2026-11-23",
+    "allowed_uses": [
+      "Use, copy and distribute with attribution to the Bank of Canada and a note that changes were made",
+      "Keep requests few (the terms forbid circumventing request limits)"
+    ],
+    "enabled": true,
+    "version": null,
+    "fetched_at": null,
+    "staged_rows": null,
+    "places": 0
   }
 ]

@@ -188,10 +188,16 @@ def extract(
             rel = f"{city.code}/{name}"
             target = directory / city.code / name
             known = files.get(rel)
-            if not force and target.is_file() and known and known.get("snapshot") == snapshot:
-                if sha256_file(target) == known["sha256"]:
-                    log.info("%s already downloaded for %s; not fetching again", rel, snapshot)
-                    continue
+            unchanged = (
+                not force
+                and target.is_file()
+                and known
+                and known.get("snapshot") == snapshot
+                and sha256_file(target) == known["sha256"]
+            )
+            if unchanged:
+                log.info("%s already downloaded for %s; not fetching again", rel, snapshot)
+                continue
             url = ab.file_url(snapshot, name, data_host)
             log.info("downloading %s", url)
             size, sha = client.download(url, target)
@@ -231,4 +237,3 @@ def extract(
     }
     write_json(meta_path, meta)
     return meta
-

@@ -35,7 +35,16 @@ def _with_foursquare_disabled():
 
 def test_both_sources_are_enabled_and_disabled_ones_are_refused():
     registry = load_registry()
-    assert registry.enabled() == ["overture", "foursquare", "osm", "wikidata", "wikivoyage"]
+    assert registry.enabled() == [
+        "overture",
+        "foursquare",
+        "osm",
+        "wikidata",
+        "wikivoyage",
+        "insideairbnb",
+        "osm_lodging",
+        "boc_fx",
+    ]
     assert registry.require("foursquare").licence == "Apache-2.0"
     disabled = _with_foursquare_disabled()
     with pytest.raises(SourceDisabledError):

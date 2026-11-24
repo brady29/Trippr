@@ -44,7 +44,9 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_meta(directory: Path, source: str, licence: str, version: str, files: dict[str, dict], **extra) -> None:
+def write_meta(
+    directory: Path, source: str, licence: str, version: str, files: dict[str, dict], **extra
+) -> None:
     meta = {
         "source": source,
         "licence": licence,
@@ -111,16 +113,58 @@ def foursquare_rows() -> None:
     rows = {
         "TYO": [
             # (id, name, lat, lon, label, closed)
-            ("fsq-tokyu", "Tokyu Stay Shibuya Shin-Minamiguchi", 35.65490, 139.70490, "Travel and Transportation > Lodging > Hotel", None),
-            ("fsq-shibuya-hostel", "Shibuya Fixture Hostel", 35.6600, 139.7010, "Travel and Transportation > Lodging > Hostel", None),
-            ("fsq-camp", "Fixture Campground", 35.62, 139.75, "Travel and Transportation > Lodging > Campground", None),
+            (
+                "fsq-tokyu",
+                "Tokyu Stay Shibuya Shin-Minamiguchi",
+                35.65490,
+                139.70490,
+                "Travel and Transportation > Lodging > Hotel",
+                None,
+            ),
+            (
+                "fsq-shibuya-hostel",
+                "Shibuya Fixture Hostel",
+                35.6600,
+                139.7010,
+                "Travel and Transportation > Lodging > Hostel",
+                None,
+            ),
+            (
+                "fsq-camp",
+                "Fixture Campground",
+                35.62,
+                139.75,
+                "Travel and Transportation > Lodging > Campground",
+                None,
+            ),
             ("fsq-other", "Fixture Lodging", 35.69, 139.72, "Travel and Transportation > Lodging", None),
-            ("fsq-closed", "Closed Fixture Inn", 35.68, 139.76, "Travel and Transportation > Lodging > Inn", "2026-01-05"),
+            (
+                "fsq-closed",
+                "Closed Fixture Inn",
+                35.68,
+                139.76,
+                "Travel and Transportation > Lodging > Inn",
+                "2026-01-05",
+            ),
             ("fsq-restaurant", "Fixture Ramen", 35.68, 139.77, "Dining and Drinking > Restaurant", None),
         ],
         "OSA": [
-            ("fsq-shin-osaka", "Shin-Osaka Hotel", 34.73350, 135.50340, "Travel and Transportation > Lodging > Hotel", None),
-            ("fsq-bnb", "Fixture B&B Osaka", 34.69, 135.50, "Travel and Transportation > Lodging > Bed and Breakfast", None),
+            (
+                "fsq-shin-osaka",
+                "Shin-Osaka Hotel",
+                34.73350,
+                135.50340,
+                "Travel and Transportation > Lodging > Hotel",
+                None,
+            ),
+            (
+                "fsq-bnb",
+                "Fixture B&B Osaka",
+                34.69,
+                135.50,
+                "Travel and Transportation > Lodging > Bed and Breakfast",
+                None,
+            ),
         ],
     }
     con = duckdb.connect()
@@ -135,11 +179,25 @@ def foursquare_rows() -> None:
         for fid, name, lat, lon, label, closed in items:
             con.execute(
                 "INSERT INTO t VALUES (?, ?, ?, ?, '1-2-3 Fixture', ?, NULL, '100-0001', NULL, 'JP', DATE '2020-01-01', DATE '2026-10-01', ?, NULL, ?, ['x'], [?])",
-                [fid, name, lat, lon, "Tokyo" if city == "TYO" else "Osaka", closed, "https://example.com/" + fid, label],
+                [
+                    fid,
+                    name,
+                    lat,
+                    lon,
+                    "Tokyo" if city == "TYO" else "Osaka",
+                    closed,
+                    "https://example.com/" + fid,
+                    label,
+                ],
             )
         path = directory / f"{city}.parquet"
         con.execute(f"COPY (SELECT * FROM t ORDER BY fsq_place_id) TO '{path.as_posix()}' (FORMAT parquet)")
-        files[path.name] = {"city": city, "rows": len(items), "sha256": sha256(path), "fetched_at": FETCHED_AT}
+        files[path.name] = {
+            "city": city,
+            "rows": len(items),
+            "sha256": sha256(path),
+            "fetched_at": FETCHED_AT,
+        }
     write_meta(directory, "foursquare", "Apache-2.0", "fixture", files)
 
 
@@ -157,11 +215,60 @@ def osm_rows() -> None:
 
     data = {
         "TYO": [
-            el("node", 101, 35.65484, 139.70506, tourism="hotel", name="Tokyu Stay Shibuya Shin-Minamiguchi", stars="3", website="https://www.tokyustay.example/shibuya", wikidata="Q111", **{"name:en": "Tokyu Stay Shibuya Shin-Minamiguchi", "addr:country": "JP"}),
-            el("way", 202, 35.69425, 139.76457, tourism="hotel", name="ANA Holiday Inn Tokyo Bay", stars="4", phone="+81 3 0000 0000"),
-            el("node", 303, 35.7150, 139.7960, tourism="guest_house", name="浅草ゲストハウス", **{"name:en": "Asakusa Guest House", "name:ja": "浅草ゲストハウス", "addr:street": "Kaminarimon", "addr:housenumber": "1"}),
-            el("node", 304, 35.71503, 139.79604, tourism="guest_house", name="浅草ゲストハウス", **{"name:en": "Asakusa Guest House"}),
-            el("node", 305, 35.7000, 139.7000, tourism="apartment", name="Shinjuku Fixture Apartments", stars="2S"),
+            el(
+                "node",
+                101,
+                35.65484,
+                139.70506,
+                tourism="hotel",
+                name="Tokyu Stay Shibuya Shin-Minamiguchi",
+                stars="3",
+                website="https://www.tokyustay.example/shibuya",
+                wikidata="Q111",
+                **{"name:en": "Tokyu Stay Shibuya Shin-Minamiguchi", "addr:country": "JP"},
+            ),
+            el(
+                "way",
+                202,
+                35.69425,
+                139.76457,
+                tourism="hotel",
+                name="ANA Holiday Inn Tokyo Bay",
+                stars="4",
+                phone="+81 3 0000 0000",
+            ),
+            el(
+                "node",
+                303,
+                35.7150,
+                139.7960,
+                tourism="guest_house",
+                name="浅草ゲストハウス",
+                **{
+                    "name:en": "Asakusa Guest House",
+                    "name:ja": "浅草ゲストハウス",
+                    "addr:street": "Kaminarimon",
+                    "addr:housenumber": "1",
+                },
+            ),
+            el(
+                "node",
+                304,
+                35.71503,
+                139.79604,
+                tourism="guest_house",
+                name="浅草ゲストハウス",
+                **{"name:en": "Asakusa Guest House"},
+            ),
+            el(
+                "node",
+                305,
+                35.7000,
+                139.7000,
+                tourism="apartment",
+                name="Shinjuku Fixture Apartments",
+                stars="2S",
+            ),
             el("node", 306, 35.7100, 139.8100, tourism="hostel", name="Fixture Hostel Sumida"),
             el("node", 307, 35.7200, 139.8200, tourism="hotel"),  # no name: dropped
             el("node", 308, 35.6000, 139.6000, tourism="chalet", name="Fixture Chalet"),  # excluded kind
@@ -169,26 +276,72 @@ def osm_rows() -> None:
         ],
         "OSA": [
             el("node", 401, 34.69880, 135.53530, tourism="hostel", name="Lucky's hostel"),
-            el("node", 402, 34.70, 135.51, tourism="motel", name="Fixture Motel Osaka", **{"addr:country": "JP"}),
+            el(
+                "node",
+                402,
+                34.70,
+                135.51,
+                tourism="motel",
+                name="Fixture Motel Osaka",
+                **{"addr:country": "JP"},
+            ),
         ],
     }
     files = {}
     for city, elements in data.items():
         path = directory / f"{city}.json"
-        body = {"version": 0.6, "generator": "Overpass API fixture", "osm3s": {"timestamp_osm_base": "2026-11-17T22:00:00Z"}, "elements": elements}
+        body = {
+            "version": 0.6,
+            "generator": "Overpass API fixture",
+            "osm3s": {"timestamp_osm_base": "2026-11-17T22:00:00Z"},
+            "elements": elements,
+        }
         write_text(path, json.dumps(body, ensure_ascii=False, indent=1) + "\n")
-        files[path.name] = {"city": city, "rows": len(elements), "osm_base": "2026-11-17T22:00:00Z", "sha256": sha256(path), "fetched_at": FETCHED_AT}
+        files[path.name] = {
+            "city": city,
+            "rows": len(elements),
+            "osm_base": "2026-11-17T22:00:00Z",
+            "sha256": sha256(path),
+            "fetched_at": FETCHED_AT,
+        }
     write_meta(directory, "osm_lodging", "ODbL-1.0", "2026-11-17T22:00:00Z", files)
 
 
 # --- Inside Airbnb -----------------------------------------------------------------------------------
 
 LISTING_COLUMNS = [
-    "id", "listing_url", "last_scraped", "name", "description", "host_id", "host_name", "neighbourhood_cleansed",
-    "neighbourhood_group_cleansed", "latitude", "longitude", "property_type", "room_type", "accommodates", "bathrooms_text",
-    "bedrooms", "beds", "price", "minimum_nights", "availability_30", "availability_60", "availability_90",
-    "availability_365", "number_of_reviews", "number_of_reviews_ltm", "estimated_occupancy_l365d", "review_scores_rating",
-    "review_scores_location", "review_scores_value", "license", "instant_bookable", "calculated_host_listings_count",
+    "id",
+    "listing_url",
+    "last_scraped",
+    "name",
+    "description",
+    "host_id",
+    "host_name",
+    "neighbourhood_cleansed",
+    "neighbourhood_group_cleansed",
+    "latitude",
+    "longitude",
+    "property_type",
+    "room_type",
+    "accommodates",
+    "bathrooms_text",
+    "bedrooms",
+    "beds",
+    "price",
+    "minimum_nights",
+    "availability_30",
+    "availability_60",
+    "availability_90",
+    "availability_365",
+    "number_of_reviews",
+    "number_of_reviews_ltm",
+    "estimated_occupancy_l365d",
+    "review_scores_rating",
+    "review_scores_location",
+    "review_scores_value",
+    "license",
+    "instant_bookable",
+    "calculated_host_listings_count",
 ]
 
 
@@ -196,13 +349,17 @@ def fmt_price(local: float | None, rng: random.Random) -> str:
     return "" if local is None else f"${local:,.2f}"
 
 
-def make_city(code: str, snapshot: str, clusters: list[dict], rng: random.Random, currency_scale: float) -> list[dict]:
+def make_city(
+    code: str, snapshot: str, clusters: list[dict], rng: random.Random, currency_scale: float
+) -> list[dict]:
     rows = []
     listing_id = {"TYO": 1000, "SIN": 5000}[code]
     for cl in clusters:
-        for i in range(cl["n"]):
+        for _ in range(cl["n"]):
             listing_id += 1
-            room = rng.choices(["Entire home/apt", "Private room", "Shared room", "Hotel room"], [60, 30, 5, 5])[0]
+            room = rng.choices(
+                ["Entire home/apt", "Private room", "Shared room", "Hotel room"], [60, 30, 5, 5]
+            )[0]
             local = round(rng.uniform(*cl["price"]) / currency_scale) * currency_scale
             if room == "Private room":
                 local *= 0.6
@@ -221,7 +378,9 @@ def make_city(code: str, snapshot: str, clusters: list[dict], rng: random.Random
                     "neighbourhood_group_cleansed": cl.get("group", ""),
                     "latitude": round(cl["lat"] + rng.uniform(-0.0045, 0.0045), 5),
                     "longitude": round(cl["lon"] + rng.uniform(-0.0045, 0.0045), 5),
-                    "property_type": "Entire rental unit" if room == "Entire home/apt" else "Private room in rental unit",
+                    "property_type": "Entire rental unit"
+                    if room == "Entire home/apt"
+                    else "Private room in rental unit",
                     "room_type": room,
                     "accommodates": rng.randint(1, 6),
                     "bathrooms_text": "1 bath",
@@ -270,7 +429,13 @@ def write_listings(path: Path, rows: list[dict]) -> None:
 
 
 def rect(lat: float, lon: float, d: float = 0.005) -> dict:
-    ring = [[lon - d, lat - d], [lon + d, lat - d], [lon + d, lat + d], [lon - d, lat + d], [lon - d, lat - d]]
+    ring = [
+        [lon - d, lat - d],
+        [lon + d, lat - d],
+        [lon + d, lat + d],
+        [lon - d, lat + d],
+        [lon - d, lat - d],
+    ]
     return {"type": "Polygon", "coordinates": [ring]}
 
 
@@ -279,15 +444,57 @@ def airbnb() -> None:
     rng = random.Random(2026)
     cities = {
         "TYO": [
-            {"name": "Shibuya Ku", "lat": 35.659, "lon": 139.700, "n": 40, "price": (15000, 40000), "group": ""},
+            {
+                "name": "Shibuya Ku",
+                "lat": 35.659,
+                "lon": 139.700,
+                "n": 40,
+                "price": (15000, 40000),
+                "group": "",
+            },
             {"name": "Taito Ku", "lat": 35.715, "lon": 139.797, "n": 40, "price": (8000, 20000), "group": ""},
-            {"name": "Shinjuku Ku", "lat": 35.690, "lon": 139.700, "n": 35, "price": (10000, 25000), "group": ""},
-            {"name": "Ogasawara Mura", "lat": 27.09, "lon": 142.19, "n": 2, "price": (12000, 15000), "group": ""},
+            {
+                "name": "Shinjuku Ku",
+                "lat": 35.690,
+                "lon": 139.700,
+                "n": 35,
+                "price": (10000, 25000),
+                "group": "",
+            },
+            {
+                "name": "Ogasawara Mura",
+                "lat": 27.09,
+                "lon": 142.19,
+                "n": 2,
+                "price": (12000, 15000),
+                "group": "",
+            },
         ],
         "SIN": [
-            {"name": "Kallang", "lat": 1.311, "lon": 103.866, "n": 16, "price": (90, 300), "group": "Central Region"},
-            {"name": "Geylang", "lat": 1.315, "lon": 103.887, "n": 9, "price": (80, 200), "group": "Central Region"},
-            {"name": "Tampines", "lat": 1.345, "lon": 103.959, "n": 3, "price": (60, 90), "group": "East Region"},
+            {
+                "name": "Kallang",
+                "lat": 1.311,
+                "lon": 103.866,
+                "n": 16,
+                "price": (90, 300),
+                "group": "Central Region",
+            },
+            {
+                "name": "Geylang",
+                "lat": 1.315,
+                "lon": 103.887,
+                "n": 9,
+                "price": (80, 200),
+                "group": "Central Region",
+            },
+            {
+                "name": "Tampines",
+                "lat": 1.345,
+                "lon": 103.959,
+                "n": 3,
+                "price": (60, 90),
+                "group": "East Region",
+            },
         ],
     }
     centres = {"TYO": (35.6812, 139.7671), "SIN": (1.2900, 103.8500)}
@@ -307,8 +514,13 @@ def airbnb() -> None:
         for r in rows:
             for day in range(40):
                 blocked = (r["id"] + day) % 3 == 0 if r["id"] % 5 else day < 30
-                buf.write(f"{r['id']},{first + timedelta(days=day)},{'f' if blocked else 't'},{r['minimum_nights']},1125\n")
-        with open(city_dir / "calendar.csv.gz", "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+                buf.write(
+                    f"{r['id']},{first + timedelta(days=day)},{'f' if blocked else 't'},{r['minimum_nights']},1125\n"
+                )
+        with (
+            open(city_dir / "calendar.csv.gz", "wb") as raw,
+            gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz,
+        ):
             gz.write(buf.getvalue().encode())
 
         # Reviews summary: ltm dates inside the last year, the rest older.
@@ -322,24 +534,57 @@ def airbnb() -> None:
         write_text(city_dir / "reviews.csv", "\n".join(lines) + "\n")
 
         # Neighbourhoods: names and rectangles (area known from the geometry).
-        nb_lines = ["neighbourhood_group,neighbourhood"] + [f"{c.get('group', '')},{c['name']}" for c in clusters] + [f"{clusters[0].get('group', '')},Empty Fixture Ward"]
+        nb_lines = (
+            ["neighbourhood_group,neighbourhood"]
+            + [f"{c.get('group', '')},{c['name']}" for c in clusters]
+            + [f"{clusters[0].get('group', '')},Empty Fixture Ward"]
+        )
         write_text(city_dir / "neighbourhoods.csv", "\n".join(nb_lines) + "\n")
         features = [
-            {"type": "Feature", "properties": {"neighbourhood": c["name"], "neighbourhood_group": c.get("group", "")}, "geometry": rect(c["lat"], c["lon"])}
+            {
+                "type": "Feature",
+                "properties": {"neighbourhood": c["name"], "neighbourhood_group": c.get("group", "")},
+                "geometry": rect(c["lat"], c["lon"]),
+            }
             for c in clusters
         ]
-        write_text(city_dir / "neighbourhoods.geojson", json.dumps({"type": "FeatureCollection", "features": features}) + "\n")
+        write_text(
+            city_dir / "neighbourhoods.geojson",
+            json.dumps({"type": "FeatureCollection", "features": features}) + "\n",
+        )
 
-        for name in ("listings.csv.gz", "calendar.csv.gz", "reviews.csv", "neighbourhoods.csv", "neighbourhoods.geojson"):
+        for name in (
+            "listings.csv.gz",
+            "calendar.csv.gz",
+            "reviews.csv",
+            "neighbourhoods.csv",
+            "neighbourhoods.geojson",
+        ):
             p = city_dir / name
             counted = name in ("listings.csv.gz", "calendar.csv.gz", "reviews.csv")
-            n = duckdb.connect().execute(f"SELECT count(*) FROM read_csv('{p.as_posix()}', all_varchar=true)").fetchall()[0][0] if counted else None
+            n = (
+                duckdb.connect()
+                .execute(f"SELECT count(*) FROM read_csv('{p.as_posix()}', all_varchar=true)")
+                .fetchall()[0][0]
+                if counted
+                else None
+            )
             files[f"{code}/{name}"] = {
-                "city": code, "name": name, "snapshot": snapshot, "url": f"fixture://{code}/{name}", "bytes": p.stat().st_size,
-                "sha256": sha256(p), "rows": n, "fetched_at": FETCHED_AT,
+                "city": code,
+                "name": name,
+                "snapshot": snapshot,
+                "url": f"fixture://{code}/{name}",
+                "bytes": p.stat().st_size,
+                "sha256": sha256(p),
+                "rows": n,
+                "fetched_at": FETCHED_AT,
             }
     write_meta(
-        directory, "insideairbnb", "CC-BY-4.0", max(SNAPSHOTS.values()), files,
+        directory,
+        "insideairbnb",
+        "CC-BY-4.0",
+        max(SNAPSHOTS.values()),
+        files,
         attribution="Data from Inside Airbnb (insideairbnb.com), CC BY 4.0. Location and snapshot date are shown with every figure.",
         snapshots=dict(sorted(SNAPSHOTS.items())),
         coverage={"covered": ["SIN", "TYO"], "not_covered_in_this_run": []},
@@ -356,11 +601,26 @@ def fx() -> None:
         day = date(2026, 9, d)
         if day.weekday() >= 5:
             continue
-        obs.append({"d": str(day), "FXJPYCAD": {"v": f"{0.00890 + 0.00001 * (d - 14):.6f}"}, "FXSGDCAD": {"v": f"{1.0964 + 0.001 * (d - 14):.4f}"}})
+        obs.append(
+            {
+                "d": str(day),
+                "FXJPYCAD": {"v": f"{0.00890 + 0.00001 * (d - 14):.6f}"},
+                "FXSGDCAD": {"v": f"{1.0964 + 0.001 * (d - 14):.4f}"},
+            }
+        )
     path = directory / "rates.json"
-    write_text(path, json.dumps({"terms": {"url": "https://www.bankofcanada.ca/terms/"}, "observations": obs}, indent=1) + "\n")
-    write_meta(directory, "boc_fx", "Bank of Canada Terms of Use (free use with attribution)", "2026-09-28",
-               {"rates.json": {"city": None, "rows": len(obs), "sha256": sha256(path), "fetched_at": FETCHED_AT}})
+    write_text(
+        path,
+        json.dumps({"terms": {"url": "https://www.bankofcanada.ca/terms/"}, "observations": obs}, indent=1)
+        + "\n",
+    )
+    write_meta(
+        directory,
+        "boc_fx",
+        "Bank of Canada Terms of Use (free use with attribution)",
+        "2026-09-28",
+        {"rates.json": {"city": None, "rows": len(obs), "sha256": sha256(path), "fetched_at": FETCHED_AT}},
+    )
 
 
 # --- staged places for walkability -------------------------------------------------------------------
@@ -372,8 +632,19 @@ def places() -> None:
 
     def cluster(lat, lon, n, nightlife, prefix):
         for i in range(n):
-            cat = "bar" if i < nightlife else rng.choice(["restaurant", "cafe", "museum", "temple_shrine", "market", "shopping"])
-            rows.append(("TYO", round(lat + rng.uniform(-0.004, 0.004), 6), round(lon + rng.uniform(-0.004, 0.004), 6), cat))
+            cat = (
+                "bar"
+                if i < nightlife
+                else rng.choice(["restaurant", "cafe", "museum", "temple_shrine", "market", "shopping"])
+            )
+            rows.append(
+                (
+                    "TYO",
+                    round(lat + rng.uniform(-0.004, 0.004), 6),
+                    round(lon + rng.uniform(-0.004, 0.004), 6),
+                    cat,
+                )
+            )
 
     cluster(35.659, 139.700, 70, 14, "shibuya")  # dense and noisy
     cluster(35.715, 139.797, 12, 0, "asakusa")  # sparse and quiet
@@ -384,7 +655,9 @@ def places() -> None:
     con = duckdb.connect()
     con.execute("CREATE TABLE p (city_code VARCHAR, lat DOUBLE, lon DOUBLE, category VARCHAR)")
     con.executemany("INSERT INTO p VALUES (?, ?, ?, ?)", rows)
-    con.execute(f"COPY (SELECT * FROM p ORDER BY city_code, lat, lon) TO '{path.as_posix()}' (FORMAT parquet)").fetchall()
+    con.execute(
+        f"COPY (SELECT * FROM p ORDER BY city_code, lat, lon) TO '{path.as_posix()}' (FORMAT parquet)"
+    ).fetchall()
 
 
 def main() -> None:

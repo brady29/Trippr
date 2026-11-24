@@ -81,7 +81,7 @@ class PoliteClient:
             quote_url(url), headers={"User-Agent": self.user_agent, "Accept": accept}
         )
         self.requests += 1
-        return urllib.request.urlopen(request, timeout=self.timeout_s)  # noqa: S310 (http(s) URLs only)
+        return urllib.request.urlopen(request, timeout=self.timeout_s)
 
     def robots_allows(self, url: str) -> bool:
         parts = urllib.parse.urlsplit(url)
@@ -151,7 +151,7 @@ class PoliteClient:
                 headers={"User-Agent": self.user_agent, "Accept": "application/json"},
             )
             self.requests += 1
-            with urllib.request.urlopen(request, timeout=self.timeout_s) as resp:  # noqa: S310
+            with urllib.request.urlopen(request, timeout=self.timeout_s) as resp:
                 return resp.read()
 
         return self._with_retries(url, send, method="POST")  # type: ignore[return-value]

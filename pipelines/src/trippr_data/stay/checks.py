@@ -85,13 +85,24 @@ def _nulls(con: duckdb.DuckDBPyConnection, view: str, fields: tuple[str, ...], n
 def check_hotels(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[CheckResult]:
     results = [
         _schema(con, "hotel", HOTEL_COLUMNS, "stay.hotel.schema"),
-        _nulls(con, "hotel", ("hotel_id", "name", "kind", "lat", "lon", "city_code", "sources", "licences"), "stay.hotel.required"),
+        _nulls(
+            con,
+            "hotel",
+            ("hotel_id", "name", "kind", "lat", "lon", "city_code", "sources", "licences"),
+            "stay.hotel.required",
+        ),
     ]
     dup_ids = scalar(con, "SELECT count(*) - count(DISTINCT hotel_id) FROM hotel")
     results.append(
-        CheckResult("stay.hotel.unique_id", "fail" if dup_ids else "pass", f"{dup_ids} duplicate hotel ids" if dup_ids else "hotel ids are unique")
+        CheckResult(
+            "stay.hotel.unique_id",
+            "fail" if dup_ids else "pass",
+            f"{dup_ids} duplicate hotel ids" if dup_ids else "hotel ids are unique",
+        )
     )
-    run(con, "CREATE TABLE city_ref (code VARCHAR, country VARCHAR, lat DOUBLE, lon DOUBLE, radius_km DOUBLE)")
+    run(
+        con, "CREATE TABLE city_ref (code VARCHAR, country VARCHAR, lat DOUBLE, lon DOUBLE, radius_km DOUBLE)"
+    )
     con.executemany(
         "INSERT INTO city_ref VALUES (?, ?, ?, ?, ?)",
         [[c.code, c.country, c.lat, c.lon, c.radius_km] for c in ctx.cities.values()],
@@ -105,7 +116,9 @@ def check_hotels(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
         CheckResult(
             "stay.hotel.city_radius",
             "fail" if outside else "pass",
-            f"{sum(o['n'] for o in outside)} hotels outside their city's radius" if outside else "all hotels are inside their city's radius",
+            f"{sum(o['n'] for o in outside)} hotels outside their city's radius"
+            if outside
+            else "all hotels are inside their city's radius",
             {"outside": outside},
         )
     )
@@ -155,15 +168,23 @@ def check_hotels(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
         CheckResult(
             "stay.hotel.duplicates",
             "fail" if near else "pass",
-            f"{len(near)}+ hotel pairs with the same name within {DUPLICATE_HOTEL_KM * 1000:.0f} m" if near else "no same-name hotels within 50 m",
+            f"{len(near)}+ hotel pairs with the same name within {DUPLICATE_HOTEL_KM * 1000:.0f} m"
+            if near
+            else "no same-name hotels within 50 m",
             {"examples": near},
         )
     )
-    bad_kind = scalar(con, f"SELECT count(*) FROM hotel WHERE kind NOT IN ({', '.join(sql_str(k) for k in KINDS)})")
+    bad_kind = scalar(
+        con, f"SELECT count(*) FROM hotel WHERE kind NOT IN ({', '.join(sql_str(k) for k in KINDS)})"
+    )
     other_share = (scalar(con, "SELECT count(*) FROM hotel WHERE kind = 'other'") or 0) / total
     status = "fail" if bad_kind else ("warn" if other_share > MAX_OTHER_KIND_SHARE_WARN else "pass")
     results.append(
-        CheckResult("stay.hotel.kinds", status, f"{bad_kind} unknown kinds; {other_share:.1%} of hotels are kind 'other'")
+        CheckResult(
+            "stay.hotel.kinds",
+            status,
+            f"{bad_kind} unknown kinds; {other_share:.1%} of hotels are kind 'other'",
+        )
     )
     return results
 
@@ -185,22 +206,38 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
     ]
     dups = sum(c["duplicate_ids"] for c in per_city.values())
     results.append(
-        CheckResult("stay.airbnb.unique_ids", "fail" if dups else "pass", f"{dups} duplicate listing ids" if dups else "listing ids are unique per city")
+        CheckResult(
+            "stay.airbnb.unique_ids",
+            "fail" if dups else "pass",
+            f"{dups} duplicate listing ids" if dups else "listing ids are unique per city",
+        )
     )
-    low_geo = {k: round(v["geo_ok"] / v["listings"], 4) for k, v in per_city.items() if v["geo_ok"] / v["listings"] < MIN_GEO_OK_SHARE}
+    low_geo = {
+        k: round(v["geo_ok"] / v["listings"], 4)
+        for k, v in per_city.items()
+        if v["geo_ok"] / v["listings"] < MIN_GEO_OK_SHARE
+    }
     results.append(
         CheckResult(
             "stay.airbnb.coordinates",
             "fail" if low_geo else "pass",
-            f"too many listings without valid coordinates: {low_geo}" if low_geo else f"at least {MIN_GEO_OK_SHARE:.1%} of listings have valid coordinates in every city",
+            f"too many listings without valid coordinates: {low_geo}"
+            if low_geo
+            else f"at least {MIN_GEO_OK_SHARE:.1%} of listings have valid coordinates in every city",
         )
     )
-    far = {k: round(1 - v["in_radius"] / v["listings"], 3) for k, v in per_city.items() if v["in_radius"] / v["listings"] < MIN_IN_RADIUS_SHARE_WARN}
+    far = {
+        k: round(1 - v["in_radius"] / v["listings"], 3)
+        for k, v in per_city.items()
+        if v["in_radius"] / v["listings"] < MIN_IN_RADIUS_SHARE_WARN
+    }
     results.append(
         CheckResult(
             "stay.airbnb.in_city_radius",
             "warn" if far else "pass",
-            f"share outside the Trippr city radius: {far}" if far else f"at least {MIN_IN_RADIUS_SHARE_WARN:.0%} of listings are inside the city radius",
+            f"share outside the Trippr city radius: {far}"
+            if far
+            else f"at least {MIN_IN_RADIUS_SHARE_WARN:.0%} of listings are inside the city radius",
         )
     )
     outside = 0
@@ -222,8 +259,16 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
             f"{outside} listings outside their country's bounding box",
         )
     )
-    price_fail = {k: round(1 - v["price_missing"] / v["listings"], 3) for k, v in per_city.items() if 1 - v["price_missing"] / v["listings"] < MIN_PRICE_SHARE_FAIL}
-    price_warn = {k: round(1 - v["price_missing"] / v["listings"], 3) for k, v in per_city.items() if MIN_PRICE_SHARE_FAIL <= 1 - v["price_missing"] / v["listings"] < MIN_PRICE_SHARE_WARN}
+    price_fail = {
+        k: round(1 - v["price_missing"] / v["listings"], 3)
+        for k, v in per_city.items()
+        if 1 - v["price_missing"] / v["listings"] < MIN_PRICE_SHARE_FAIL
+    }
+    price_warn = {
+        k: round(1 - v["price_missing"] / v["listings"], 3)
+        for k, v in per_city.items()
+        if MIN_PRICE_SHARE_FAIL <= 1 - v["price_missing"] / v["listings"] < MIN_PRICE_SHARE_WARN
+    }
     results.append(
         CheckResult(
             "stay.airbnb.price_coverage",
@@ -234,39 +279,89 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
         )
     )
     lo, hi = MEDIAN_PRICE_CAD_RANGE
-    implausible = {k: v["median_price_cad"] for k, v in per_city.items() if v["median_price_cad"] is None or not lo <= v["median_price_cad"] <= hi}
+    implausible = {
+        k: v["median_price_cad"]
+        for k, v in per_city.items()
+        if v["median_price_cad"] is None or not lo <= v["median_price_cad"] <= hi
+    }
     results.append(
         CheckResult(
             "stay.airbnb.price_sanity",
             "fail" if implausible else "pass",
-            f"city median CAD price outside {lo:.0f}..{hi:.0f}: {implausible}" if implausible else f"every city's median price is within CAD {lo:.0f}..{hi:.0f} a night",
+            f"city median CAD price outside {lo:.0f}..{hi:.0f}: {implausible}"
+            if implausible
+            else f"every city's median price is within CAD {lo:.0f}..{hi:.0f} a night",
         )
     )
-    other_rooms = {k: v["other_room_type"] for k, v in per_city.items() if v["other_room_type"] / v["listings"] > MAX_OTHER_ROOM_SHARE}
+    other_rooms = {
+        k: v["other_room_type"]
+        for k, v in per_city.items()
+        if v["other_room_type"] / v["listings"] > MAX_OTHER_ROOM_SHARE
+    }
     results.append(
-        CheckResult("stay.airbnb.room_types", "warn" if other_rooms else "pass", f"unrecognised room types: {other_rooms}" if other_rooms else "room types are all recognised")
+        CheckResult(
+            "stay.airbnb.room_types",
+            "warn" if other_rooms else "pass",
+            f"unrecognised room types: {other_rooms}" if other_rooms else "room types are all recognised",
+        )
     )
-    bad_fx = [k for k, v in per_city.items() if not v.get("cad_per_unit") or v["cad_per_unit"] <= 0 or v["rate_date"] > v["snapshot"]]
+    bad_fx = [
+        k
+        for k, v in per_city.items()
+        if not v.get("cad_per_unit") or v["cad_per_unit"] <= 0 or v["rate_date"] > v["snapshot"]
+    ]
     results.append(
-        CheckResult("stay.airbnb.fx", "fail" if bad_fx else "pass", f"missing or invalid exchange rate for {bad_fx}" if bad_fx else "every city has a Bank of Canada rate on or before its snapshot date")
+        CheckResult(
+            "stay.airbnb.fx",
+            "fail" if bad_fx else "pass",
+            f"missing or invalid exchange rate for {bad_fx}"
+            if bad_fx
+            else "every city has a Bank of Canada rate on or before its snapshot date",
+        )
     )
     run_day = date_cls.fromisoformat(ctx.date)
-    old = {k: (run_day - date_cls.fromisoformat(v["snapshot"])).days for k, v in per_city.items() if (run_day - date_cls.fromisoformat(v["snapshot"])).days > MAX_SNAPSHOT_AGE_DAYS}
+    old = {
+        k: (run_day - date_cls.fromisoformat(v["snapshot"])).days
+        for k, v in per_city.items()
+        if (run_day - date_cls.fromisoformat(v["snapshot"])).days > MAX_SNAPSHOT_AGE_DAYS
+    }
     results.append(
-        CheckResult("stay.airbnb.snapshot_age", "warn" if old else "pass", f"snapshots older than {MAX_SNAPSHOT_AGE_DAYS} days: {old}" if old else f"all snapshots are within {MAX_SNAPSHOT_AGE_DAYS} days of the run")
+        CheckResult(
+            "stay.airbnb.snapshot_age",
+            "warn" if old else "pass",
+            f"snapshots older than {MAX_SNAPSHOT_AGE_DAYS} days: {old}"
+            if old
+            else f"all snapshots are within {MAX_SNAPSHOT_AGE_DAYS} days of the run",
+        )
     )
     unmatched = {k: n for k, n in stats["neighbourhoods_not_in_list"].items() if n}
-    no_nb = {k: v["no_neighbourhood"] for k, v in per_city.items() if v["no_neighbourhood"] / v["listings"] > 1 - MIN_NEIGHBOURHOOD_MATCH}
+    no_nb = {
+        k: v["no_neighbourhood"]
+        for k, v in per_city.items()
+        if v["no_neighbourhood"] / v["listings"] > 1 - MIN_NEIGHBOURHOOD_MATCH
+    }
     results.append(
         CheckResult(
             "stay.airbnb.neighbourhoods",
             "warn" if unmatched or no_nb else "pass",
-            f"neighbourhood names not in the city's list: {unmatched}; listings without one: {no_nb}" if unmatched or no_nb else "every listing's neighbourhood is in the city's neighbourhood list",
+            f"neighbourhood names not in the city's list: {unmatched}; listings without one: {no_nb}"
+            if unmatched or no_nb
+            else "every listing's neighbourhood is in the city's neighbourhood list",
         )
     )
-    thin_cal = {k: round(v.get("calendar_listings", 0) / v["listings"], 3) for k, v in per_city.items() if v.get("calendar_listings", 0) / v["listings"] < MIN_CALENDAR_SHARE_WARN}
+    thin_cal = {
+        k: round(v.get("calendar_listings", 0) / v["listings"], 3)
+        for k, v in per_city.items()
+        if v.get("calendar_listings", 0) / v["listings"] < MIN_CALENDAR_SHARE_WARN
+    }
     results.append(
-        CheckResult("stay.airbnb.calendar", "warn" if thin_cal else "pass", f"share of listings with a calendar below {MIN_CALENDAR_SHARE_WARN:.0%}: {thin_cal}" if thin_cal else "calendars cover nearly every listing")
+        CheckResult(
+            "stay.airbnb.calendar",
+            "warn" if thin_cal else "pass",
+            f"share of listings with a calendar below {MIN_CALENDAR_SHARE_WARN:.0%}: {thin_cal}"
+            if thin_cal
+            else "calendars cover nearly every listing",
+        )
     )
     drift = {}
     for k, v in per_city.items():
@@ -274,13 +369,25 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
         if a and abs(b - a) / a > REVIEWS_CONSISTENCY_TOLERANCE:
             drift[k] = {"listings_file": a, "reviews_file": b}
     results.append(
-        CheckResult("stay.airbnb.reviews_consistency", "warn" if drift else "pass", f"reviews summary and listings disagree by more than {REVIEWS_CONSISTENCY_TOLERANCE:.0%}: {drift}" if drift else "the reviews summary matches reviews_ltm in the listings within 10%")
+        CheckResult(
+            "stay.airbnb.reviews_consistency",
+            "warn" if drift else "pass",
+            f"reviews summary and listings disagree by more than {REVIEWS_CONSISTENCY_TOLERANCE:.0%}: {drift}"
+            if drift
+            else "the reviews summary matches reviews_ltm in the listings within 10%",
+        )
     )
     entry = ctx.registry.sources.get("insideairbnb")
     meta = read_json(raw_dir(ctx.out, "insideairbnb", ctx.date) / "_meta.json")
     licence_ok = bool(entry and meta.get("licence") == entry.licence and meta.get("attribution"))
     results.append(
-        CheckResult("stay.airbnb.licence", "pass" if licence_ok else "fail", "licence and attribution recorded in _meta.json match sources.yaml" if licence_ok else "licence or attribution missing from _meta.json or different from sources.yaml")
+        CheckResult(
+            "stay.airbnb.licence",
+            "pass" if licence_ok else "fail",
+            "licence and attribution recorded in _meta.json match sources.yaml"
+            if licence_ok
+            else "licence or attribution missing from _meta.json or different from sources.yaml",
+        )
     )
     if ctx.verify_raw:
         mismatched = []
@@ -290,7 +397,13 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
             if not path.is_file() or sha256_file(path) != f["sha256"]:
                 mismatched.append(rel)
         results.append(
-            CheckResult("stay.airbnb.checksums", "fail" if mismatched else "pass", f"raw files missing or changed since download: {mismatched}" if mismatched else f"{len(meta['files'])} raw files match their recorded checksums")
+            CheckResult(
+                "stay.airbnb.checksums",
+                "fail" if mismatched else "pass",
+                f"raw files missing or changed since download: {mismatched}"
+                if mismatched
+                else f"{len(meta['files'])} raw files match their recorded checksums",
+            )
         )
     return results
 
@@ -301,7 +414,13 @@ def check_airbnb(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[
 def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[CheckResult]:
     results = [_schema(con, "stay_unit", UNIT_COLUMNS, "stay.unit.schema")]
     dup = scalar(con, "SELECT count(*) - count(DISTINCT (unit_kind, unit_id)) FROM stay_unit")
-    results.append(CheckResult("stay.unit.unique_ids", "fail" if dup else "pass", f"{dup} duplicate units" if dup else "unit ids are unique per kind"))
+    results.append(
+        CheckResult(
+            "stay.unit.unique_ids",
+            "fail" if dup else "pass",
+            f"{dup} duplicate units" if dup else "unit ids are unique per kind",
+        )
+    )
     bad_scores = scalar(
         con,
         """SELECT count(*) FROM stay_unit WHERE
@@ -309,7 +428,15 @@ def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[C
              OR score_walkability NOT BETWEEN 0 AND 100 OR score_quiet NOT BETWEEN 0 AND 100
              OR stay_score NOT BETWEEN 0 AND 100""",
     )
-    results.append(CheckResult("stay.unit.scores_in_range", "fail" if bad_scores else "pass", f"{bad_scores} units with a score outside 0..100" if bad_scores else "all scores are within 0..100"))
+    results.append(
+        CheckResult(
+            "stay.unit.scores_in_range",
+            "fail" if bad_scores else "pass",
+            f"{bad_scores} units with a score outside 0..100"
+            if bad_scores
+            else "all scores are within 0..100",
+        )
+    )
     share_cols = (
         "entire_home_share",
         "private_room_share",
@@ -321,14 +448,27 @@ def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[C
         "cheaper_than_share",
     )
     bad_shares = scalar(
-        con, f"SELECT count(*) FROM stay_unit WHERE {' OR '.join(f'{c} NOT BETWEEN 0 AND 1' for c in share_cols)}"
+        con,
+        f"SELECT count(*) FROM stay_unit WHERE {' OR '.join(f'{c} NOT BETWEEN 0 AND 1' for c in share_cols)}",
     )
-    results.append(CheckResult("stay.unit.shares_in_range", "fail" if bad_shares else "pass", f"{bad_shares} units with a share outside 0..1" if bad_shares else "all shares are within 0..1"))
-    present = " OR ".join(f"{c} IS NOT NULL" for c in LISTING_STAT_COLUMNS if c not in ("n_priced", "n_rated"))
+    results.append(
+        CheckResult(
+            "stay.unit.shares_in_range",
+            "fail" if bad_shares else "pass",
+            f"{bad_shares} units with a share outside 0..1" if bad_shares else "all shares are within 0..1",
+        )
+    )
+    present = " OR ".join(
+        f"{c} IS NOT NULL" for c in LISTING_STAT_COLUMNS if c not in ("n_priced", "n_rated")
+    )
     leaks = scalar(
-        con, f"SELECT count(*) FROM stay_unit WHERE n_listings < {ctx.cfg.privacy.min_listings} AND ({present})"
+        con,
+        f"SELECT count(*) FROM stay_unit WHERE n_listings < {ctx.cfg.privacy.min_listings} AND ({present})",
     )
-    small_cells = scalar(con, f"SELECT count(*) FROM stay_unit WHERE unit_kind = 'h3' AND n_listings < {ctx.cfg.privacy.min_listings}")
+    small_cells = scalar(
+        con,
+        f"SELECT count(*) FROM stay_unit WHERE unit_kind = 'h3' AND n_listings < {ctx.cfg.privacy.min_listings}",
+    )
     results.append(
         CheckResult(
             "stay.unit.privacy",
@@ -338,8 +478,14 @@ def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[C
             else f"no unit under {ctx.cfg.privacy.min_listings} listings shows listing statistics",
         )
     )
-    unexplained = scalar(con, "SELECT count(*) FROM stay_unit WHERE stay_score IS NOT NULL AND (explanation IS NULL OR len(score_parts) = 0)")
-    thin = scalar(con, f"SELECT count(*) FROM stay_unit WHERE stay_score IS NOT NULL AND weight_coverage < {ctx.cfg.min_weight_coverage}")
+    unexplained = scalar(
+        con,
+        "SELECT count(*) FROM stay_unit WHERE stay_score IS NOT NULL AND (explanation IS NULL OR len(score_parts) = 0)",
+    )
+    thin = scalar(
+        con,
+        f"SELECT count(*) FROM stay_unit WHERE stay_score IS NOT NULL AND weight_coverage < {ctx.cfg.min_weight_coverage}",
+    )
     results.append(
         CheckResult(
             "stay.unit.explained",
@@ -354,7 +500,14 @@ def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[C
         "SELECT count(*) FILTER (WHERE stay_score IS NOT NULL) AS s, count(*) AS t FROM stay_unit WHERE unit_kind <> 'city'",
     )[0]
     scored, total = cover["s"], cover["t"]
-    results.append(CheckResult("stay.unit.coverage", "info", f"{scored} of {total} units have a stay score", {"scored": scored, "units": total}))
+    results.append(
+        CheckResult(
+            "stay.unit.coverage",
+            "info",
+            f"{scored} of {total} units have a stay score",
+            {"scored": scored, "units": total},
+        )
+    )
     return results
 
 
@@ -366,14 +519,20 @@ def counts(con: duckdb.DuckDBPyConnection, tables: set[str]) -> dict[str, dict[s
     if "hotel" in tables:
         out["hotel"] = dict(run(con, "SELECT city_code, count(*) FROM hotel GROUP BY 1 ORDER BY 1"))
     if "airbnb_listing" in tables:
-        out["airbnb_listing"] = dict(run(con, "SELECT city_code, count(*) FROM airbnb_listing GROUP BY 1 ORDER BY 1"))
+        out["airbnb_listing"] = dict(
+            run(con, "SELECT city_code, count(*) FROM airbnb_listing GROUP BY 1 ORDER BY 1")
+        )
     return out
 
 
 def check_counts(current: dict[str, dict[str, int]], baseline: dict[str, Any] | None) -> list[CheckResult]:
     previous = (baseline or {}).get("counts")
     if not previous:
-        return [CheckResult("stay.counts.vs_previous", "info", "no previous stay run; counts recorded as the baseline")]
+        return [
+            CheckResult(
+                "stay.counts.vs_previous", "info", "no previous stay run; counts recorded as the baseline"
+            )
+        ]
     failures, warnings, compared = [], [], 0
     for table, cities in current.items():
         for city, n in cities.items():
@@ -384,19 +543,34 @@ def check_counts(current: dict[str, dict[str, int]], baseline: dict[str, Any] | 
             change = (n - before) / before if before else (0.0 if n == 0 else 1.0)
             if abs(change) <= ROW_COUNT_TOLERANCE:
                 continue
-            entry = {"table": table, "city": city, "previous": before, "current": n, "change": round(change, 3)}
+            entry = {
+                "table": table,
+                "city": city,
+                "previous": before,
+                "current": n,
+                "change": round(change, 3),
+            }
             (failures if max(n, before) >= ROW_COUNT_MIN_ROWS else warnings).append(entry)
     base = f"{compared} counts compared with the stay run of {baseline.get('run_date')}"
     out = [
         CheckResult(
             "stay.counts.vs_previous",
             "fail" if failures else "pass",
-            f"{len(failures)} outside ±{ROW_COUNT_TOLERANCE:.0%}; {base}" if failures else f"all within ±{ROW_COUNT_TOLERANCE:.0%}; {base}",
+            f"{len(failures)} outside ±{ROW_COUNT_TOLERANCE:.0%}; {base}"
+            if failures
+            else f"all within ±{ROW_COUNT_TOLERANCE:.0%}; {base}",
             {"outside": failures},
         )
     ]
     if warnings:
-        out.append(CheckResult("stay.counts.small_cities", "warn", f"{len(warnings)} small counts moved more than ±{ROW_COUNT_TOLERANCE:.0%}", {"outside": warnings}))
+        out.append(
+            CheckResult(
+                "stay.counts.small_cities",
+                "warn",
+                f"{len(warnings)} small counts moved more than ±{ROW_COUNT_TOLERANCE:.0%}",
+                {"outside": warnings},
+            )
+        )
     return out
 
 
@@ -432,11 +606,18 @@ def check(
         verify_raw=verify_raw,
     )
     con = connect()
-    tables = {name for name in ("hotel", "hotel_source", "airbnb_listing", "stay_unit") if stay_table(out, date, name).is_file()}
+    tables = {
+        name
+        for name in ("hotel", "hotel_source", "airbnb_listing", "stay_unit")
+        if stay_table(out, date, name).is_file()
+    }
     if not tables:
         raise FileNotFoundError(f"No stay tables for {date} under {out}; run stay-stage first")
     for name in tables:
-        run(con, f"CREATE VIEW {name} AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, name).as_posix())})")
+        run(
+            con,
+            f"CREATE VIEW {name} AS SELECT * FROM read_parquet({sql_str(stay_table(out, date, name).as_posix())})",
+        )
     results: list[CheckResult] = []
     groups: list[tuple[str, Callable[[duckdb.DuckDBPyConnection, StayCheckContext], list[CheckResult]]]] = [
         ("hotel", check_hotels),
@@ -447,7 +628,11 @@ def check(
         if table in tables:
             results += fn(con, ctx)
     if "airbnb_listing" in tables and "stay_unit" not in tables:
-        results.append(CheckResult("stay.unit.exists", "fail", "airbnb is staged but stay-analyse has not produced stay_unit"))
+        results.append(
+            CheckResult(
+                "stay.unit.exists", "fail", "airbnb is staged but stay-analyse has not produced stay_unit"
+            )
+        )
     current = counts(con, tables)
     results += check_counts(current, ctx.baseline)
     con.close()
@@ -463,5 +648,7 @@ def check(
         },
     )
     for r in results:
-        log.log(logging.ERROR if r.status == "fail" else logging.INFO, "[%s] %s: %s", r.status, r.name, r.detail)
+        log.log(
+            logging.ERROR if r.status == "fail" else logging.INFO, "[%s] %s: %s", r.status, r.name, r.detail
+        )
     return passed, results
