@@ -298,6 +298,96 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
   threads; first use downloads 570 MB). The query side must use the same model (see the spike).
 - Tests use a fake hashing embedder; CI installs no model dependency and downloads nothing.
 
+## Stay analytics
+
+PR 7 of the spec (Feature 5): open-data hotels, Inside Airbnb market data and per-area stay scores. This is
+the pipeline half; the graph (Area aggregates), the map heat layer, Area cards and the API come after the
+bundle carries these tables.
+
+```sh
+uv run python -m trippr_data stay-extract --cities all         # Inside Airbnb + Bank of Canada rates (covered cities only)
+uv run python -m trippr_data stay --places <places.parquet>    # stage hotels + listings, analyse, check, report
+# or step by step: stay-stage, stay-analyse, stay-check, stay-report
+```
+
+| Stage | What | Output |
+|---|---|---|
+| `stay-extract` | Newest snapshot of each covered city from Inside Airbnb (`listings.csv.gz`, `calendar.csv.gz`, `reviews.csv`, neighbourhoods and polygons), then the Bank of Canada rates the snapshots need. `--source osm_lodging` also reads OSM `tourism=hotel\|hostel\|guest_house\|apartment\|motel` from Overpass | `raw/insideairbnb/<date>/<CITY>/*`, `raw/boc_fx/<date>/rates.json`, `raw/osm_lodging/<date>/<CITY>.json`, each with `_meta.json` (licence, attribution, URL, bytes, sha256) |
+| `stay-stage` | Hotels: lodging rows of the Overture and Foursquare raw files (and OSM lodging when extracted), mapped to a kind by `config/lodging_kinds.csv`, merged within and across sources. Listings: cleaned, converted to CAD, flagged | `staging/<date>/stay/hotel.parquet`, `hotel_source.parquet`, `airbnb_listing.parquet`, `airbnb_calendar.parquet`, `airbnb_reviews_monthly.parquet`, `airbnb_neighbourhood.parquet` |
+| `stay-analyse` | DuckDB aggregates per unit and the scores | `curated/<date>/stay/stay_unit.parquet`, `stay_summary.json` |
+| `stay-check` | `stay.*` checks (below); exits 1 on a failure | `reports/<date>.stay.checks.json` |
+| `stay-report` | The stay section, also appended to the main report when it exists | `reports/<date>.stay.md` |
+
+**Inside Airbnb coverage of Trippr's 108 cities** (checked 2026-11-23 against insideairbnb.com/get-the-data):
+Tokyo, Hong Kong, Singapore, Taipei and Bangkok. No other dataset exists in Trippr's 19 countries (not Osaka,
+Kyoto, Seoul, Bali or Hanoi, for example); `stay-extract` warns when the index adds one. Every other city has
+no market layer, only open-data hotels and place-based scores. The city to dataset map and currencies are in
+`config/insideairbnb_cities.csv`.
+
+**Licences and manners.** Inside Airbnb is CC BY 4.0; its Data Policies ask for attribution, not to scrape the
+site, to download once rather than on every run and not to republish the data. So the downloader reads the
+index page once, fetches one file at a time with a pause, identifies itself with a generic User-Agent, obeys
+`robots.txt`, never refetches a snapshot whose checksum matches, keeps raw and staged listings private and
+publishes aggregates only (units under 3 listings are emptied; no listing ids, host ids, names or links leave
+`staging/`). Nothing is taken from Airbnb, Booking or Google. Exchange rates come from the Bank of Canada
+Valet API (attribution required). OSM lodging is ODbL: derived tables stay private like the other OSM-derived
+fields.
+
+**Units.** One `stay_unit` table: `city` (the reference for comparisons), `area` (a Trippr Area from
+`seed/areas.json`; listings and hotels within its radius, `radiusKm` or 1.5 km), `neighbourhood` (Inside
+Airbnb's) and `h3` (resolution 8 cells with at least 3 listings, for the heat layer).
+
+**Listings cleaning.** `$1,338.49` is parsed, quoted in the city's local currency, converted at the Bank of
+Canada rate on or before the snapshot date. `price_status` is `missing`, `below_floor` (under CAD 10),
+`above_p99` (the city's 99th percentile) or `ok`; only `ok` prices with a minimum stay of 28 nights or less
+count in price statistics (`stats_ok`). Room types become `entire_home`, `private_room`, `shared_room`,
+`hotel_room`.
+
+**Aggregates** (per unit): median nightly price in CAD (all, entire home, private room, per person),
+quartiles, share of entire homes and private rooms, median rating and listings with 10 or more reviews,
+reviews in the last 12 months, share of the next year unavailable (calendar: booked or blocked), median
+availability, Inside Airbnb's estimated occupancy, listing density per km2, licensed share, multi-listing
+host share (hosts with 3 or more listings) and the share held by the top 5 hosts, hotels from open data and
+places nearby.
+
+**The stay score** (`config/stay_score.yaml`, `src/trippr_data/stay/scoring.py`, pinned by
+`tests/test_stay_scoring.py`). Four parts, each 0 to 100, higher is better, weighted 40/30/20/10:
+
+| Part | Formula |
+|---|---|
+| `value` (40%) | Share of the city's bookable listings whose price per person-night is higher than the unit's median (ties count half): 70 means "cheaper than 70% of Tokyo's listings". Needs 10 priced listings |
+| `walkability` (30%) | A proxy: places within 600 m of the unit centre (matched golden places by default; `--places` takes a bundle's `places.parquet`), `100 x min(1, ln(1+n) / ln(1+120))` |
+| `quiet` (20%) | A proxy: `100 - 100 x min(1, ln(1+n) / ln(1+12))` for bars and nightlife venues within 300 m |
+| `reviews` (10%) | The unit's median rating shrunk toward the city's by 10 extra rated listings, mapped from 4.0..5.0 to 0..100. Needs 10 rated listings |
+
+The score is the weighted mean of the parts a unit has, weights rescaled to them, and only when they carry at
+least half the weight (so a city with no Inside Airbnb data still gets walkability and quiet). The row keeps
+every part, `score_parts`, `weight_coverage` and an `explanation` sentence for the Area card. Units centred
+outside their city's radius have no place data and are not scored on places.
+
+**Hotels.** Overture and Foursquare lodging come from the raw files the places extract already writes
+(nothing extra to download). Closed places, camping sites and unnamed rows are dropped; the same hotel in
+several sources, or twice in one source, is merged (cross-source within 100 m and 0.85 name similarity,
+same-source within 50 m and 0.95; field precedence OSM, Overture, Foursquare; clusters wider than 200 m are
+not merged). Each hotel keeps its `sources[]`, licences, the Area it falls in and the distance to its centre.
+The kind `other` counts lodging with no more specific category.
+
+**Checks** (`stay.*`): schema, required fields, unique ids, coordinates inside the city radius and country
+box, licences listed in `sources.yaml`, no same-name hotels within 50 m, price coverage and sanity per city,
+exchange rate present and not after the snapshot, snapshot age, neighbourhood names, calendar coverage,
+reviews summary against `reviews_ltm`, raw file checksums, scores within 0..100, shares within 0..1, the
+privacy minimum, every score explained, and counts within 40% of the previous stay run.
+
+**Tests.** Offline: `tests/test_stay_*.py` use fixtures in `tests/fixtures/stay/` (built by
+`tests/fixtures/make_stay_fixtures.py`: real Overture lodging rows plus synthetic Foursquare, OSM and Inside
+Airbnb-shaped data) and a local HTTP server for the extractors, and compare hotels, unit scores, summary and the
+report section with `tests/fixtures/expected/stay/` (`UPDATE_GOLDEN=1` regenerates them).
+
+Limits worth knowing: the Inside Airbnb calendar has no prices (nightly price is the listing's own), prices are
+asking prices, "unavailable" is booked or blocked by the host, the places proxies count source records inside a
+radius, and no centrality part is in the score yet (the card shows distance to the city centre and to the
+nearest hub station from `seed/hubs.json`).
+
 ## Scheduled runs
 
 `.github/workflows/data-pipeline.yml` runs monthly (and on demand) once the `DATA_BUCKET` repository
