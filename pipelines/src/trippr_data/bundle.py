@@ -160,8 +160,8 @@ class BundleManifest(BaseModel):
     run_date: str
     created_at: str
     pipeline_version: str
-    # "golden" (the match stage's output) or "staged" (each source row as its own golden record).
-    input: Literal["golden", "staged"]
+    # Always the match stage's output: golden records.
+    input: Literal["golden"]
     settings: dict[str, Any]
     files: list[BundleFile]
     counts: BundleCounts
@@ -404,7 +404,7 @@ def verify_bundle(path: Path) -> BundleManifest:
 def bundle_report(manifest: BundleManifest) -> str:
     """The bundle's part of the Markdown run report."""
     c = manifest.counts
-    source = "match output" if manifest.input == "golden" else "staged rows, each its own golden record"
+    source = "match output"
     lines = [
         "",
         f"## Bundle {manifest.bundle_date}",

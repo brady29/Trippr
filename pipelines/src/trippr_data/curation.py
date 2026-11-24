@@ -20,26 +20,24 @@ import os
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import duckdb
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .duck import connect, rows, run, sql_str
+from .duck import connect, rows, run, scalar, sql_str
 from .golden import GOLDEN_COLUMNS, from_matched, source_priority_sql
 from .layout import (
     curate_stats_file,
     curated_file,
     golden_file,
     latest_matched_date,
-    latest_staging_date,
     read_json,
     staged_file,
     staged_sources,
     write_json,
 )
-from .provisional import PROVISIONAL_RADIUS_M, build_provisional_golden
 from .settings import CONFIG_DIR, SEED_DIR
 from .taxonomy import load_taxonomy
 
@@ -268,7 +266,7 @@ def select_city(candidates: list[Candidate], budget: int, cfg: CurationConfig) -
 @dataclass
 class CurateResult:
     date: str
-    input: str  # "golden" or "staged"
+    input: str  # always "golden"
     path: Path
     stats: dict[str, Any]
 
@@ -309,30 +307,50 @@ def _scored_view_sql(cfg: CurationConfig) -> str:
     """
 
 
-def load_golden(
-    con: duckdb.DuckDBPyConnection,
-    out: Path,
-    date: str,
-    *,
-    source: Literal["auto", "golden", "staged"] = "auto",
-) -> tuple[str, dict[str, Any]]:
-    """Create the `golden` table from the match output, or (no match output) from staged rows."""
-    gfile = golden_file(out, date)
-    if source in ("auto", "golden") and gfile.is_file():
-        staged = [staged_file(out, date, s).as_posix() for s in staged_sources(out, date)]
-        return "golden", {"golden_rows": from_matched(con, gfile.as_posix(), staged)}
-    if source == "golden":
-        raise FileNotFoundError(f"No golden records for {date} ({gfile}); run the match stage first")
-    sources = staged_sources(out, date)
-    if not sources:
-        raise FileNotFoundError(f"No golden or staged data for {date}; run match or stage first")
-    log.warning(
-        "no golden records for %s: using staged rows, each its own golden record "
-        "(rows of two sources with the same name within %d m are merged)",
-        date,
-        PROVISIONAL_RADIUS_M,
+DUPLICATE_RADIUS_M = 50.0
+
+
+def _merge_near_duplicates(con: duckdb.DuckDBPyConnection) -> int:
+    """Entity matching can miss a pair (a Wikidata item and an Overture record of the same park under different
+    categories). Among the candidates, a place with the same name (case-folded) as a better-scored one in the same
+    city within 50 m is dropped and its source records move to the survivor, so provenance is kept and the
+    bundle's own duplicate check holds. Returns how many places were folded away."""
+    run(
+        con,
+        f"""CREATE OR REPLACE TEMP TABLE dup AS
+            SELECT a.place_id AS drop_id,
+                   arg_max(b.place_id, b.score) AS keep_id
+            FROM pool a JOIN pool b
+              ON a.city_code = b.city_code AND lower(a.name) = lower(b.name) AND a.place_id <> b.place_id
+            WHERE hav_km(a.lat, a.lon, b.lat, b.lon) * 1000 <= {DUPLICATE_RADIUS_M}
+              AND (b.score > a.score OR (b.score = a.score AND b.place_id < a.place_id))
+            GROUP BY a.place_id""",
     )
-    return "staged", build_provisional_golden(con, [staged_file(out, date, s) for s in sources])
+    n = scalar(con, "SELECT count(*) FROM dup") or 0
+    if n:
+        run(
+            con,
+            """UPDATE pool SET sources = list_concat(pool.sources, moved.extra)
+               FROM (SELECT d.keep_id, flatten(list(a.sources)) AS extra
+                     FROM dup d JOIN pool a ON a.place_id = d.drop_id
+                     WHERE d.keep_id NOT IN (SELECT drop_id FROM dup) GROUP BY d.keep_id) moved
+               WHERE pool.place_id = moved.keep_id""",
+        )
+        run(con, "DELETE FROM pool WHERE place_id IN (SELECT drop_id FROM dup)")
+        run(
+            con,
+            """UPDATE pool SET n_sources = len(list_distinct(list_transform(sources, lambda x: x.source)))""",
+        )
+    return int(n)
+
+
+def load_golden(con: duckdb.DuckDBPyConnection, out: Path, date: str) -> dict[str, Any]:
+    """Create the `golden` table from the match stage's golden.parquet."""
+    gfile = golden_file(out, date)
+    if not gfile.is_file():
+        raise FileNotFoundError(f"No golden records for {date} ({gfile}); run the match stage first")
+    staged = [staged_file(out, date, s).as_posix() for s in staged_sources(out, date)]
+    return {"golden_rows": from_matched(con, gfile.as_posix(), staged)}
 
 
 def curate(
@@ -342,12 +360,11 @@ def curate(
     config: CurationConfig | None = None,
     config_dir: Path = CONFIG_DIR,
     seed_dir: Path = SEED_DIR,
-    source: Literal["auto", "golden", "staged"] = "auto",
 ) -> CurateResult:
     cfg = config or load_curation_config(config_dir)
     taxonomy = load_taxonomy(config_dir)
     con = connect()
-    kind, input_stats = load_golden(con, out, date, source=source)
+    input_stats = load_golden(con, out, date)
     _catrule_table(con, cfg)
     run(con, _scored_view_sql(cfg))
 
@@ -362,6 +379,7 @@ def curate(
                                       ORDER BY score DESC, signals.confidence DESC NULLS LAST, name, place_id)
                    <= {cfg.budget.cap}""",
     )
+    merged_duplicates = _merge_near_duplicates(con)
     supply = {
         r["city_code"]: r["n"]
         for r in rows(
@@ -406,7 +424,7 @@ def curate(
     total_selected = sum(len(v) for v in selected.values())
     stats: dict[str, Any] = {
         "run_date": date,
-        "input": kind,
+        "input": "golden",
         "input_stats": input_stats,
         "budget": cfg.budget.model_dump(),
         "eligible_places": sum(supply.values()),
@@ -424,7 +442,7 @@ def curate(
         "by_tag": by_tag,
         "tag_share": {t: round(n / total_selected, 4) for t, n in by_tag.items()} if total_selected else {},
         "taxonomy_categories": len(taxonomy),
-        "provisional_merge": kind == "staged",
+        "merged_duplicates": merged_duplicates,
     }
     write_json(curate_stats_file(out, date), stats)
     con.close()
@@ -436,9 +454,9 @@ def curate(
         cfg.budget.total,
         ", ".join(f"{t} {s:.0%}" for t, s in stats["tag_share"].items()),
     )
-    return CurateResult(date=date, input=kind, path=path, stats=stats)
+    return CurateResult(date=date, input="golden", path=path, stats=stats)
 
 
 def default_date(out: Path) -> str | None:
-    """The run to curate when --date is not given: the newest golden date, else the newest staging date."""
-    return latest_matched_date(out) or latest_staging_date(out)
+    """The run to curate when --date is not given: the newest one the match stage has run on."""
+    return latest_matched_date(out)

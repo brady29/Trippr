@@ -26,7 +26,7 @@ type LoadRow = {
   load: {
     bundleDate: string;
     loadedAt: string;
-    input: "golden" | "staged";
+    input: "golden";
     pipelineVersion: string;
     counts: unknown;
     checks: unknown;

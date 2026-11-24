@@ -95,8 +95,8 @@ export const bundleManifestSchema = z
     run_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     created_at: utcTimestamp,
     pipeline_version: z.string(),
-    /** "golden": the match stage's output. "staged": each source row was its own golden record. */
-    input: z.enum(["golden", "staged"]),
+    /** The match stage's output: golden records. */
+    input: z.literal("golden"),
     settings: z.record(z.unknown()),
     files: z.array(z.object({ name: z.string(), sha256: z.string().regex(/^[0-9a-f]{64}$/), bytes: z.number().int().min(0), rows: nullable(z.number().int()).optional() }).strict()),
     counts: z
@@ -232,8 +232,8 @@ export interface DataCheckView {
 export interface DataLoadView {
   bundleDate: string;
   loadedAt: string;
-  /** "golden" (entity-matched) or "staged" (each source row its own record). */
-  input: "golden" | "staged";
+  /** Entity-matched golden records. */
+  input: "golden";
   pipelineVersion: string;
   counts: {
     places: number;

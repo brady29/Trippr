@@ -13,7 +13,7 @@ match   ─► matched/<date>/links.parquet (record -> cluster) + golden.parquet
 eval-er ─► matched/<date>/eval.json          (precision and recall on eval/er_pairs.csv)
 check   ─► reports/<date>.checks.json        (exit 1 on a failed check)
 report  ─► reports/<date>.md + <date>.json   (+ $GITHUB_STEP_SUMMARY, + latest.json when passed)
-curate  ─► curated/<date>/curated_place.parquet + curate.stats.json   (from matched/<date>/golden.parquet, else staged rows)
+curate  ─► curated/<date>/curated_place.parquet + curate.stats.json   (from matched/<date>/golden.parquet)
 bundle  ─► bundles/<date>/{places.jsonl.gz, places.parquet, sources.json, manifest.json}   (exit 1 if a check fails)
 upload  ─► gs://$DATA_BUCKET/...             (same layout)
 ```

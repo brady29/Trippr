@@ -121,8 +121,8 @@ def cmd_report(args: argparse.Namespace, registry: Registry, out: Path) -> int:
 def cmd_curate(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     date = args.date or default_date(out)
     if not date:
-        raise SystemExit(f"No golden or staged data under {out}; run stage (and match) first or pass --date")
-    curate(out, date, source=args.input)
+        raise SystemExit(f"No matched data under {out}; run match first or pass --date")
+    curate(out, date)
     return 0
 
 
@@ -212,13 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     add("check", cmd_check, "run the data quality checks; exits 1 on failure")
     add("report", cmd_report, "write the Markdown run report (and to $GITHUB_STEP_SUMMARY)")
-    p = add("curate", cmd_curate, "rank golden records and choose the places for the graph (curated/)")
-    p.add_argument(
-        "--input",
-        choices=["auto", "golden", "staged"],
-        default="auto",
-        help="golden records from the match stage, or staged rows (default: golden when present)",
-    )
+    add("curate", cmd_curate, "rank golden records and choose the places for the graph (curated/)")
     p = add("bundle", cmd_bundle, "write bundles/<date>/ from the curated places; exits 1 if a check fails")
     p.add_argument("--no-parquet", action="store_true", help="leave places.parquet out of the bundle")
     add("upload", cmd_upload, "copy the run to gs://$DATA_BUCKET")

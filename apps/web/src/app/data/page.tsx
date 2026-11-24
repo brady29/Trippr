@@ -231,7 +231,7 @@ export default function DataPage() {
                   </div>
                   <div>
                     <dt className="text-xs uppercase tracking-wide text-ink-faint">Matching</dt>
-                    <dd>{load.input === "golden" ? "entity-matched records" : "each source row on its own"}</dd>
+                    <dd>entity-matched records</dd>
                   </div>
                   <div>
                     <dt className="text-xs uppercase tracking-wide text-ink-faint">Added / updated</dt>

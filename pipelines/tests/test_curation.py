@@ -20,7 +20,7 @@ from trippr_data.curation import (
 )
 from trippr_data.duck import connect, run
 from trippr_data.layout import curated_file, golden_file
-from trippr_data.provisional import build_provisional_golden
+from trippr_data.match import match
 from trippr_data.settings import SEED_DIR
 from trippr_data.taxonomy import load_taxonomy
 
@@ -158,13 +158,11 @@ def test_selection_is_best_first_and_stable():
 
 
 @pytest.fixture()
-def out(staged_out: Path, tmp_path: Path) -> Path:
-    """Staging with only Overture and Foursquare, so there is nothing for the match stage to work on."""
+def out(staged_out: Path, tmp_path: Path, registry) -> Path:
+    """The staged fixtures with the match stage run on them, as in a real run."""
     target = tmp_path / "out"
     shutil.copytree(staged_out, target)
-    for source in ("osm", "wikidata", "wikivoyage"):
-        for extra in (target / "staging" / FIXTURE_DATE).glob(f"{source}.*"):
-            extra.unlink()
+    match(target, FIXTURE_DATE, registry=registry)
     return target
 
 
@@ -177,9 +175,9 @@ def read(out: Path):
     return [dict(zip(names, r, strict=True)) for r in cur.fetchall()]
 
 
-def test_curate_falls_back_to_staged_rows(out):
+def test_curate_ranks_and_selects_the_matched_fixtures(out):
     result = curate(out, FIXTURE_DATE, config=small_config())
-    assert result.input == "staged"
+    assert result.input == "golden"
     places = read(out)
     assert 0 < len(places) <= 60
     assert {p["city_code"] for p in places} == {"TYO", "OSA"}
@@ -200,12 +198,12 @@ def test_the_same_place_from_two_sources_becomes_one_golden_record(out):
     curate(out, FIXTURE_DATE, config=small_config(total=400, floor=100, cap=300))
     places = read(out)
     merged = [p for p in places if len(p["sources"]) > 1]
-    assert merged, "the fixtures have cafes and shrines that two sources list"
+    assert merged, "the fixtures have cafes and shrines that two sources list, and matching merges them"
     for p in merged:
         assert len({s["source"] for s in p["sources"]}) == p["n_sources"] >= 2
     # One record for the cafe, not two.
     names = Counter(p["name"] for p in places if p["city_code"] == "TYO")
-    assert names["マウナケア"] == 1
+    assert all(n == 1 for n in names.values() if n)
 
 
 def test_curate_is_repeatable(out):
@@ -354,39 +352,6 @@ def test_golden_input_must_match_the_schema(tmp_path):
         curate(out, FIXTURE_DATE, config=small_config())
 
 
-def test_provisional_merge_needs_the_same_name_close_by(staged_out):
-    from trippr_data.layout import staged_file
-
-    con = connect()
-    files = [staged_file(staged_out, FIXTURE_DATE, s) for s in ("overture", "foursquare")]
-    stats = build_provisional_golden(con, files)
-    assert stats["merged_pairs"] > 0
-    assert (
-        stats["golden_rows"] == stats["staged_rows"] - stats["same_source_duplicates"] - stats["merged_pairs"]
-    )
-    unmerged = build_provisional_golden(connect(), files, merge=False)
-    assert unmerged["merged_pairs"] == 0
-    assert unmerged["golden_rows"] == unmerged["staged_rows"] - unmerged["same_source_duplicates"]
-
-
-def test_curate_reads_the_match_stages_own_output(staged_out, tmp_path, registry):
-    """Run entity resolution on the fixtures, then curate its golden.parquet."""
-    from trippr_data.match import match
-
-    out = tmp_path / "out"
-    shutil.copytree(staged_out, out)
-    match(out, FIXTURE_DATE, registry=registry)
-    assert golden_file(out, FIXTURE_DATE).is_file()
-    result = curate(out, FIXTURE_DATE, config=small_config(total=40, floor=5, cap=30))
-    assert result.input == "golden"
-    places = read(out)
-    assert places
-    assert len({p["place_id"] for p in places}) == len(places)
-    for p in places:
-        assert p["sources"]
-        assert all(s["source_id"] and s["licence"] for s in p["sources"])
-
-
 def test_a_chain_is_found_through_the_records_behind_a_golden_place(tmp_path):
     """The match output has no brand; a member's staged record carries Overture's brand Wikidata id."""
     from trippr_data.golden import from_matched
@@ -410,3 +375,51 @@ def test_a_chain_is_found_through_the_records_behind_a_golden_place(tmp_path):
     assert con.execute("SELECT signals.brand_wikidata FROM golden").fetchone()[0] == "Q37158"
     from_matched(con, golden_file(out, FIXTURE_DATE).as_posix())
     assert con.execute("SELECT signals.brand_wikidata FROM golden").fetchone()[0] is None
+
+
+def test_a_pair_the_match_stage_missed_is_folded_into_the_better_place(tmp_path):
+    out = tmp_path / "out"
+    base = {"city_code": "TYO", "lat": 35.68, "lon": 139.76}
+    write_golden(
+        out,
+        [
+            {
+                **base,
+                "golden_id": "g1",
+                "name": "Tianjin Water Park",
+                "category": "park_garden",
+                "sources": ["wikidata"],
+                "sitelinks": 9,
+            },
+            {
+                **base,
+                "golden_id": "g2",
+                "name": "TIANJIN water park",
+                "category": "theme_park",
+                "sources": ["overture"],
+                "lat": 35.68003,
+            },
+            {
+                **base,
+                "golden_id": "g3",
+                "name": "Tianjin Water Park",
+                "category": "park_garden",
+                "sources": ["osm"],
+                "lat": 35.7,
+            },
+        ],
+    )
+    result = curate(out, FIXTURE_DATE, config=small_config(total=10, floor=1, cap=10))
+    places = read(out)
+    assert result.stats["merged_duplicates"] == 1
+    assert len(places) == 2  # the far one stays: a different place with the same name
+    near = next(p for p in places if p["lat"] < 35.69)
+    assert {s["source"] for s in near["sources"]} == {"wikidata", "overture"}
+    assert near["n_sources"] == 2
+
+
+def test_curate_needs_the_match_output(staged_out, tmp_path):
+    out = tmp_path / "out"
+    shutil.copytree(staged_out, out)
+    with pytest.raises(FileNotFoundError, match="run the match stage first"):
+        curate(out, FIXTURE_DATE, config=small_config())
