@@ -8,8 +8,8 @@ from types import SimpleNamespace
 
 from trippr_data.enrich.inputs import read_places, taxonomy
 from trippr_data.enrich.run import write_enrichment
-from trippr_data.enrich.settings import enriched_file
-from trippr_data.layout import curated_file
+from trippr_data.enrich.settings import enriched_file, eval_root
+from trippr_data.layout import curated_file, write_json
 
 MODEL = "claude-haiku-5-5"
 ENRICHED_AT = "2026-11-18T09:30:00+00:00"
@@ -37,6 +37,34 @@ def answer(i: int, name: str, category: str, *, empty_summary: bool = False) -> 
         "enriched_at": ENRICHED_AT,
         "batch_id": "msgbatch_fixture",
     }
+
+
+def write_fixture_eval(out: Path) -> Path:
+    """An eval-enrich report.json with made-up scores (a fixture, not a real run), so the bundle test and the
+    app's Data page cover the scores path."""
+    report = eval_root(out, MODEL) / "report.json"
+    write_json(
+        report,
+        {
+            "model": MODEL,
+            "judge_model": None,
+            "metrics": {
+                "n": 174,
+                "valid_rate": 1.0,
+                "tag_f1": 0.8,
+                "duration_within_tolerance": 0.7,
+                "best_time_accuracy": 0.75,
+                "indoor_accuracy": 0.85,
+                "summary_rule_unsupported_rate": 0.04,
+                "summary_judge_unsupported_rate": None,
+                "display_name_match": 0.6,
+            },
+            "targets": {"tag_f1": True, "unsupported_summaries": True, "valid_answers": True},
+            "by_script": {},
+            "misses": [],
+        },
+    )
+    return report
 
 
 def write_fixture_enrichment(out: Path, date: str, *, every: int = 2) -> Path:

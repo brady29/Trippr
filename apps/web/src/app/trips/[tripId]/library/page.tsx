@@ -1,6 +1,6 @@
 "use client";
 
-import { hasRole, type ActivityFacets, type ActivityPageQuery, type LibraryActivity } from "@trippr/contracts";
+import { hasRole, type ActivityFacets, type ActivityPageQuery, type BestTime, type LibraryActivity, type PriceLevel } from "@trippr/contracts";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { ActivityItem, NewActivityForm } from "@/components/activity";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
+import { BEST_TIME_LABEL, PRICE_LABEL, durationMaxLabel } from "@/lib/enrichment";
 import { useActivityFacets, useActivityPages, useLookupPlace, useTrip, useTripActivities } from "@/lib/queries";
 
 /**
@@ -128,6 +129,10 @@ function Library({ tripId }: { tripId: string }) {
   const [source, setSource] = useState("");
   const [maxRank, setMaxRank] = useState("");
   const [fixedOnly, setFixedOnly] = useState(false);
+  const [bestTime, setBestTime] = useState("");
+  const [indoor, setIndoor] = useState("");
+  const [durationMax, setDurationMax] = useState("");
+  const [priceLevel, setPriceLevel] = useState("");
   const [text, setText] = useState("");
   const q = useDebounced(text.trim(), 300);
 
@@ -140,9 +145,13 @@ function Library({ tripId }: { tripId: string }) {
       ...(source ? { source } : {}),
       ...(maxRank ? { maxRank: Number(maxRank) } : {}),
       ...(fixedOnly ? { fixedDates: true } : {}),
+      ...(bestTime ? { bestTime: bestTime as BestTime } : {}),
+      ...(indoor ? { indoor: indoor === "indoor" } : {}),
+      ...(durationMax ? { durationMax: Number(durationMax) } : {}),
+      ...(priceLevel ? { priceLevel: priceLevel as PriceLevel } : {}),
       ...(q ? { q } : {}),
     }),
-    [scope, city, tag, category, source, maxRank, fixedOnly, q],
+    [scope, city, tag, category, source, maxRank, fixedOnly, bestTime, indoor, durationMax, priceLevel, q],
   );
   const pages = useActivityPages(tripId, filters);
   const shown = useMemo(() => pages.data?.pages.flatMap((p) => p.items) ?? [], [pages.data]);
@@ -153,6 +162,7 @@ function Library({ tripId }: { tripId: string }) {
   const canEdit = hasRole(trip.data?.role, "editor");
   const isOwner = trip.data?.role === "owner";
   const hasCatalogue = (f?.totals.catalogue ?? 0) > 0;
+  const hasEnrichment = (f?.enrichment.enriched ?? 0) > 0;
 
   return (
     <>
@@ -228,6 +238,41 @@ function Library({ tripId }: { tripId: string }) {
                     {TOP_PICKS.map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
+                      </option>
+                    ))}
+                  </Select>
+                </>
+              ) : null}
+              {hasEnrichment && f ? (
+                <>
+                  <Select value={bestTime} onChange={(e) => setBestTime(e.target.value)} aria-label="Filter by best time">
+                    <option value="">Any time of day</option>
+                    {f.enrichment.bestTimes
+                      .filter((b) => b.name !== "any")
+                      .map((b) => (
+                        <option key={b.name} value={b.name}>
+                          Best in the {BEST_TIME_LABEL[b.name].toLowerCase()}
+                        </option>
+                      ))}
+                  </Select>
+                  <Select value={indoor} onChange={(e) => setIndoor(e.target.value)} aria-label="Filter by indoor or outdoor">
+                    <option value="">Indoor or outdoor</option>
+                    <option value="indoor">Indoor ({f.enrichment.indoor})</option>
+                    <option value="outdoor">Outdoor ({f.enrichment.outdoor})</option>
+                  </Select>
+                  <Select value={durationMax} onChange={(e) => setDurationMax(e.target.value)} aria-label="Filter by time needed">
+                    <option value="">Any length</option>
+                    {f.enrichment.durations.map((d) => (
+                      <option key={d.max} value={d.max}>
+                        {durationMaxLabel(d.max)} ({d.count})
+                      </option>
+                    ))}
+                  </Select>
+                  <Select value={priceLevel} onChange={(e) => setPriceLevel(e.target.value)} aria-label="Filter by price">
+                    <option value="">Any price</option>
+                    {f.enrichment.priceLevels.map((p) => (
+                      <option key={p.name} value={p.name}>
+                        {PRICE_LABEL[p.name]} ({p.count})
                       </option>
                     ))}
                   </Select>

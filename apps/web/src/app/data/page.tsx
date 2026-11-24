@@ -2,6 +2,7 @@
 
 import type { CheckStatus, DataCheckView, DataLoadView, DataSourceView } from "@trippr/contracts";
 import Link from "next/link";
+import { EnrichmentStats } from "@/components/data-enrichment";
 import { BoardHeader, BoardStat, NavLink, TopBar } from "@/components/shell";
 import { ErrorNote, Panel, Spinner, Tag } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
@@ -31,7 +32,7 @@ const STAGES = [
   { name: "Stage", note: "one schema, one taxonomy", built: true },
   { name: "Match", note: "entity resolution", built: false },
   { name: "Curate", note: "rank, budget, mix", built: true },
-  { name: "Enrich", note: "AI summaries", built: false },
+  { name: "Enrich", note: "AI summaries", built: true },
   { name: "Embed", note: "search vectors", built: false },
   { name: "Bundle", note: "checked seed bundle", built: true },
   { name: "Load", note: "idempotent job into the graph", built: true },
@@ -154,7 +155,9 @@ function Checks({ load }: { load: DataLoadView }) {
 }
 
 function Evals({ load }: { load: DataLoadView }) {
-  const entries = Object.entries(load.evals);
+  // The enrichment scores have their own panel above.
+  const entries = Object.entries(load.evals).filter(([name]) => name !== "enrich");
+  if (!entries.length && "enrich" in load.evals) return null;
   return (
     <Panel title="Evaluation results">
       {entries.length ? (
@@ -271,6 +274,7 @@ export default function DataPage() {
               )}
             </section>
 
+            {load ? <EnrichmentStats load={load} /> : null}
             {load ? <Checks load={load} /> : null}
             {load ? <Evals load={load} /> : null}
 

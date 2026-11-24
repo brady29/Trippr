@@ -280,7 +280,28 @@
       }
     ]
   },
-  "evals": {},
+  "evals": {
+    "enrich": {
+      "model": "claude-haiku-5-5",
+      "judge_model": null,
+      "metrics": {
+        "n": 174,
+        "valid_rate": 1.0,
+        "tag_f1": 0.8,
+        "duration_within_tolerance": 0.7,
+        "best_time_accuracy": 0.75,
+        "indoor_accuracy": 0.85,
+        "summary_rule_unsupported_rate": 0.04,
+        "summary_judge_unsupported_rate": null,
+        "display_name_match": 0.6
+      },
+      "targets": {
+        "tag_f1": true,
+        "unsupported_summaries": true,
+        "valid_answers": true
+      }
+    }
+  },
   "enrichment": {
     "places": 40,
     "with_summary": 39,

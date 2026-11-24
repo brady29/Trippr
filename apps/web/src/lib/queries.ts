@@ -80,7 +80,8 @@ export const useTripActivities = (tripId: string) => {
 
 const queryString = (params: Record<string, string | number | boolean | undefined>) => {
   const search = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "" && v !== false) search.set(k, String(v));
+  // false means "leave out", except for the indoor filter, where false asks for outdoor places.
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "" && (v !== false || k === "indoor")) search.set(k, String(v));
   const text = search.toString();
   return text ? `?${text}` : "";
 };

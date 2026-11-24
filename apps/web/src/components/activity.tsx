@@ -11,6 +11,7 @@ import {
   useUpdateActivity,
   useVote,
 } from "@/lib/queries";
+import { EnrichmentBlock, GenericNameSubtitle } from "./enrichment";
 import { ChatIcon, StarIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
 import { PLACE_STATUS_LABEL, PlaceEditor } from "./place-editor";
 import { PlaceLinks } from "./place-links";
@@ -107,6 +108,7 @@ export function ActivityItem({
               activity.title
             )}
           </div>
+          <GenericNameSubtitle activity={activity} />
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft">
             {isFixedDate(activity.when) ? (
               <span className="inline-flex items-center gap-1 font-medium text-stamp">
@@ -124,6 +126,7 @@ export function ActivityItem({
               </button>
             ) : null}
           </div>
+          <EnrichmentBlock activity={activity} />
           <PlaceLinks activity={activity} className="mt-1.5 text-xs" />
           {footer}
         </div>

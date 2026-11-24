@@ -26,11 +26,20 @@ staged ─► (match) ─► curate ─► bundle ──► bundles/<date>/ ─�
 | `places.jsonl.gz` | One curated place per line, ordered by city and rank. What the load job reads |
 | `places.parquet` | The same places for DuckDB and BigQuery |
 | `sources.json` | The registry entries behind the places: licence, attribution, terms date, counts, freshness |
-| `manifest.json` | Counts, file checksums (SHA-256) and the check results |
+| `manifest.json` | Counts, file checksums (SHA-256) and the check results; `enrichment` and `evals.enrich` when the bundle is enriched |
+| `enrichment.jsonl.gz`, `enrichment.parquet` | Optional. The LLM enrichment (see below), one line per enriched place, joined to the places by id |
 
 The JSON shapes are defined twice, in `pipelines/src/trippr_data/bundle.py` (pydantic) and `packages/contracts/src/catalogue.ts` (zod). The pipeline's golden test writes a bundle from the fixtures and commits it (`pipelines/tests/fixtures/expected/bundle/`); the contract tests, the API integration tests and the e2e tests all read that same bundle, so the two sides cannot drift.
 
 Bundle checks (any failure sets `checks.passed: false`, so the bundle is never loaded): non-empty; unique ids; every place has sources and a licence for each, all listed in `sources.yaml`; categories in the taxonomy; coordinates inside the city radius and the country box; no two places with the same name within 50 m; within the budget, floor and cap; no colour tag far above its share; plus the staging checks of the same run.
+
+### Enrichment
+
+After `enrich` has run (a laptop job, see [pipelines/README.md](../pipelines/README.md)), the bundle step adds the AI-written fields: `tags` (taxonomy categories), a one-line `summary`, `duration_min`, `best_time`, `indoor`, `price_level`, `good_for`, a `display_name` suggestion with `is_generic_name`, and `provenance` (`summary_ai`, model, prompt version, date, input sources) with the sentence to show (`ai_label`, e.g. "Summary written by AI from Wikidata and Wikivoyage"). The zod shape is `bundleEnrichmentSchema`. The extra bundle check `enrichment.summary_provenance` fails the bundle when any summary is not marked as AI-written, and the load job refuses such a bundle again on its side.
+
+**Load job.** Enrichment goes onto the Activity node as `summary`, `summaryAi`, `aiLabel`, `enrichTags`, `durationMin`, `bestTime`, `indoor`, `priceLevel`, `goodFor`, `displayName`, `genericName`, `enrichModel`, `enrichPromptVersion` and `enrichedAt` (empty lists are stored as nothing). It is part of the place's content hash, so a place is refreshed when its enrichment changes and not otherwise; a bundle that comes without enrichment leaves what the graph already holds. A hand-written activity that was matched to a place **keeps its own summary** (the AI summary is only added while it has none, or replaced while it is still the AI's), and the other fields are only filled while empty, or refreshed once the pipeline filled them. Titles are never changed: `display_name` is a subtitle for places whose own name is generic or formal (`is_generic_name`).
+
+**App.** Activities show the summary with the label from the data ("Summary written by AI from ..."), and badges for duration, best time of day, indoor or outdoor and price level; they are estimates and say so on hover. The Activities page filters on `bestTime`, `indoor`, `durationMax` and `priceLevel` (below). The Data page has an "AI enrichment" panel: places enriched out of the bundle, how many have a summary, the model and prompt, the date, and the `eval-enrich` scores from the manifest when the pipeline recorded them.
 
 `python -m trippr_data run` now ends with curate and bundle after a passing check, adds a bundle section to the run report and uploads `bundles/` with the rest.
 
@@ -59,15 +68,17 @@ What it does, and does not do:
 
 ### Graph model
 
-Activity gains `catalogue`, `category`, `score`, `rank`, `listed`, `nameLocal`, `phone`, `openingHours`, `wikidataQid`, `sources` (JSON of source id, record id and licence), `sourceKeys`, `sourceIds`, `catalogueId`, `contentHash`, `bundleDate`. `(:Activity)-[:FROM_SOURCE {sourceId, fetchedAt, licence}]->(:DataSource {id, name, licence, url, attribution, ...})` makes licences queryable. Constraints and indexes are in `db/schema/*.cypher`; the job applies them first, and they are idempotent.
+Activity gains `catalogue`, `category`, `score`, `rank`, `listed`, `nameLocal`, `phone`, `openingHours`, `wikidataQid`, `sources` (JSON of source id, record id and licence), `sourceKeys`, `sourceIds`, `catalogueId`, `contentHash`, `bundleDate`, and the enrichment fields (see Enrichment above). `(:Activity)-[:FROM_SOURCE {sourceId, fetchedAt, licence}]->(:DataSource {id, name, licence, url, attribution, ...})` makes licences queryable. Constraints and indexes are in `db/schema/*.cypher`; the job applies them first, and they are idempotent.
 
 ### API
 
 | Route | |
 |---|---|
-| `GET /trips/:id/activities/page` | The whole library, filtered and paged: `scope` (`all`, `mine`, `catalogue`), `city`, `tag`, `category`, `q`, `source`, `minScore`, `maxRank`, `fixedDates`, `sort`, `offset`, `limit` (50, max 100). Viewers can read it |
-| `GET /trips/:id/activities/facets` | Filter menus and headline numbers |
-| `GET /trips/:id/activities` | Unchanged for existing callers: the group's own ideas, plus catalogue places it voted on, commented on or planned |
+| `GET /trips/:id/activities/page` | The whole library, filtered and paged: `scope` (`all`, `mine`, `catalogue`), `city`, `tag`, `category`, `q`, `source`, `minScore`, `maxRank`, `fixedDates`, `bestTime`, `indoor`, `durationMax`, `priceLevel`, `sort`, `offset`, `limit` (50, max 100). Viewers can read it |
+| `GET /trips/:id/activities/facets` | Filter menus and headline numbers, with counts for the enrichment filters (`enrichment`) |
+| `GET /trips/:id/activities` | Unchanged for existing callers: the group's own ideas, plus catalogue places it voted on, commented on or planned. Every activity read (list, page, a stop's library, the result of a vote or edit) carries `enrichment` when the place was enriched |
+
+Enrichment filters: `bestTime` (`morning`, `afternoon`, `evening`, `night`, `any`; places best at any time always match), `indoor` (`true` or `false`), `durationMax` (minutes, at most) and `priceLevel` (`free`, `$`, `$$`, `$$$`, exact). A place the model could not tell (no duration, no indoor flag) is left out of that filter.
 | `GET /data/sources` | Public. Sources with licences and attribution, counts, freshness, the latest load and its checks |
 
 The stop drawers and the route editor's library show catalogue places only once the group has engaged with them, so a city's few hundred places do not bury its ideas.

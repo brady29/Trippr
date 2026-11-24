@@ -52,7 +52,7 @@ from trippr_data.match import match
 from trippr_data.taxonomy import load_taxonomy
 
 from .conftest import FIXTURE_DATE, FIXTURES
-from .enrichment_fixture import MODEL, write_fixture_enrichment
+from .enrichment_fixture import MODEL, write_fixture_enrichment, write_fixture_eval
 
 EXPECTED_BUNDLE = FIXTURES / "expected" / "bundle" / FIXTURE_DATE
 CREATED_AT = datetime(2026, 11, 18, 12, 0, 0, tzinfo=UTC)
@@ -79,6 +79,7 @@ def built(staged_out: Path, tmp_path: Path, registry):
     cfg = golden_config()
     curate(out, FIXTURE_DATE, config=cfg)
     write_fixture_enrichment(out, FIXTURE_DATE)
+    write_fixture_eval(out)
     path, manifest = build_bundle(
         out, FIXTURE_DATE, registry=registry, config=cfg, created_at=CREATED_AT, parquet=False
     )
@@ -130,6 +131,7 @@ def test_enrichment_is_bundled_with_provenance(built):
     assert e and e.places == len(items) and e.models == [MODEL] and e.source_date == FIXTURE_DATE
     assert e.with_summary == sum(1 for i in items if i.summary) == len(items) - 1
     assert e.enriched_at == "2026-11-18T09:30:00Z"
+    assert manifest.evals["enrich"]["model"] == MODEL and manifest.evals["enrich"]["metrics"]["tag_f1"] == 0.8
     assert next(f for f in manifest.files if f.name == ENRICHMENT_FILE).rows == len(items)
     for i in items:
         assert i.ai and i.provenance.model == MODEL and i.provenance.enriched_at.endswith("Z")

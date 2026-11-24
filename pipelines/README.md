@@ -15,6 +15,7 @@ check   ─► reports/<date>.checks.json        (exit 1 on a failed check)
 report  ─► reports/<date>.md + <date>.json   (+ $GITHUB_STEP_SUMMARY, + latest.json when passed)
 curate  ─► curated/<date>/curated_place.parquet + curate.stats.json   (from matched/<date>/golden.parquet)
 bundle  ─► bundles/<date>/{places.jsonl.gz, places.parquet, sources.json, manifest.json}   (exit 1 if a check fails)
+           + enrichment.jsonl.gz and enrichment.parquet when enriched/<date>/enrichment.parquet exists (see LLM enrichment)
 upload  ─► gs://$DATA_BUCKET/...             (same layout)
 ```
 
@@ -409,7 +410,7 @@ gcloud storage buckets add-iam-policy-binding gs://trippr-bucket-data \
 
 Then add the repository variable `DATA_BUCKET=trippr-bucket-data`.
 
-## LLM enrichment (PR 4, pipeline half)
+## LLM enrichment (PR 4)
 
 `enrich` adds `tags`, a one-line `summary`, `duration_min`, `best_time`, `indoor`, `price_level`,
 `good_for` and a `display_name` / `is_generic_name` suggestion to each curated place with Claude's **Message Batches API** (half price). It does not run in the
@@ -436,6 +437,24 @@ uv run python -m trippr_data enrich --yes
 | Resume | Each batch is recorded in `out/enrich/enrich.state.json` the moment it is created. `--no-wait` submits and returns; rerunning the same command (or `enrich-status --collect`) collects finished batches and never resubmits a key already in flight. A key that fails validation three times is left out until its input changes |
 | Cost guard | The estimate must be within `ENRICH_BUDGET_USD` (default **25** for the first full run, or `--budget-usd`) or nothing is submitted (exit 3). `--yes` is required to spend at all (exit 3 without it). The cap is re-checked before each batch of `--batch-size` (2000). Output tokens are an assumption (350 each, `--output-tokens`); `eval-enrich` prints the measured average to calibrate it |
 | Guardrails | Output is pydantic-validated: tags must be taxonomy categories, at most 4; summary at most 140 characters (code points, so CJK gets the same room), one line, URLs dropped, no replacement characters; duration 5 to 1440 minutes |
+
+### In the bundle
+
+`bundle` picks up `out/enriched/<date>/enrichment.parquet` (the bundle's date, else the newest earlier date,
+since enrichment is cached across runs) and writes it next to the places, joined by id (`place_id` is the
+bundle's `id`):
+
+| File | What |
+|---|---|
+| `enrichment.jsonl.gz` | One enriched place per line, in the order of `places.jsonl.gz`: `id`, `tags`, `summary`, `duration_min`, `best_time`, `indoor`, `price_level`, `good_for`, `display_name`, `is_generic_name`, `ai`, `ai_label` and `provenance` (`summary_ai`, `model`, `prompt_version`, `enriched_at`, `batch_id`, `input_sources`). Places that were not enriched have no line. Places the bundle no longer contains are dropped |
+| `enrichment.parquet` | The same rows for DuckDB and BigQuery (with the places Parquet) |
+| `manifest.json` | `enrichment`: places, places with a summary, models, prompt versions, newest `enriched_at` and the `enriched/<date>` it came from. `evals.enrich`: the scores in `out/enrich-eval/<model>/report.json` for the model that enriched the most places, when `eval-enrich` has been run for it |
+
+`places.jsonl.gz` is unchanged, so a bundle without enrichment is still valid and everything that reads places
+(embed, the load job) keeps working. The bundle check `enrichment.summary_provenance` fails the bundle (so the
+app never loads it) when any place has a summary without `ai`, an AI label and `provenance.summary_ai`, or
+claims an AI summary it does not have. The tests build the committed golden bundle with a fake answer cache
+and made-up eval scores (`tests/enrichment_fixture.py`), so no model is called.
 
 ### Names and cost
 
