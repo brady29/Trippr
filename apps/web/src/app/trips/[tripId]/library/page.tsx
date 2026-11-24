@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityItem, NewActivityForm } from "@/components/activity";
+import { SemanticSearch } from "@/components/semantic-search";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
@@ -287,6 +288,12 @@ function Library({ tripId }: { tripId: string }) {
               </span>
             </div>
           </div>
+          <SemanticSearch
+            tripId={tripId}
+            filters={{ city, tag, category }}
+            canEdit={canEdit}
+            footerFor={(a) => <CatalogueFooter activity={a} facets={f} />}
+          />
           {pages.isPending ? <Spinner /> : null}
           {pages.error ? <ErrorNote error={pages.error} /> : null}
           {!pages.isPending && !shown.length ? <p className="text-sm text-ink-soft">Nothing matches those filters.</p> : null}

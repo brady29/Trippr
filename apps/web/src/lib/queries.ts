@@ -17,6 +17,8 @@ import type {
   PlaceBody,
   PlaceLookupResult,
   PlanBody,
+  SearchRequest,
+  SearchResponse,
   RouteView,
   StopLibrary,
   StopView,
@@ -95,6 +97,22 @@ export const useActivityPages = (tripId: string, filters: ActivityPageQuery) => 
     initialPageParam: 0,
     getNextPageParam: (last) => last.nextOffset ?? undefined,
     enabled: ready && Boolean(tripId),
+  });
+};
+
+/**
+ * Semantic search (GET /trips/:id/search). Only runs for a non-null request; the answer is kept for a minute so
+ * asking the same question again costs nothing. No retries: a 429 must show, not repeat.
+ */
+export const useSearch = (tripId: string, request: SearchRequest | null) => {
+  const ready = useReady();
+  return useQuery({
+    // Under the activities prefix, so a vote or an edit refreshes the open results.
+    queryKey: ["trip-activities", tripId, "search", request] as const,
+    queryFn: ({ signal }) => api<SearchResponse>(`/trips/${tripId}/search${queryString({ ...request! })}`, { signal }),
+    enabled: ready && Boolean(tripId) && request !== null,
+    staleTime: 60_000,
+    retry: false,
   });
 };
 

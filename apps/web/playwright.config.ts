@@ -12,6 +12,9 @@ export const E2E_OWNER_INVITE = "e2e-owner-invite-token";
 /** The data pipeline's golden bundle (Tokyo and Osaka places), put in the graph by the real load job. */
 export const E2E_BUNDLES = fileURLToPath(new URL("../../pipelines/tests/fixtures/expected/bundle", import.meta.url));
 
+/** Fake place vectors for the golden bundle (made by apps/api/src/fake-embeddings.ts; the folder is gitignored). */
+export const E2E_EMBEDDINGS = fileURLToPath(new URL("./.e2e-embeddings", import.meta.url));
+
 const apiEnv = {
   NODE_ENV: "test",
   PORT: String(API_PORT),
@@ -32,6 +35,10 @@ const apiEnv = {
   // Flight prices run on invented sample history (see flight-prices.spec.ts); no provider key is ever used.
   FLIGHT_PRICES_ENABLED: "true",
   FLIGHT_PRICES_PROVIDER: "demo",
+  // Semantic search with the fake query embedder and fake place vectors: the whole path runs, nothing is downloaded or called.
+  SEARCH_EMBEDDER: "fake",
+  SEARCH_FAKE_DIMS: "64",
+  SEARCH_RATE_PER_MINUTE: "1000",
 };
 
 export default defineConfig({
@@ -55,7 +62,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `pnpm --dir ../.. db:reset && pnpm --dir ../.. db:load-bundle --bundle "${E2E_BUNDLES}" && pnpm --dir ../api exec tsx src/flight-snapshots.ts --demo-seed && pnpm --dir ../api exec tsx src/server.ts`,
+      command: `pnpm --dir ../.. db:reset && pnpm --dir ../api exec tsx src/fake-embeddings.ts --bundle "${E2E_BUNDLES}" --out "${E2E_EMBEDDINGS}" --dims 64 && pnpm --dir ../.. db:load-bundle --bundle "${E2E_BUNDLES}" --embeddings "${E2E_EMBEDDINGS}" && pnpm --dir ../api exec tsx src/flight-snapshots.ts --demo-seed && pnpm --dir ../api exec tsx src/server.ts`,
       url: `${E2E_API_URL}/health`,
       env: apiEnv,
       reuseExistingServer: !process.env.CI,
