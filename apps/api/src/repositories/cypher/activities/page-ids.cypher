@@ -3,6 +3,10 @@
 //   $scope     all | mine | catalogue   (mine: the group's own ideas and catalogue places it voted, commented on or planned)
 //   $q         lower-case text to find in the title, local name or address
 //   $source    a data source id, matched against the place's source ids
+//   $bestTime  morning | afternoon | evening | night | any: places best then, and places good at any time
+//   $indoor    true = indoor places, false = outdoor places (places the enrichment could not tell are left out)
+//   $durationMax  places that take at most this many minutes (needs a duration)
+//   $priceLevel   free | $ | $$ | $$$, exactly
 //   $sort      relevance (votes, then own ideas, then score) | score | title
 MATCH (a:Activity)-[:FOR]->(:Trip {id: $tripId}), (a)-[:IN]->(c:City)
 WHERE coalesce(a.hidden, false) = false
@@ -15,6 +19,10 @@ WHERE coalesce(a.hidden, false) = false
   AND ($q IS NULL OR toLower(a.title) CONTAINS $q OR toLower(coalesce(a.nameLocal, '')) CONTAINS $q
        OR toLower(coalesce(a.address, '')) CONTAINS $q)
   AND ($scope <> 'catalogue' OR a.catalogue = true)
+  AND ($bestTime IS NULL OR a.bestTime = $bestTime OR a.bestTime = 'any')
+  AND ($indoor IS NULL OR a.indoor = $indoor)
+  AND ($durationMax IS NULL OR a.durationMin <= $durationMax)
+  AND ($priceLevel IS NULL OR a.priceLevel = $priceLevel)
 OPTIONAL MATCH (:User)-[v:VOTED]->(a)
 WITH a, sum(coalesce(v.value, 0)) AS votes, count(v) AS voters
 OPTIONAL MATCH (:Stop)-[p:PLANS]->(a)

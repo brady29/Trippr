@@ -45,3 +45,6 @@ CREATE INDEX flight_price_route IF NOT EXISTS FOR (n:FlightPrice) ON (n.routeKey
 CREATE CONSTRAINT data_source_id IF NOT EXISTS FOR (n:DataSource) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT data_load_id IF NOT EXISTS FOR (n:DataLoad) REQUIRE n.id IS UNIQUE;
 CREATE INDEX activity_category IF NOT EXISTS FOR (n:Activity) ON (n.category);
+
+// LLM enrichment (data pipeline): the Activities page filters on these; summary, duration and the rest are plain properties.
+CREATE INDEX activity_best_time IF NOT EXISTS FOR (n:Activity) ON (n.bestTime);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { ActivitySource, BundlePlace } from "@trippr/contracts";
+import type { ActivitySource, BundleEnrichment, BundlePlace } from "@trippr/contracts";
 import { isCatalogueId, planAdoptions } from "@trippr/rules";
 import { nowIso } from "../../ids";
 import type { Repositories } from "../../repositories";
@@ -36,15 +36,45 @@ const sourceKey = (s: { source: string; source_id: string }) => `${s.source}:${s
 const keysOf = (p: BundlePlace) => [...p.sources.map(sourceKey), ...(p.wikidata_qid ? [`wikidata:${p.wikidata_qid}`] : [])];
 
 /** The place's content as the graph stores it (not the bundle date), so an unchanged place is not rewritten. */
-function hashOf(p: BundlePlace): string {
-  const content = [
+function hashOf(p: BundlePlace, e?: BundleEnrichment): string {
+  const content: unknown[] = [
     p.name, p.name_en, p.name_local, p.category, p.tag, p.score, p.rank, p.n_sources, p.lat, p.lon, p.address, p.website,
     p.phone, p.opening_hours, p.wikidata_qid, p.sources.map((s) => [s.source, s.source_id, s.licence, s.fetched_at]),
   ];
+  // Only when there is enrichment, so a place without it keeps the hash it had before enrichment existed.
+  if (e) {
+    content.push([
+      e.tags, e.summary, e.duration_min, e.best_time, e.indoor, e.price_level, e.good_for, e.display_name, e.is_generic_name, e.ai_label,
+      e.provenance.summary_ai, e.provenance.model, e.provenance.prompt_version, e.provenance.enriched_at,
+    ]);
+  }
   return createHash("sha1").update(JSON.stringify(content)).digest("hex");
 }
 
-function toRow(p: BundlePlace, activityId: string, bundleDate: string, now: string): PlaceRow {
+/** The enrichment columns of a PlaceRow. Empty lists and empty summaries become null. */
+function enrichmentColumns(e?: BundleEnrichment): Pick<PlaceRow, "enriched" | "summary" | "summaryAi" | "aiLabel" | "enrichTags" | "durationMin" | "bestTime" | "indoor" | "priceLevel" | "goodFor" | "displayName" | "genericName" | "enrichModel" | "enrichPromptVersion" | "enrichedAt"> {
+  const summary = e?.summary.trim() ? e.summary.trim() : null;
+  return {
+    enriched: Boolean(e),
+    summary,
+    // The label only travels with a summary the model wrote.
+    summaryAi: Boolean(e && summary && e.provenance.summary_ai),
+    aiLabel: summary && e ? e.ai_label : null,
+    enrichTags: e && e.tags.length ? e.tags : null,
+    durationMin: e?.duration_min ?? null,
+    bestTime: e?.best_time ?? null,
+    indoor: e?.indoor ?? null,
+    priceLevel: e?.price_level ?? null,
+    goodFor: e && e.good_for.length ? e.good_for : null,
+    displayName: e?.display_name ?? null,
+    genericName: Boolean(e?.is_generic_name),
+    enrichModel: e?.provenance.model ?? null,
+    enrichPromptVersion: e?.provenance.prompt_version ?? null,
+    enrichedAt: e?.provenance.enriched_at ?? null,
+  };
+}
+
+function toRow(p: BundlePlace, activityId: string, bundleDate: string, now: string, enrichment?: BundleEnrichment): PlaceRow {
   const sources: ActivitySource[] = p.sources.map((s) => ({ source: s.source, sourceId: s.source_id, licence: s.licence }));
   // English name first for the group; the local-script name stays searchable.
   const title = p.name_en ?? p.name;
@@ -70,9 +100,10 @@ function toRow(p: BundlePlace, activityId: string, bundleDate: string, now: stri
     sources: JSON.stringify(sources),
     sourceKeys: keysOf(p),
     sourceIds: [...new Set(p.sources.map((s) => s.source))],
-    contentHash: hashOf(p),
+    contentHash: hashOf(p, enrichment),
     bundleDate,
     now,
+    ...enrichmentColumns(enrichment),
   };
 }
 
@@ -117,7 +148,7 @@ export function planLoad(existing: ExistingActivity[], bundle: LoadedBundle, now
       continue;
     }
     used.add(match.id);
-    const row = toRow(place, match.id, bundle.date, now);
+    const row = toRow(place, match.id, bundle.date, now, bundle.enrichment.get(place.id));
     if (match.hidden) plan.skippedHidden++;
     else if (match.contentHash === row.contentHash && match.listed) plan.unchanged++;
     else (match.adopted ? plan.adopt : plan.refresh).push(row);
@@ -133,10 +164,10 @@ export function planLoad(existing: ExistingActivity[], bundle: LoadedBundle, now
   for (const { activityId, placeId } of adoptions) {
     const place = placeById.get(placeId)!;
     adoptedPlaces.add(placeId);
-    plan.adopt.push(toRow(place, activityId, bundle.date, now));
+    plan.adopt.push(toRow(place, activityId, bundle.date, now, bundle.enrichment.get(place.id)));
     plan.adopted.push({ activityId, placeId, title: handWritten.find((a) => a.id === activityId)?.title ?? activityId });
   }
-  for (const place of unmatched) if (!adoptedPlaces.has(place.id)) plan.create.push(toRow(place, place.id, bundle.date, now));
+  for (const place of unmatched) if (!adoptedPlaces.has(place.id)) plan.create.push(toRow(place, place.id, bundle.date, now, bundle.enrichment.get(place.id)));
 
   for (const a of existing) {
     if (!a.catalogue || a.hidden || used.has(a.id)) continue;
@@ -231,6 +262,16 @@ export async function loadBundle(repos: Repositories, bundle: LoadedBundle, opti
       unlisted: summary.unlisted,
       byTag: manifest.counts.by_tag,
       byCategory: manifest.counts.by_category,
+      enrichment: manifest.enrichment
+        ? {
+            places: manifest.enrichment.places,
+            withSummary: manifest.enrichment.with_summary,
+            models: manifest.enrichment.models,
+            promptVersions: manifest.enrichment.prompt_versions,
+            enrichedAt: manifest.enrichment.enriched_at,
+            sourceDate: manifest.enrichment.source_date,
+          }
+        : null,
     }),
     checks: JSON.stringify(manifest.checks),
     evals: JSON.stringify(manifest.evals),

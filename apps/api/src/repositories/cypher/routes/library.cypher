@@ -20,6 +20,8 @@ OPTIONAL MATCH (a)-[:TAGGED]->(tg:Tag)
 WITH s, c, k, a, planned, votes, myVote, commentCount, collect(tg.name) AS tags
 RETURN s.id AS stopId, c.code AS cityCode, c.name AS cityName, k.iso AS countryIso,
        a {.id, .title, .when, .url, .costCad, .mapsQuery, .website, .ticketUrl, .reserveUrl, .mapsUrl, .lat, .lon, .address, .placeStatus,
-          .catalogue, .category, .score, .rank, .listed, .nameLocal, .phone, .openingHours, .sources} AS activity,
+          .catalogue, .category, .score, .rank, .listed, .nameLocal, .phone, .openingHours, .sources,
+          .enrichedAt, .enrichModel, .summary, .summaryAi, .aiLabel, .enrichTags, .durationMin, .bestTime, .indoor,
+          .priceLevel, .goodFor, .displayName, .genericName} AS activity,
        planned, votes, myVote, tags, commentCount
 ORDER BY stopId, votes DESC

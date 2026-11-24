@@ -10,7 +10,11 @@ SET a.title = row.title, a.catalogue = true, a.listed = true, a.unlistedAt = nul
     a.openingHours = row.openingHours, a.nameLocal = row.nameLocal, a.wikidataQid = row.wikidataQid,
     a.sources = row.sources, a.sourceKeys = row.sourceKeys, a.sourceIds = row.sourceIds,
     a.catalogueId = row.id, a.contentHash = row.contentHash, a.bundleDate = row.bundleDate, a.loadedAt = row.now,
-    a.placeStatus = 'placed', a.geoSource = 'catalogue', a.placedAt = row.now
+    a.placeStatus = 'placed', a.geoSource = 'catalogue', a.placedAt = row.now,
+    a.summary = row.summary, a.summaryAi = row.summaryAi, a.aiLabel = row.aiLabel, a.enrichTags = row.enrichTags,
+    a.durationMin = row.durationMin, a.bestTime = row.bestTime, a.indoor = row.indoor, a.priceLevel = row.priceLevel,
+    a.goodFor = row.goodFor, a.displayName = row.displayName, a.genericName = row.genericName,
+    a.enrichModel = row.enrichModel, a.enrichPromptVersion = row.enrichPromptVersion, a.enrichedAt = row.enrichedAt
 MERGE (a)-[:IN]->(c)
 MERGE (a)-[:FOR]->(t)
 WITH a, row

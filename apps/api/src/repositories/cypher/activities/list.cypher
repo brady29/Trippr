@@ -20,7 +20,9 @@ WITH a, c, k, votes, voters, myVote, tags, commentCount, count(s) AS planCount,
 WHERE ($activityId IS NOT NULL OR $ids IS NOT NULL OR coalesce(a.catalogue, false) = false
        OR voters > 0 OR commentCount > 0 OR planCount > 0)
 RETURN a {.id, .title, .when, .url, .costCad, .mapsQuery, .website, .ticketUrl, .reserveUrl, .mapsUrl, .lat, .lon, .address, .placeStatus,
-          .catalogue, .category, .score, .rank, .listed, .nameLocal, .phone, .openingHours, .sources} AS activity,
+          .catalogue, .category, .score, .rank, .listed, .nameLocal, .phone, .openingHours, .sources,
+          .enrichedAt, .enrichModel, .summary, .summaryAi, .aiLabel, .enrichTags, .durationMin, .bestTime, .indoor,
+          .priceLevel, .goodFor, .displayName, .genericName} AS activity,
        c.code AS cityCode, c.name AS cityName, k.iso AS countryIso,
        votes, myVote, tags, commentCount, plannedIn
 ORDER BY votes DESC, a.title

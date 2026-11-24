@@ -59,6 +59,26 @@ export interface PlaceRow {
   contentHash: string;
   bundleDate: string;
   now: string;
+  /**
+   * LLM enrichment. false = the bundle has none for this place: the graph's own is left as it is.
+   * Lists are null, not empty (an empty array is not stored as a property).
+   */
+  enriched: boolean;
+  summary: string | null;
+  /** The summary was written by a model; the app labels it. */
+  summaryAi: boolean;
+  aiLabel: string | null;
+  enrichTags: string[] | null;
+  durationMin: number | null;
+  bestTime: string | null;
+  indoor: boolean | null;
+  priceLevel: string | null;
+  goodFor: string[] | null;
+  displayName: string | null;
+  genericName: boolean;
+  enrichModel: string | null;
+  enrichPromptVersion: string | null;
+  enrichedAt: string | null;
 }
 
 export interface SourceRow {

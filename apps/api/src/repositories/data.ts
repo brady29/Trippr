@@ -44,7 +44,7 @@ export function dataRepository(db: GraphClient) {
       const [sources, loads, totals] = await Promise.all([
         db.query<SourceRow>(q("data/sources"), {}, read),
         db.query<LoadRow>(q("data/latest-load"), {}, read),
-        db.query<{ catalogue: unknown; listed: unknown; unlisted: unknown; handWritten: unknown }>(q("data/totals"), {}, read),
+        db.query<{ catalogue: unknown; listed: unknown; unlisted: unknown; handWritten: unknown; enriched: unknown }>(q("data/totals"), {}, read),
       ]);
       const views: DataSourceView[] = sources.map(({ source: s, activities }) => ({
         id: s.id,
@@ -63,10 +63,12 @@ export function dataRepository(db: GraphClient) {
         activities: num(activities),
       }));
       const row = loads[0]?.load;
-      const counts = parseJson<DataLoadView["counts"]>(row?.counts) ?? null;
+      // The enrichment section travels inside the stored counts JSON (older loads have none).
+      const stored = parseJson<DataLoadView["counts"] & { enrichment?: DataLoadView["enrichment"] }>(row?.counts) ?? null;
+      const { enrichment, ...counts } = stored ?? ({} as NonNullable<typeof stored>);
       const checks = parseJson<DataLoadView["checks"]>(row?.checks) ?? null;
       const latestLoad: DataLoadView | null =
-        row && counts && checks
+        row && stored && checks
           ? {
               bundleDate: row.bundleDate,
               loadedAt: row.loadedAt,
@@ -75,13 +77,14 @@ export function dataRepository(db: GraphClient) {
               counts,
               checks,
               evals: parseJson<Record<string, unknown>>(row.evals) ?? {},
+              enrichment: enrichment ?? null,
             }
           : null;
       const t = totals[0];
       return {
         sources: views,
         latestLoad,
-        totals: { catalogue: num(t?.catalogue), listed: num(t?.listed), unlisted: num(t?.unlisted), handWritten: num(t?.handWritten) },
+        totals: { catalogue: num(t?.catalogue), listed: num(t?.listed), unlisted: num(t?.unlisted), handWritten: num(t?.handWritten), enriched: num(t?.enriched) },
       };
     },
   };

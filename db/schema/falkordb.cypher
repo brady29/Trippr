@@ -50,3 +50,6 @@ CREATE INDEX FOR (n:FlightPrice) ON (n.routeKey);
 GRAPH.CONSTRAINT CREATE UNIQUE NODE DataSource PROPERTIES 1 id;
 GRAPH.CONSTRAINT CREATE UNIQUE NODE DataLoad PROPERTIES 1 id;
 CREATE INDEX FOR (n:Activity) ON (n.category);
+
+// LLM enrichment (data pipeline): the Activities page filters on these; summary, duration and the rest are plain properties.
+CREATE INDEX FOR (n:Activity) ON (n.bestTime);

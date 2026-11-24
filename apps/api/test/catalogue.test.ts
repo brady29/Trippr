@@ -1,9 +1,9 @@
-import type { ActivityFacets, ActivityPage, DataSourcesResponse, LibraryActivity, RouteView } from "@trippr/contracts";
+import type { ActivityFacets, ActivityPage, DataSourcesResponse, LibraryActivity, RouteView, StopLibrary } from "@trippr/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { localStore } from "../src/services/catalogue/bundle";
 import { runLoadJob } from "../src/services/catalogue/job";
 import { client, signIn, startHarness, type Harness } from "./harness";
-import { GOLDEN_BUNDLE_DIR, place, tempBundleRoot, writeBundle } from "./bundle-kit";
+import { GOLDEN_BUNDLE_DIR, enrichment, place, tempBundleRoot, writeBundle } from "./bundle-kit";
 
 // Run on both databases in CI (DB_DIALECT=falkordb | neo4j).
 
@@ -249,6 +249,148 @@ describe("the Data page's endpoint", () => {
     const demo = await client(h.app).post<{ token: string }>("/auth/demo");
     expect(demo.status).toBe(200);
     expect((await client(h.app, demo.body.token).get("/data/sources")).status).toBe(200);
+  });
+});
+
+describe("LLM enrichment", () => {
+  const root = tempBundleRoot();
+  const mk = (name: string, rank: number, over: Partial<ReturnType<typeof place>> = {}) =>
+    place({ name, city_code: "UKY", category: "temple_shrine", tag: "culture", score: 7, rank, ...over });
+  const shrine = mk("Enriched Shrine", 21); // indoor, evening, 45 min, $$
+  const garden = mk("Enriched Garden", 22, { category: "park_garden", tag: "nature" }); // outdoor, morning, 120 min, free
+  const hall = mk("Enriched Hall", 23); // good at any time, 30 min, indoor
+  const plain = mk("Plain Place", 24); // never enriched
+  const silent = mk("Silent Place", 25); // enriched, but the model had nothing it could support to say
+
+  const enrichmentV1 = [
+    enrichment(shrine, { summary: "A quiet hillside shrine.", duration_min: 45, best_time: "evening", indoor: true, price_level: "$$", good_for: ["rain"], tags: ["temple_shrine"], display_name: "Shrine of Quiet", is_generic_name: true }),
+    enrichment(garden, { summary: "A large garden with ponds.", duration_min: 120, best_time: "morning", indoor: false, price_level: "free", good_for: ["views", "families"] }),
+    enrichment(hall, { summary: "A hall for exhibitions.", duration_min: 30, best_time: "any", indoor: true, price_level: "$" }),
+    enrichment(silent, { summary: "", duration_min: null, best_time: null, indoor: null, price_level: null, good_for: [], tags: [] }),
+    enrichment(teamlab, { summary: "An art museum with water.", duration_min: 150, best_time: "afternoon", indoor: true, price_level: "$$$", ai_label: "Summary written by AI from Overture Maps" }),
+  ];
+  const places = [shrine, garden, hall, plain, silent, teamlab];
+  const run = (date: string) => runLoadJob({ dryRun: false, json: false, help: false, date }, { db: h.db, store: localStore(root), log: () => {} });
+  const ours = (items: LibraryActivity[]) => items.map((i) => i.title).sort();
+  const find = async (title: string) => (await page(`?q=${encodeURIComponent(title.toLowerCase())}&includeUnlisted=true`)).items.find((i) => i.title === title)!;
+
+  it("writes the enrichment onto catalogue places, and never over a hand-written activity's own text", async () => {
+    // The group's own note on the hand-written activity (not AI-written, so it must survive).
+    await h.db.query("MATCH (a:Activity {id: $id}) SET a.summary = $summary", { id: "act-teamlab", summary: "Booked for the first week, bring a towel." });
+    writeBundle(root, { date: "2026-12-01", places, enrichment: enrichmentV1, evals: { enrich: { model: "claude-haiku-5-5", judge_model: null, metrics: { n: 174, tag_f1: 0.8 }, targets: { tag_f1: true } } } });
+    const result = await run("2026-12-01");
+    expect(result.exitCode).toBe(0);
+    expect(result.summary).toMatchObject({ created: 5 });
+
+    const s = await find("Enriched Shrine");
+    expect(s.enrichment).toEqual({
+      tags: ["temple_shrine"],
+      summary: "A quiet hillside shrine.",
+      summaryAi: true,
+      aiLabel: "Summary written by AI from Overture Maps and Wikidata",
+      durationMin: 45,
+      bestTime: "evening",
+      indoor: true,
+      priceLevel: "$$",
+      goodFor: ["rain"],
+      displayName: "Shrine of Quiet",
+      isGenericName: true,
+      model: "claude-haiku-5-5",
+      enrichedAt: "2026-11-18T09:30:00Z",
+    });
+    expect(s.title).toBe("Enriched Shrine"); // the display name is a suggestion, never the title
+    expect((await find("Enriched Garden")).enrichment).toMatchObject({ indoor: false, priceLevel: "free", goodFor: ["views", "families"], isGenericName: false });
+    expect((await find("Plain Place")).enrichment).toBeUndefined();
+    // Nothing to say: the place is marked enriched, with no summary and no AI label.
+    expect((await find("Silent Place")).enrichment).toMatchObject({ summary: null, summaryAi: false, aiLabel: null, durationMin: null, bestTime: null, indoor: null, goodFor: [], tags: [] });
+
+    // The adopted hand-written activity: its own text stays; the empty fields are filled; the title is its own.
+    const mine = (await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.find((a) => a.id === "act-teamlab")!;
+    expect(mine.title).toBe("teamLab Planets");
+    expect(mine.enrichment).toMatchObject({ summary: "Booked for the first week, bring a towel.", summaryAi: false, aiLabel: null, durationMin: 150, bestTime: "afternoon", indoor: true, priceLevel: "$$$" });
+  });
+
+  it("shows the enrichment wherever an activity is read: the page, the detail after a vote, and a stop's library", async () => {
+    const id = shrine.id;
+    const voted = await owner.api.put<LibraryActivity>(`/activities/${id}/vote`, { value: 1 });
+    expect(voted.body.enrichment).toMatchObject({ summary: "A quiet hillside shrine.", summaryAi: true, bestTime: "evening" });
+    const list = (await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.find((a) => a.id === id);
+    expect(list?.enrichment?.summaryAi).toBe(true); // voted places join the group's own list
+    // The Tokyo stop's library carries the adopted hand-written activity with its enrichment.
+    const library = (await owner.api.get<StopLibrary[]>(`/routes/${MAIN}/library`)).body;
+    const fromLibrary = library.flatMap((s) => s.activities).find((a) => a.id === "act-teamlab");
+    expect(fromLibrary?.enrichment).toMatchObject({ durationMin: 150, bestTime: "afternoon" });
+  });
+
+  it("filters on best time, indoor, duration and price level, and combines them", async () => {
+    const q = (extra: string) => page(`?scope=catalogue&city=UKY&limit=100${extra}`).then((p) => ours(p.items));
+    // Evening: the evening place and the one that is good any time.
+    expect(await q("&bestTime=evening")).toEqual(["Enriched Hall", "Enriched Shrine"]);
+    expect(await q("&bestTime=morning")).toEqual(["Enriched Garden", "Enriched Hall"]);
+    expect(await q("&bestTime=night")).toEqual(["Enriched Hall"]);
+    expect(await q("&indoor=true")).toEqual(["Enriched Hall", "Enriched Shrine"]);
+    expect(await q("&indoor=false")).toEqual(["Enriched Garden"]); // places the model could not tell are left out
+    expect(await q("&durationMax=45")).toEqual(["Enriched Hall", "Enriched Shrine"]);
+    expect(await q("&durationMax=30")).toEqual(["Enriched Hall"]);
+    expect(await q("&priceLevel=free")).toEqual(["Enriched Garden"]);
+    expect(await q(`&priceLevel=${encodeURIComponent("$$")}`)).toEqual(["Enriched Shrine"]);
+    expect(await q("&bestTime=evening&indoor=true&durationMax=45")).toEqual(["Enriched Hall", "Enriched Shrine"]);
+    expect(await q("&bestTime=evening&indoor=false")).toEqual([]);
+    // The group's own list and unfiltered pages are unchanged by the filters being absent.
+    expect(await q("&q=enriched")).toHaveLength(3); // text search still works beside them
+    expect((await owner.api.get(`/trips/${TRIP}/activities/page?bestTime=dusk`)).status).toBe(400);
+    expect((await owner.api.get(`/trips/${TRIP}/activities/page?priceLevel=%24%24%24%24`)).status).toBe(400);
+  });
+
+  it("offers counts for the enrichment filters", async () => {
+    const f = (await owner.api.get<ActivityFacets>(`/trips/${TRIP}/activities/facets`)).body.enrichment;
+    // shrine, garden, hall, silent and the adopted teamLab are enriched; the plain place is not.
+    expect(f.enriched).toBe(5);
+    expect(f.indoor).toBe(3);
+    expect(f.outdoor).toBe(1);
+    expect(Object.fromEntries(f.bestTimes.map((b) => [b.name, b.count]))).toEqual({ morning: 1, afternoon: 1, evening: 1, night: 0, any: 1 });
+    expect(Object.fromEntries(f.priceLevels.map((b) => [b.name, b.count]))).toEqual({ free: 1, $: 1, $$: 1, $$$: 1 });
+    expect(Object.fromEntries(f.durations.map((d) => [d.max, d.count]))).toEqual({ 30: 1, 60: 2, 120: 3, 240: 4 });
+  });
+
+  it("is idempotent, and refreshes only the places whose enrichment changed", async () => {
+    const same = await run("2026-12-01");
+    expect(same.summary).toMatchObject({ created: 0, refreshed: 0, unchanged: 6, removed: 0 });
+
+    // A newer bundle: a new summary for the shrine and a new duration for teamLab's (adopted) activity.
+    const next = [{ ...enrichmentV1[0]!, summary: "A hillside shrine with a view." }, ...enrichmentV1.slice(1, 4), { ...enrichmentV1[4]!, duration_min: 90 }];
+    writeBundle(root, { date: "2026-12-02", places, enrichment: next });
+    const result = await run("2026-12-02");
+    expect(result.summary).toMatchObject({ created: 0, refreshed: 1 });
+    expect(result.summary!.adopted).toEqual([]); // teamLab was already matched; it is refreshed in place
+    expect((await find("Enriched Shrine")).enrichment?.summary).toBe("A hillside shrine with a view.");
+    const mine = (await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.find((a) => a.id === "act-teamlab")!;
+    expect(mine.enrichment).toMatchObject({ durationMin: 90, summary: "Booked for the first week, bring a towel.", summaryAi: false });
+  });
+
+  it("keeps what the graph already holds when a bundle comes without enrichment", async () => {
+    writeBundle(root, { date: "2026-12-03", places });
+    const result = await run("2026-12-03");
+    expect(result.exitCode).toBe(0);
+    expect((await find("Enriched Shrine")).enrichment).toMatchObject({ summary: "A hillside shrine with a view.", summaryAi: true, bestTime: "evening" });
+    expect((await page("?scope=catalogue&city=UKY&bestTime=evening")).items.map((i) => i.title)).toContain("Enriched Shrine");
+  });
+
+  it("tells the Data page what was enriched, by which model, and how it scored", async () => {
+    writeBundle(root, { date: "2026-12-04", places, enrichment: enrichmentV1, evals: { enrich: { model: "claude-haiku-5-5", judge_model: null, metrics: { n: 174, tag_f1: 0.8 }, targets: { tag_f1: true } } } });
+    await run("2026-12-04");
+    const data = (await client(h.app).get<DataSourcesResponse>("/data/sources")).body;
+    expect(data.latestLoad?.enrichment).toEqual({
+      places: 5,
+      withSummary: 4,
+      models: ["claude-haiku-5-5"],
+      promptVersions: ["enrich-v1"],
+      enrichedAt: "2026-11-18T09:30:00Z",
+      sourceDate: "2026-12-04",
+    });
+    expect(data.latestLoad?.evals).toMatchObject({ enrich: { model: "claude-haiku-5-5", metrics: { tag_f1: 0.8 } } });
+    expect(data.totals.enriched).toBe(5);
+    expect(data.latestLoad?.counts).not.toHaveProperty("enrichment");
   });
 });
 

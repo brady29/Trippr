@@ -4,9 +4,11 @@ import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import {
   BUNDLE_FILES,
+  bundleEnrichmentSchema,
   bundleManifestSchema,
   bundlePlaceSchema,
   bundleSourceInfoSchema,
+  type BundleEnrichment,
   type BundleManifest,
   type BundlePlace,
   type BundleSourceInfo,
@@ -84,6 +86,8 @@ export interface LoadedBundle {
   manifest: BundleManifest;
   places: BundlePlace[];
   sources: BundleSourceInfo[];
+  /** LLM enrichment by place id; empty when the bundle has none. */
+  enrichment: Map<string, BundleEnrichment>;
 }
 
 const sha256 = (data: Buffer) => createHash("sha256").update(data).digest("hex");
@@ -115,7 +119,31 @@ export async function readBundle(store: BundleStore, date: string): Promise<Load
   const known = new Set(sources.map((s) => s.id));
   const unknown = places.flatMap((p) => p.sources.map((s) => s.source)).filter((s) => !known.has(s));
   if (unknown.length) throw new Error(`places cite sources missing from sources.json: ${[...new Set(unknown)].join(", ")}`);
-  return { date, manifest, places, sources };
+  return { date, manifest, places, sources, enrichment: readEnrichment(files.get(BUNDLE_FILES.enrichment), manifest, places) };
+}
+
+/** The optional enrichment file, checked against the places and the manifest. Nothing here may be an unlabelled AI summary. */
+function readEnrichment(file: Buffer | undefined, manifest: BundleManifest, places: BundlePlace[]): Map<string, BundleEnrichment> {
+  const out = new Map<string, BundleEnrichment>();
+  if (!file) {
+    if (manifest.enrichment) throw new Error("the manifest describes enrichment, but the bundle has no enrichment file");
+    return out;
+  }
+  const ids = new Set(places.map((p) => p.id));
+  for (const line of gunzipSync(file).toString("utf8").split("\n")) {
+    if (!line.trim()) continue;
+    const item = bundleEnrichmentSchema.parse(JSON.parse(line));
+    if (!ids.has(item.id)) throw new Error(`enrichment for ${item.id}, which is not a place in the bundle`);
+    if (out.has(item.id)) throw new Error(`enrichment for ${item.id} appears twice`);
+    if (item.summary && !(item.ai && item.provenance.summary_ai && item.ai_label)) {
+      throw new Error(`${item.id} has a summary that is not marked as written by AI`);
+    }
+    out.set(item.id, item);
+  }
+  if (manifest.enrichment && manifest.enrichment.places !== out.size) {
+    throw new Error(`${out.size} enriched places, but the manifest says ${manifest.enrichment.places}`);
+  }
+  return out;
 }
 
 export interface BundleChoice {

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
-import type { BundleManifest, BundlePlace, BundleSourceInfo } from "@trippr/contracts";
+import type { BundleEnrichment, BundleManifest, BundlePlace, BundleSourceInfo } from "@trippr/contracts";
 
 /** The bundles folder the pipeline golden test commits: real Overture and Foursquare fixture rows for Tokyo and Osaka. */
 export const GOLDEN_BUNDLE_DIR = resolve(import.meta.dirname, "../../../pipelines/tests/fixtures/expected/bundle");
@@ -78,13 +78,39 @@ export function place(over: Partial<BundlePlace> & { name: string }): BundlePlac
   };
 }
 
+/** A valid enrichment line for a place; override anything. The summary is AI-written unless the override says otherwise. */
+export function enrichment(p: BundlePlace, over: Partial<Omit<BundleEnrichment, "provenance">> & { provenance?: Partial<BundleEnrichment["provenance"]> } = {}): BundleEnrichment {
+  const { provenance, ...rest } = over;
+  const summary = rest.summary ?? `${p.name} is worth a visit.`;
+  return {
+    id: p.id,
+    tags: [p.category],
+    summary,
+    duration_min: 60,
+    best_time: "morning",
+    indoor: false,
+    price_level: "$",
+    good_for: ["views"],
+    display_name: null,
+    is_generic_name: false,
+    ai: true,
+    ai_label: summary ? "Summary written by AI from Overture Maps and Wikidata" : null,
+    ...rest,
+    provenance: { summary_ai: Boolean(summary), model: "claude-haiku-5-5", prompt_version: "enrich-v1", enriched_at: "2026-11-18T09:30:00Z", batch_id: "msgbatch_test", input_sources: ["overture", "wikidata"], ...provenance },
+  };
+}
+
 export interface BundleOptions {
   date: string;
   places: BundlePlace[];
   passed?: boolean;
   sources?: BundleSourceInfo[];
+  /** LLM enrichment for some of the places (written as enrichment.jsonl.gz, with the manifest's enrichment section). */
+  enrichment?: BundleEnrichment[];
+  /** Scores for the manifest's evals.enrich. */
+  evals?: Record<string, unknown>;
   /** Corrupt a file after the manifest was written. */
-  corrupt?: "places" | "sources";
+  corrupt?: "places" | "sources" | "enrichment";
 }
 
 /** Write bundles/<date>/ the way the pipeline does (gzip JSON Lines, sources.json, manifest with checksums). */
@@ -102,6 +128,8 @@ export function writeBundle(root: string, options: BundleOptions): string {
     return out;
   };
   const sha = (b: Buffer) => createHash("sha256").update(b).digest("hex");
+  const enriched = options.enrichment;
+  const enrichmentFile = enriched ? gzipSync(Buffer.from(enriched.map((e) => JSON.stringify(e)).join("\n") + "\n", "utf8")) : undefined;
   const manifest: BundleManifest = {
     format: 1,
     bundle_date: options.date,
@@ -113,6 +141,7 @@ export function writeBundle(root: string, options: BundleOptions): string {
     files: [
       { name: "places.jsonl.gz", sha256: sha(placesFile), bytes: placesFile.length, rows: options.places.length },
       { name: "sources.json", sha256: sha(sourcesFile), bytes: sourcesFile.length, rows: sources.length },
+      ...(enrichmentFile && enriched ? [{ name: "enrichment.jsonl.gz", sha256: sha(enrichmentFile), bytes: enrichmentFile.length, rows: enriched.length }] : []),
     ],
     counts: {
       places: options.places.length,
@@ -131,8 +160,21 @@ export function writeBundle(root: string, options: BundleOptions): string {
         ...(options.passed === false ? [{ name: "duplicates.name_50m", status: "fail" as const, detail: "2 duplicate pairs", data: {} }] : []),
       ],
     },
-    evals: {},
+    evals: options.evals ?? {},
+    ...(enriched
+      ? {
+          enrichment: {
+            places: enriched.length,
+            with_summary: enriched.filter((e) => e.summary).length,
+            models: [...new Set(enriched.map((e) => e.provenance.model))].sort(),
+            prompt_versions: [...new Set(enriched.map((e) => e.provenance.prompt_version))].sort(),
+            enriched_at: enriched.map((e) => e.provenance.enriched_at).sort().at(-1) ?? null,
+            source_date: options.date,
+          },
+        }
+      : {}),
   };
+  if (enrichmentFile) writeFileSync(join(dir, "enrichment.jsonl.gz"), options.corrupt === "enrichment" ? Buffer.concat([enrichmentFile, Buffer.from("x")]) : enrichmentFile);
   writeFileSync(join(dir, "places.jsonl.gz"), options.corrupt === "places" ? Buffer.concat([placesFile, Buffer.from("x")]) : placesFile);
   writeFileSync(join(dir, "sources.json"), options.corrupt === "sources" ? Buffer.from("[]") : sourcesFile);
   writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2));

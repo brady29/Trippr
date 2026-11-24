@@ -1,11 +1,18 @@
-import type {
-  Activity,
-  ActivityFacets,
-  ActivityPage,
-  ActivityPageParams,
-  ActivitySource,
-  Comment,
-  LibraryActivity,
+import {
+  BEST_TIMES,
+  GOOD_FOR,
+  PRICE_LEVELS,
+  type Activity,
+  type ActivityEnrichment,
+  type ActivityFacets,
+  type ActivityPage,
+  type ActivityPageParams,
+  type ActivitySource,
+  type BestTime,
+  type Comment,
+  type GoodFor,
+  type LibraryActivity,
+  type PriceLevel,
 } from "@trippr/contracts";
 import { PLACE_STATUSES, type PlaceStatus, type When } from "@trippr/rules";
 import type { GraphClient } from "../db/graph";
@@ -40,7 +47,45 @@ export type ActivityNode = {
   openingHours?: string | null;
   /** JSON: [{ source, sourceId, licence }]. */
   sources?: unknown;
+  /** LLM enrichment (catalogue places the enrich stage covered). */
+  enrichedAt?: string | null;
+  enrichModel?: string | null;
+  summary?: string | null;
+  summaryAi?: boolean | null;
+  aiLabel?: string | null;
+  enrichTags?: string[] | null;
+  durationMin?: unknown;
+  bestTime?: string | null;
+  indoor?: boolean | null;
+  priceLevel?: string | null;
+  goodFor?: string[] | null;
+  displayName?: string | null;
+  genericName?: boolean | null;
 };
+
+/** The enrichment DTO, or nothing when the enrich stage never covered the place. */
+export function enrichmentFields(a: ActivityNode): { enrichment: ActivityEnrichment } | Record<string, never> {
+  if (a.enrichedAt == null) return {};
+  const summary = a.summary?.trim() ? a.summary : null;
+  return {
+    enrichment: {
+      tags: a.enrichTags ?? [],
+      summary,
+      // The AI flag only ever travels with a summary; a hand-written summary would have no flag.
+      summaryAi: summary != null && a.summaryAi === true,
+      aiLabel: summary != null && a.summaryAi === true ? (a.aiLabel ?? "Summary written by AI") : null,
+      durationMin: optNum(a.durationMin),
+      bestTime: BEST_TIMES.includes(a.bestTime as BestTime) ? (a.bestTime as BestTime) : null,
+      indoor: typeof a.indoor === "boolean" ? a.indoor : null,
+      priceLevel: PRICE_LEVELS.includes(a.priceLevel as PriceLevel) ? (a.priceLevel as PriceLevel) : null,
+      goodFor: (a.goodFor ?? []).filter((g): g is GoodFor => GOOD_FOR.includes(g as GoodFor)),
+      displayName: a.displayName ?? null,
+      isGenericName: a.genericName === true,
+      model: a.enrichModel ?? null,
+      enrichedAt: a.enrichedAt,
+    },
+  };
+}
 
 /** Fields shared by every activity DTO, from the stored node. */
 export function activityFields(a: ActivityNode) {
@@ -71,6 +116,7 @@ export function activityFields(a: ActivityNode) {
     ...(a.phone != null ? { phone: a.phone } : {}),
     ...(a.openingHours != null ? { openingHours: a.openingHours } : {}),
     ...(a.sources != null ? { sources: parseJson<ActivitySource[]>(a.sources) ?? [] } : {}),
+    ...enrichmentFields(a),
   } satisfies Partial<Activity>;
 }
 
@@ -130,6 +176,10 @@ export function activitiesRepository(db: GraphClient) {
         maxRank: query.maxRank ?? null,
         fixedDates: query.fixedDates,
         includeUnlisted: query.includeUnlisted,
+        bestTime: query.bestTime ?? null,
+        indoor: query.indoor ?? null,
+        durationMax: query.durationMax ?? null,
+        priceLevel: query.priceLevel ?? null,
         q: query.q ? query.q.toLowerCase() : null,
         sort: query.sort,
       },
@@ -151,7 +201,7 @@ export function activitiesRepository(db: GraphClient) {
 
   async function facets(tripId: string): Promise<ActivityFacets> {
     const params = { tripId };
-    const [cities, tags, categories, sources, totals] = await Promise.all([
+    const [cities, tags, categories, sources, totals, enrichment] = await Promise.all([
       db.query<{ code: string; name: string; n: unknown }>(q("activities/facet-cities"), params, read),
       db.query<{ name: string; n: unknown }>(q("activities/facet-tags"), params, read),
       db.query<{ name: string; n: unknown }>(q("activities/facet-categories"), params, read),
@@ -161,13 +211,28 @@ export function activitiesRepository(db: GraphClient) {
         params,
         read,
       ),
+      db.query<Record<string, unknown>>(q("activities/facet-enrichment"), params, read),
     ]);
     const t = totals[0];
+    const e = enrichment[0] ?? {};
     return {
       cities: cities.map((c) => ({ code: c.code, name: c.name, count: num(c.n) })),
       tags: tags.map((x) => ({ name: x.name, count: num(x.n) })),
       categories: categories.map((x) => ({ name: x.name, count: num(x.n) })),
       sources: sources.map((x) => ({ id: x.id, name: x.name, count: num(x.n) })),
+      enrichment: {
+        enriched: num(e.enriched),
+        bestTimes: BEST_TIMES.map((name) => ({ name, count: num(e[name === "any" ? "anyTime" : name]) })),
+        priceLevels: [
+          { name: "free" as const, count: num(e.free) },
+          { name: "$" as const, count: num(e.cheap) },
+          { name: "$$" as const, count: num(e.moderate) },
+          { name: "$$$" as const, count: num(e.expensive) },
+        ],
+        indoor: num(e.indoor),
+        outdoor: num(e.outdoor),
+        durations: [30, 60, 120, 240].map((max) => ({ max, count: num(e[`upTo${max}`]) })),
+      },
       totals: {
         ideas: num(t?.ideas),
         catalogue: num(t?.catalogue),

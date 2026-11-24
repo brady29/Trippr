@@ -5,7 +5,7 @@ import type { ExistingActivity } from "../src/repositories/catalogue";
 import { localStore, readBundle, selectBundle } from "../src/services/catalogue/bundle";
 import { parseArgs } from "../src/services/catalogue/job";
 import { planLoad } from "../src/services/catalogue/loader";
-import { GOLDEN_BUNDLE_DIR, place, tempBundleRoot, writeBundle } from "./bundle-kit";
+import { GOLDEN_BUNDLE_DIR, enrichment, place, tempBundleRoot, writeBundle } from "./bundle-kit";
 
 // No database: the bundle reader and the load plan. Runs without Docker
 // (pnpm --filter @trippr/api exec vitest run test/catalogue-unit.test.ts).
@@ -75,8 +75,84 @@ describe("reading bundles", () => {
   });
 });
 
+describe("reading enrichment", () => {
+  const sky = place({ name: "Sky" });
+  const tower = place({ name: "Tower" });
+  const bundleWith = (items: ReturnType<typeof enrichment>[], extra: Partial<Parameters<typeof writeBundle>[1]> = {}) => {
+    const root = tempBundleRoot();
+    writeBundle(root, { date: "2026-11-26", places: [sky, tower], enrichment: items, ...extra });
+    return localStore(root);
+  };
+
+  it("reads the golden bundle's enrichment and agrees with its manifest", async () => {
+    const bundle = await readBundle(localStore(GOLDEN_BUNDLE_DIR), "2026-11-18");
+    expect(bundle.enrichment.size).toBe(bundle.manifest.enrichment?.places);
+    expect(bundle.enrichment.size).toBeGreaterThan(0);
+    for (const e of bundle.enrichment.values()) if (e.summary) expect(e.provenance.summary_ai).toBe(true);
+  });
+
+  it("joins enrichment to places by id, and a bundle without any still loads", async () => {
+    const bundle = await readBundle(bundleWith([enrichment(sky)]), "2026-11-26");
+    expect([...bundle.enrichment.keys()]).toEqual([sky.id]);
+    const plain = tempBundleRoot();
+    writeBundle(plain, { date: "2026-11-26", places: [sky] });
+    expect((await readBundle(localStore(plain), "2026-11-26")).enrichment.size).toBe(0);
+  });
+
+  it("refuses enrichment for an unknown place, a duplicate, an unlabelled AI summary and a changed file", async () => {
+    const stray = enrichment(place({ name: "Elsewhere" }));
+    await expect(readBundle(bundleWith([stray]), "2026-11-26")).rejects.toThrow(/not a place in the bundle/);
+    await expect(readBundle(bundleWith([enrichment(sky), enrichment(sky)]), "2026-11-26")).rejects.toThrow(/twice/);
+    const unlabelled = enrichment(sky, { provenance: { summary_ai: false } });
+    await expect(readBundle(bundleWith([unlabelled]), "2026-11-26")).rejects.toThrow(/not marked as written by AI/);
+    await expect(readBundle(bundleWith([enrichment(sky)], { corrupt: "enrichment" }), "2026-11-26")).rejects.toThrow(/checksum/);
+  });
+
+  it("allows a place the model had nothing to say about (no summary, no label)", async () => {
+    const quiet = enrichment(sky, { summary: "", duration_min: null, best_time: null, indoor: null, price_level: null, good_for: [] });
+    expect(quiet.ai_label).toBeNull();
+    expect((await readBundle(bundleWith([quiet]), "2026-11-26")).enrichment.get(sky.id)?.summary).toBe("");
+  });
+});
+
 describe("planning a load", () => {
   const now = "2026-11-26T00:00:00Z";
+
+  it("puts enrichment on the row, nulls for empty lists, and changes the hash only when there is enrichment", async () => {
+    const sky = place({ name: "Sky" });
+    const tower = place({ name: "Tower" });
+    const root = tempBundleRoot();
+    writeBundle(root, { date: "2026-11-26", places: [sky, tower], enrichment: [enrichment(sky, { good_for: [], display_name: "Sky Deck", is_generic_name: true })] });
+    const plain = tempBundleRoot();
+    writeBundle(plain, { date: "2026-11-26", places: [sky, tower] });
+    const withE = planLoad([], await readBundle(localStore(root), "2026-11-26"), now);
+    const without = planLoad([], await readBundle(localStore(plain), "2026-11-26"), now);
+    const a = withE.create.find((r) => r.id === sky.id)!;
+    expect(a).toMatchObject({
+      enriched: true, summary: "Sky is worth a visit.", summaryAi: true, aiLabel: expect.stringMatching(/^Summary written by AI/),
+      durationMin: 60, bestTime: "morning", indoor: false, priceLevel: "$", goodFor: null, enrichTags: ["museum"],
+      displayName: "Sky Deck", genericName: true, enrichModel: "claude-haiku-5-5", enrichedAt: "2026-11-18T09:30:00Z",
+    });
+    expect(withE.create.find((r) => r.id === tower.id)).toMatchObject({ enriched: false, summary: null, summaryAi: false, aiLabel: null });
+    expect(a.contentHash).not.toBe(without.create.find((r) => r.id === sky.id)!.contentHash);
+    // The place with no enrichment keeps the hash it had before enrichment existed.
+    expect(withE.create.find((r) => r.id === tower.id)!.contentHash).toBe(without.create.find((r) => r.id === tower.id)!.contentHash);
+  });
+
+  it("refreshes a loaded place when its enrichment arrives, then leaves it alone", async () => {
+    const sky = place({ name: "Sky" });
+    const first = await readBundle(bundleOf("2026-11-26", [sky]).store, "2026-11-26");
+    const loaded = planLoad([], first, now).create.map((r) => existing({ id: r.id, catalogue: true, catalogueId: r.id, sourceKeys: r.sourceKeys, contentHash: r.contentHash }));
+    const root = tempBundleRoot();
+    writeBundle(root, { date: "2026-11-27", places: [sky], enrichment: [enrichment(sky)] });
+    const second = await readBundle(localStore(root), "2026-11-27");
+    const plan = planLoad(loaded, second, now);
+    expect(plan.refresh).toHaveLength(1);
+    expect(plan.refresh[0]).toMatchObject({ enriched: true, summaryAi: true });
+    const again = planLoad(loaded.map((a) => ({ ...a, contentHash: plan.refresh[0]!.contentHash })), second, now);
+    expect(again.unchanged).toBe(1);
+    expect(again.refresh).toHaveLength(0);
+  });
 
   it("creates new places as ideas and records nothing else on a first load", async () => {
     const { store } = bundleOf("2026-11-26", [place({ name: "Sky" }), place({ name: "Tower", city_code: "OSA" })]);
