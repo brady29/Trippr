@@ -26,13 +26,13 @@ import duckdb
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .duck import connect, rows, run, scalar, sql_str
-from .golden import GOLDEN_COLUMNS, source_priority_sql
+from .duck import connect, rows, run, sql_str
+from .golden import GOLDEN_COLUMNS, from_matched, source_priority_sql
 from .layout import (
     curate_stats_file,
     curated_file,
     golden_file,
-    latest_golden_date,
+    latest_matched_date,
     latest_staging_date,
     read_json,
     staged_file,
@@ -319,14 +319,8 @@ def load_golden(
     """Create the `golden` table from the match output, or (no match output) from staged rows."""
     gfile = golden_file(out, date)
     if source in ("auto", "golden") and gfile.is_file():
-        run(con, f"CREATE TABLE golden AS SELECT * FROM read_parquet({sql_str(gfile.as_posix())})")
-        actual = {r["column_name"] for r in rows(con, "DESCRIBE golden")}
-        if actual != set(GOLDEN_COLUMNS):
-            raise ValueError(
-                f"{gfile} does not match the golden_place schema: missing {sorted(set(GOLDEN_COLUMNS) - actual)}, "
-                f"unexpected {sorted(actual - set(GOLDEN_COLUMNS))}"
-            )
-        return "golden", {"golden_rows": scalar(con, "SELECT count(*) FROM golden")}
+        staged = [staged_file(out, date, s).as_posix() for s in staged_sources(out, date)]
+        return "golden", {"golden_rows": from_matched(con, gfile.as_posix(), staged)}
     if source == "golden":
         raise FileNotFoundError(f"No golden records for {date} ({gfile}); run the match stage first")
     sources = staged_sources(out, date)
@@ -447,4 +441,4 @@ def curate(
 
 def default_date(out: Path) -> str | None:
     """The run to curate when --date is not given: the newest golden date, else the newest staging date."""
-    return latest_golden_date(out) or latest_staging_date(out)
+    return latest_matched_date(out) or latest_staging_date(out)

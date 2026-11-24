@@ -1,6 +1,6 @@
 """A stand-in for the match stage: golden records straight from staged rows.
 
-Used by curate only when there is no `golden/<date>/golden_place.parquet`. Every staged row becomes its own
+Used by curate only when there is no `matched/<date>/golden.parquet`. Every staged row becomes its own
 golden record, except that a pair of rows from two different sources with the same name (case-folded) within
 PROVISIONAL_RADIUS_M of each other, each the other's nearest such row, is merged into one. That is far weaker
 than entity resolution (no scripts, no scoring, no QIDs) but it stops the same cafe from Overture and
@@ -16,8 +16,7 @@ from typing import Any
 import duckdb
 
 from .duck import run, scalar, sql_str
-from .golden import GOLDEN_COLUMNS, GOLDEN_SOURCE_TYPE, source_priority_sql
-from .schema import SIGNALS_TYPE
+from .golden import GOLDEN_COLUMNS, GOLDEN_SIGNALS_TYPE, GOLDEN_SOURCE_TYPE, source_priority_sql
 
 PROVISIONAL_RADIUS_M = 75.0
 SAME_SOURCE_RADIUS_M = 50.0
@@ -97,12 +96,10 @@ def build_provisional_golden(
                    NULL,
                    CAST({{
                      'confidence': greatest(l.signals.confidence, o.signals.confidence),
-                     'providers': list_distinct(list_concat(
-                         coalesce(l.signals.providers, []), coalesce(o.signals.providers, []))),
-                     'brand_wikidata': coalesce(l.signals.brand_wikidata, o.signals.brand_wikidata),
                      'wikidata_sitelinks': greatest(l.signals.wikidata_sitelinks, o.signals.wikidata_sitelinks),
-                     'wikivoyage_listed': coalesce(l.signals.wikivoyage_listed, o.signals.wikivoyage_listed)
-                   }} AS {SIGNALS_TYPE}),
+                     'wikivoyage_listed': coalesce(l.signals.wikivoyage_listed, o.signals.wikivoyage_listed),
+                     'brand_wikidata': coalesce(l.signals.brand_wikidata, o.signals.brand_wikidata)
+                   }} AS {GOLDEN_SIGNALS_TYPE}),
                    [{src("l")}, {src("o")}]
             FROM pair p JOIN st l ON l.rid = p.lead_rid JOIN st o ON o.rid = p.other_rid""",
     )
@@ -112,7 +109,10 @@ def build_provisional_golden(
             SELECT 'g-' || substr(sha256(s.source || ':' || s.source_id), 1, 16),
                    s.name, s.name_local, s.name_en, s.category, s.lat, s.lon, s.city_code,
                    s.address, s.website, s.phone, s.opening_hours, s.wikidata_qid, NULL,
-                   s.signals, [{src("s")}]
+                   CAST({{'confidence': s.signals.confidence, 'wikidata_sitelinks': s.signals.wikidata_sitelinks,
+                          'wikivoyage_listed': s.signals.wikivoyage_listed,
+                          'brand_wikidata': s.signals.brand_wikidata}} AS {GOLDEN_SIGNALS_TYPE}),
+                   [{src("s")}]
             FROM st s
             WHERE s.rid NOT IN (SELECT lead_rid FROM pair UNION ALL SELECT other_rid FROM pair)""",
     )

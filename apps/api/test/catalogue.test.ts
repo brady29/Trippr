@@ -255,6 +255,6 @@ describe("the bundle the pipeline's golden test writes", () => {
     const again = await runLoadJob({ dryRun: false, json: false, help: false }, { db: h.db, store: localStore(GOLDEN_BUNDLE_DIR), log: () => {} });
     expect(again.summary).toMatchObject({ created: 0, refreshed: 0, unlisted: 0, removed: 0 });
     const data = (await client(h.app).get<DataSourcesResponse>("/data/sources")).body;
-    expect(data.latestLoad).toMatchObject({ bundleDate: "2026-11-18", input: "staged" });
+    expect(data.latestLoad).toMatchObject({ bundleDate: "2026-11-18", input: "golden" });
   });
 });

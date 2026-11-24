@@ -40,6 +40,7 @@ from trippr_data.checks import check
 from trippr_data.cities import load_cities, load_countries
 from trippr_data.curation import curate, load_curation_config
 from trippr_data.layout import bundle_dir
+from trippr_data.match import match
 from trippr_data.taxonomy import load_taxonomy
 
 from .conftest import FIXTURE_DATE, FIXTURES
@@ -54,10 +55,17 @@ def golden_config():
     return cfg
 
 
-@pytest.fixture()
-def built(staged_out: Path, tmp_path: Path, registry):
+def matched_copy(staged_out: Path, tmp_path: Path, registry) -> Path:
+    """The staged fixtures with the match stage run on them, as in a real run."""
     out = tmp_path / "out"
     shutil.copytree(staged_out, out)
+    match(out, FIXTURE_DATE, registry=registry)
+    return out
+
+
+@pytest.fixture()
+def built(staged_out: Path, tmp_path: Path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
     check(out, FIXTURE_DATE, registry=registry, baseline=None)
     cfg = golden_config()
     curate(out, FIXTURE_DATE, config=cfg)
@@ -71,7 +79,7 @@ def test_bundle_files_and_manifest(built):
     _, path, manifest = built
     assert sorted(p.name for p in path.iterdir()) == [MANIFEST_FILE, PLACES_FILE, SOURCES_FILE]
     assert manifest.checks.passed, [r for r in manifest.checks.results if r.status == "fail"]
-    assert manifest.input == "staged" and manifest.format == 1
+    assert manifest.input == "golden" and manifest.format == 1
     assert (
         manifest.counts.places == sum(manifest.counts.by_city.values()) == 80 or manifest.counts.places <= 80
     )
@@ -93,17 +101,18 @@ def test_places_round_trip_with_provenance(built):
     for p in places:
         assert p.id.startswith("cat-") and p.rank >= 1 and p.sources
         assert all(s.source_id and s.licence and s.fetched_at.endswith("Z") for s in p.sources)
-    assert {s.source for p in places for s in p.sources} == {"overture", "foursquare"}
+    assert {"overture", "foursquare"} <= {s.source for p in places for s in p.sources}
 
 
 def test_sources_json_has_licences_and_attribution(built):
     _, path, manifest = built
     sources = json.loads((path / SOURCES_FILE).read_text(encoding="utf-8"))
     by_id = {s["id"]: s for s in sources}
-    assert set(by_id) == {"overture", "foursquare"}
+    assert {"overture", "foursquare"} <= set(by_id)
     for s in sources:
         assert s["licence"] and s["attribution"] and s["licence_urls"] and s["terms_checked_on"]
-        assert s["places"] == manifest.counts.by_source[s["id"]]
+        assert s["places"] == manifest.counts.by_source.get(s["id"], 0)
+    for s in (by_id["overture"], by_id["foursquare"]):
         assert s["staged_rows"] and s["version"] and s["fetched_at"]
 
 
@@ -117,8 +126,7 @@ def test_verify_detects_a_changed_file(built):
 
 
 def test_a_failed_check_is_written_to_the_manifest(staged_out, tmp_path, registry):
-    out = tmp_path / "out"
-    shutil.copytree(staged_out, out)
+    out = matched_copy(staged_out, tmp_path, registry)
     curate(out, FIXTURE_DATE, config=golden_config())
     strict = golden_config()  # the bundle is judged against a mix limit the curated places break
     strict.mix.tag_max_share = {"culture": 0.05}
@@ -133,8 +141,7 @@ def test_a_failed_check_is_written_to_the_manifest(staged_out, tmp_path, registr
 
 
 def test_missing_staging_checks_only_warn(staged_out, tmp_path, registry):
-    out = tmp_path / "out"
-    shutil.copytree(staged_out, out)
+    out = matched_copy(staged_out, tmp_path, registry)
     curate(out, FIXTURE_DATE, config=golden_config())
     _, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=golden_config())
     status = {r.name: r.status for r in manifest.checks.results}

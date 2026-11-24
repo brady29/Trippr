@@ -21,7 +21,7 @@
     "version": "2026-11-18.0",
     "fetched_at": "2026-11-18T00:00:00Z",
     "staged_rows": 138,
-    "places": 80
+    "places": 59
   },
   {
     "id": "foursquare",
@@ -43,6 +43,75 @@
     "version": "fixture",
     "fetched_at": "2026-11-18T00:00:00Z",
     "staged_rows": 10,
-    "places": 10
+    "places": 9
+  },
+  {
+    "id": "osm",
+    "name": "OpenStreetMap",
+    "url": "https://www.openstreetmap.org/",
+    "licence": "ODbL-1.0",
+    "licence_detail": "Open Database Licence 1.0. Attribution to OpenStreetMap and its contributors is required, and a database derived from OSM data and made public must be offered under the ODbL (share-alike).",
+    "licence_urls": [
+      "https://opendatacommons.org/licenses/odbl/1-0/",
+      "https://www.openstreetmap.org/copyright"
+    ],
+    "attribution": "© OpenStreetMap contributors, available under the Open Database Licence (https://www.openstreetmap.org/copyright).",
+    "terms_checked_on": "2026-11-22",
+    "allowed_uses": [
+      "Read, transform and combine with other data; OSM-derived fields stay traceable through sources[]",
+      "Show places and derived fields in the app with the attribution above and a link to the copyright page",
+      "Keep raw and staged copies in our own bucket (not published as a dataset; if a database derived from OSM is ever published it must be ODbL)"
+    ],
+    "enabled": true,
+    "version": "overpass-fixture",
+    "fetched_at": "2026-11-18T00:00:00Z",
+    "staged_rows": 17,
+    "places": 6
+  },
+  {
+    "id": "wikidata",
+    "name": "Wikidata",
+    "url": "https://www.wikidata.org/",
+    "licence": "CC0-1.0",
+    "licence_detail": "Wikidata's structured data is released under CC0 1.0 (public domain dedication).",
+    "licence_urls": [
+      "https://creativecommons.org/publicdomain/zero/1.0/",
+      "https://www.wikidata.org/wiki/Wikidata:Licensing"
+    ],
+    "attribution": "Wikidata (wikidata.org), structured data under CC0 1.0. No attribution is required; we give it anyway.",
+    "terms_checked_on": "2026-11-22",
+    "allowed_uses": [
+      "Read, transform and combine with other data (CC0, no conditions)",
+      "Show labels, descriptions, links and sitelink counts in the app",
+      "Keep raw and staged copies in our own bucket"
+    ],
+    "enabled": true,
+    "version": "wdqs-fixture",
+    "fetched_at": "2026-11-18T00:00:00Z",
+    "staged_rows": 36,
+    "places": 21
+  },
+  {
+    "id": "wikivoyage",
+    "name": "Wikivoyage",
+    "url": "https://en.wikivoyage.org/",
+    "licence": "CC-BY-SA-4.0",
+    "licence_detail": "Wikivoyage text is CC BY-SA 4.0 (some older text is also GFDL). Reusers must attribute Wikivoyage and its contributors, link to the licence, and release derived text under the same licence.",
+    "licence_urls": [
+      "https://creativecommons.org/licenses/by-sa/4.0/",
+      "https://en.wikivoyage.org/wiki/Wikivoyage:Copyleft"
+    ],
+    "attribution": "Text from Wikivoyage (en.wikivoyage.org) by its contributors, licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).",
+    "terms_checked_on": "2026-11-22",
+    "allowed_uses": [
+      "Read and parse the dump; use listing facts (names, coordinates, websites, QIDs) like any open fact",
+      "Quote listing text (`content`) only with the attribution above, flagged as CC BY-SA in the data",
+      "Text-derived output (including AI summaries) is a derivative and stays CC BY-SA with attribution"
+    ],
+    "enabled": true,
+    "version": "enwikivoyage-fixture",
+    "fetched_at": "2026-11-18T00:00:00Z",
+    "staged_rows": 18,
+    "places": 17
   }
 ]

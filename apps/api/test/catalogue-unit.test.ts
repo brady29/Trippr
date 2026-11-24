@@ -42,7 +42,7 @@ describe("reading bundles", () => {
     const bundle = await readBundle(localStore(GOLDEN_BUNDLE_DIR), "2026-11-18");
     expect(bundle.places.length).toBe(bundle.manifest.counts.places);
     expect(bundle.places.length).toBeGreaterThan(20);
-    expect(bundle.sources.map((s) => s.id).sort()).toEqual(["foursquare", "overture"]);
+    expect(bundle.sources.map((s) => s.id)).toEqual(expect.arrayContaining(["foursquare", "overture"]));
   });
 
   it("takes the newest bundle whose checks passed and says why it skipped the others", async () => {

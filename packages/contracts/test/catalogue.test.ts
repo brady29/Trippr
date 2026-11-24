@@ -20,7 +20,7 @@ describe("the seed bundle contract", () => {
   it("parses the manifest, the places and the sources the pipeline wrote", () => {
     expect(manifest.checks.passed).toBe(true);
     expect(places.length).toBe(manifest.counts.places);
-    expect(sources.map((s) => s.id).sort()).toEqual(["foursquare", "overture"]);
+    expect(sources.map((s) => s.id)).toEqual(expect.arrayContaining(["foursquare", "overture"]));
   });
 
   it("keeps provenance on every place", () => {

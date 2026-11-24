@@ -4,7 +4,7 @@
   "run_date": "2026-11-18",
   "created_at": "2026-11-18T12:00:00Z",
   "pipeline_version": "0.1.0",
-  "input": "staged",
+  "input": "golden",
   "settings": {
     "budget": {
       "total": 80,
@@ -32,47 +32,44 @@
   "files": [
     {
       "name": "places.jsonl.gz",
-      "sha256": "e25517eaadb46a0fc5444d342b0e4ff78702027b644deb754a2ad87d28a23857",
-      "bytes": 12788,
+      "sha256": "2fdfb393ce66831eaca46c62b4e00c9f6359d389eef2b0cb670995b5b09effcf",
+      "bytes": 13461,
       "rows": 80
     },
     {
       "name": "sources.json",
-      "sha256": "99bc21b88b20e8e206b2b2108e8ba5a8d1df72983cdd4dcf1a84907fc74e2cbb",
-      "bytes": 2329,
-      "rows": 2
+      "sha256": "2d8ef3ab3aa716516081cee5bff3591828c5632feffab8e10dfb1a48aa7d404c",
+      "bytes": 5589,
+      "rows": 5
     }
   ],
   "counts": {
     "places": 80,
     "cities": 2,
     "by_city": {
-      "OSA": 27,
-      "TYO": 53
+      "OSA": 26,
+      "TYO": 54
     },
     "by_category": {
-      "aquarium_zoo": 8,
+      "aquarium_zoo": 5,
       "arcade_gaming": 2,
-      "bar": 4,
+      "bar": 2,
       "cafe": 3,
-      "castle_palace": 4,
+      "castle_palace": 1,
       "electronics": 1,
-      "gallery": 2,
       "hike": 5,
-      "historic_site": 6,
+      "landmark": 9,
       "market": 4,
-      "monument": 1,
-      "museum": 7,
+      "museum": 6,
       "nature_spot": 1,
       "nightlife": 2,
-      "onsen_spa": 5,
-      "park_garden": 5,
-      "performance": 1,
-      "restaurant": 4,
+      "onsen_spa": 4,
+      "park_garden": 8,
+      "restaurant": 6,
       "sports_venue": 3,
-      "temple_shrine": 8,
+      "temple_shrine": 13,
       "theme_park": 2,
-      "tour": 2
+      "tour": 3
     },
     "by_tag": {
       "culture": 29,
@@ -83,8 +80,11 @@
       "tech": 3
     },
     "by_source": {
-      "foursquare": 10,
-      "overture": 80
+      "foursquare": 9,
+      "osm": 6,
+      "overture": 59,
+      "wikidata": 21,
+      "wikivoyage": 17
     },
     "with_licence": 80,
     "with_sources": 80
@@ -119,7 +119,7 @@
       {
         "name": "categories.in_taxonomy",
         "status": "pass",
-        "detail": "22 taxonomy categories in use",
+        "detail": "19 taxonomy categories in use",
         "data": {}
       },
       {
@@ -191,13 +191,13 @@
       {
         "name": "staging.null_rates.optional",
         "status": "info",
-        "detail": "null share: foursquare: name_local 0%, name_en 100%, address 0%, website 0%, phone 10%; overture: name_local 9%, name_en 86%, address 0%, website 45%, phone 30%",
+        "detail": "null share: foursquare: name_local 0%, name_en 100%, address 0%, website 0%, phone 10%; osm: name_local 12%, name_en 71%, address 94%, website 94%, phone 100%; overture: name_local 9%, name_en 86%, address 0%, website 45%, phone 30%; wikidata: name_local 3%, name_en 33%, address 100%, website 83%, phone 100%; wikivoyage: name_local 28%, name_en 33%, address 67%, website 44%, phone 67%",
         "data": {}
       },
       {
         "name": "staging.coordinates.city_radius",
         "status": "pass",
-        "detail": "all 148 rows inside their city's radius",
+        "detail": "all 219 rows inside their city's radius",
         "data": {}
       },
       {
@@ -215,7 +215,7 @@
       {
         "name": "staging.licence.registered",
         "status": "pass",
-        "detail": "licences in use: Apache-2.0, CC0-1.0, CDLA-Permissive-2.0",
+        "detail": "licences in use: Apache-2.0, CC-BY-SA-4.0, CC0-1.0, CDLA-Permissive-2.0, ODbL-1.0",
         "data": {}
       },
       {
@@ -227,7 +227,37 @@
       {
         "name": "staging.categories.in_taxonomy",
         "status": "pass",
-        "detail": "25 taxonomy categories in use",
+        "detail": "26 taxonomy categories in use",
+        "data": {}
+      },
+      {
+        "name": "staging.match.cluster_spread",
+        "status": "pass",
+        "detail": "no cluster wider than 500 m",
+        "data": {}
+      },
+      {
+        "name": "staging.match.links",
+        "status": "pass",
+        "detail": "every link points at an existing record and cluster",
+        "data": {}
+      },
+      {
+        "name": "staging.match.golden_licences",
+        "status": "pass",
+        "detail": "every golden record lists its sources and licences (Apache-2.0, CC-BY-SA-4.0, CC0-1.0, CDLA-Permissive-2.0, ODbL-1.0)",
+        "data": {}
+      },
+      {
+        "name": "staging.match.duplicate_golden",
+        "status": "pass",
+        "detail": "0 golden records (0.00%) have another golden record within 50 m with the same name (limit 0.5%)",
+        "data": {}
+      },
+      {
+        "name": "staging.match.eval",
+        "status": "info",
+        "detail": "no entity-resolution eval for this run",
         "data": {}
       }
     ]

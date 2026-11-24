@@ -19,10 +19,8 @@ from trippr_data.curation import (
     select_city,
 )
 from trippr_data.duck import connect, run
-from trippr_data.golden import GOLDEN_COLUMNS, GOLDEN_SOURCE_TYPE
 from trippr_data.layout import curated_file, golden_file
 from trippr_data.provisional import build_provisional_golden
-from trippr_data.schema import SIGNALS_TYPE
 from trippr_data.settings import SEED_DIR
 from trippr_data.taxonomy import load_taxonomy
 
@@ -161,8 +159,12 @@ def test_selection_is_best_first_and_stable():
 
 @pytest.fixture()
 def out(staged_out: Path, tmp_path: Path) -> Path:
+    """Staging with only Overture and Foursquare, so there is nothing for the match stage to work on."""
     target = tmp_path / "out"
     shutil.copytree(staged_out, target)
+    for source in ("osm", "wikidata", "wikivoyage"):
+        for extra in (target / "staging" / FIXTURE_DATE).glob(f"{source}.*"):
+            extra.unlink()
     return target
 
 
@@ -198,10 +200,9 @@ def test_the_same_place_from_two_sources_becomes_one_golden_record(out):
     curate(out, FIXTURE_DATE, config=small_config(total=400, floor=100, cap=300))
     places = read(out)
     merged = [p for p in places if len(p["sources"]) > 1]
-    assert merged, "the fixtures have cafes and shrines that both Overture and Foursquare list"
+    assert merged, "the fixtures have cafes and shrines that two sources list"
     for p in merged:
-        assert {s["source"] for s in p["sources"]} == {"overture", "foursquare"}
-        assert p["n_sources"] == 2
+        assert len({s["source"] for s in p["sources"]}) == p["n_sources"] >= 2
     # One record for the cafe, not two.
     names = Counter(p["name"] for p in places if p["city_code"] == "TYO")
     assert names["マウナケア"] == 1
@@ -225,35 +226,39 @@ def test_a_small_budget_keeps_the_best_places(out):
 # --- golden records from the match stage --------------------------------------------------------
 
 
+MATCHED_SOURCE_TYPE = (
+    "STRUCT(source VARCHAR, source_id VARCHAR, licence VARCHAR, raw_ref VARCHAR, "
+    "fetched_at TIMESTAMP WITH TIME ZONE, link_rule VARCHAR)"
+)
+
+
 def write_golden(out: Path, records: list[dict]) -> None:
+    """A golden.parquet shaped like the match stage's (the columns curate reads, plus a few it ignores)."""
     con = duckdb.connect()
-    columns = ", ".join(f"{n} {t}" for n, t in GOLDEN_COLUMNS.items())
-    run(con, f"CREATE TABLE g ({columns})")
+    run(
+        con,
+        f"""CREATE TABLE g (golden_id VARCHAR, city_code VARCHAR, name VARCHAR, name_en VARCHAR, name_local VARCHAR,
+            category VARCHAR, lat DOUBLE, lon DOUBLE, address VARCHAR, website VARCHAR, phone VARCHAR,
+            opening_hours VARCHAR, wikidata_qid VARCHAR, description VARCHAR, wikidata_sitelinks INTEGER,
+            wikivoyage_listed BOOLEAN, confidence DOUBLE, n_sources INTEGER, sources {MATCHED_SOURCE_TYPE}[])""",
+    )
     for r in records:
         con.execute(
-            f"INSERT INTO g VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS {SIGNALS_TYPE}), CAST(? AS {GOLDEN_SOURCE_TYPE}[]))",
+            "INSERT INTO g VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, NULL, ?, NULL, NULL, ?, NULL, ?, ?, ?, ?, "
+            f"CAST(? AS {MATCHED_SOURCE_TYPE}[]))",
             [
                 r["golden_id"],
+                r["city_code"],
                 r["name"],
-                None,
-                None,
                 r["category"],
                 r["lat"],
                 r["lon"],
-                r["city_code"],
-                None,
                 r.get("website"),
-                None,
-                None,
                 r.get("qid"),
-                None,
-                {
-                    "confidence": r.get("confidence"),
-                    "providers": None,
-                    "brand_wikidata": r.get("brand"),
-                    "wikidata_sitelinks": r.get("sitelinks"),
-                    "wikivoyage_listed": r.get("voyage"),
-                },
+                r.get("sitelinks"),
+                r.get("voyage"),
+                r.get("confidence"),
+                len(r["sources"]),
                 [
                     {
                         "source": s,
@@ -261,6 +266,7 @@ def write_golden(out: Path, records: list[dict]) -> None:
                         "licence": "CC0-1.0",
                         "fetched_at": "2026-11-18T00:00:00+00:00",
                         "raw_ref": f"raw/{s}/x.parquet",
+                        "link_rule": "x",
                     }
                     for s in r["sources"]
                 ],
@@ -325,7 +331,7 @@ def test_curate_ranks_golden_records(tmp_path):
     result = curate(out, FIXTURE_DATE, config=small_config(total=10, floor=1, cap=10))
     assert result.input == "golden"
     places = read(out)
-    assert [p["name"] for p in places] == ["Tokyo Tower", "Quiet Viewpoint", "Cheap Diner", "Chain Coffee"]
+    assert [p["name"] for p in places] == ["Tokyo Tower", "Quiet Viewpoint", "Chain Coffee", "Cheap Diner"]
     assert "Dubious Place" not in {p["name"] for p in places}  # confidence below the minimum
     # A place with a Wikidata QID gets an id built from it, so it stays the same if its sources change.
     tower = places[0]
@@ -344,7 +350,7 @@ def test_golden_input_must_match_the_schema(tmp_path):
     path.parent.mkdir(parents=True)
     con = duckdb.connect()
     run(con, f"COPY (SELECT 1 AS golden_id) TO '{path.as_posix()}' (FORMAT PARQUET)")
-    with pytest.raises(ValueError, match="golden_place schema"):
+    with pytest.raises(ValueError, match=r"golden.parquet from the match stage"):
         curate(out, FIXTURE_DATE, config=small_config())
 
 
@@ -361,3 +367,46 @@ def test_provisional_merge_needs_the_same_name_close_by(staged_out):
     unmerged = build_provisional_golden(connect(), files, merge=False)
     assert unmerged["merged_pairs"] == 0
     assert unmerged["golden_rows"] == unmerged["staged_rows"] - unmerged["same_source_duplicates"]
+
+
+def test_curate_reads_the_match_stages_own_output(staged_out, tmp_path, registry):
+    """Run entity resolution on the fixtures, then curate its golden.parquet."""
+    from trippr_data.match import match
+
+    out = tmp_path / "out"
+    shutil.copytree(staged_out, out)
+    match(out, FIXTURE_DATE, registry=registry)
+    assert golden_file(out, FIXTURE_DATE).is_file()
+    result = curate(out, FIXTURE_DATE, config=small_config(total=40, floor=5, cap=30))
+    assert result.input == "golden"
+    places = read(out)
+    assert places
+    assert len({p["place_id"] for p in places}) == len(places)
+    for p in places:
+        assert p["sources"]
+        assert all(s["source_id"] and s["licence"] for s in p["sources"])
+
+
+def test_a_chain_is_found_through_the_records_behind_a_golden_place(tmp_path):
+    """The match output has no brand; a member's staged record carries Overture's brand Wikidata id."""
+    from trippr_data.golden import from_matched
+    from trippr_data.layout import staged_file
+
+    out = tmp_path / "out"
+    base = {"city_code": "TYO", "lat": 35.68, "lon": 139.76}
+    write_golden(
+        out,
+        [{**base, "golden_id": "g2", "name": "Chain Coffee", "category": "cafe", "sources": ["overture"]}],
+    )
+    members = staged_file(out, FIXTURE_DATE, "overture")
+    members.parent.mkdir(parents=True)
+    con = duckdb.connect()
+    run(
+        con,
+        f"""COPY (SELECT 'overture' AS source, 'overture-g2' AS source_id,
+                   {{'brand_wikidata': 'Q37158'}} AS signals) TO '{members.as_posix()}' (FORMAT PARQUET)""",
+    )
+    from_matched(con, golden_file(out, FIXTURE_DATE).as_posix(), [members.as_posix()])
+    assert con.execute("SELECT signals.brand_wikidata FROM golden").fetchone()[0] == "Q37158"
+    from_matched(con, golden_file(out, FIXTURE_DATE).as_posix())
+    assert con.execute("SELECT signals.brand_wikidata FROM golden").fetchone()[0] is None
