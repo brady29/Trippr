@@ -1,13 +1,16 @@
 # Trippr data pipeline
 
-Python package that turns open place datasets into one clean, checked table of places for Trippr's
-108 cities. This is PR 1 of the [Trip Data Platform Spec](../docs/data-platform-spec.md): extract and
-stage **Overture Maps Places** and **Foursquare Open Source Places**, run quality checks and write a
-run report. Matching, curation, enrichment and loading into the graph come in later PRs.
+Python package that turns open place datasets into one clean, checked, deduplicated table of places
+for Trippr's 108 cities. PRs 1 and 2 of the [Trip Data Platform Spec](../docs/data-platform-spec.md):
+extract and stage **Overture Maps Places**, **Foursquare Open Source Places**, **OpenStreetMap**,
+**Wikidata** and **Wikivoyage**, match the same place across sources into golden records, run quality
+checks and write a run report. Curation, enrichment and loading into the graph come in later PRs.
 
 ```
 extract ─► raw/<source>/<date>/<CITY>.parquet + _meta.json
 stage   ─► staging/<date>/<source>.parquet (staged_place) + <source>.stats.json
+match   ─► matched/<date>/links.parquet (record -> cluster) + golden.parquet + match.stats.json
+eval-er ─► matched/<date>/eval.json          (precision and recall on eval/er_pairs.csv)
 check   ─► reports/<date>.checks.json        (exit 1 on a failed check)
 report  ─► reports/<date>.md + <date>.json   (+ $GITHUB_STEP_SUMMARY, + latest.json when passed)
 upload  ─► gs://$DATA_BUCKET/...             (same layout)
@@ -21,7 +24,10 @@ Needs Python 3.12 and [uv](https://docs.astral.sh/uv/) (`pip install uv` works t
 cd pipelines
 uv sync                                   # creates .venv from uv.lock
 uv run python -m trippr_data extract --source overture --cities TYO,OSA,CKG
+uv run python -m trippr_data extract --source osm,wikivoyage,wikidata --cities TYO,OSA   # in this order
 uv run python -m trippr_data stage        # defaults to the newest raw date
+uv run python -m trippr_data match        # entity resolution: matched/<date>/{links,golden}.parquet
+uv run python -m trippr_data eval-er      # precision / recall on the labelled pairs (eval/)
 uv run python -m trippr_data check
 uv run python -m trippr_data report       # prints the report path
 
@@ -45,6 +51,7 @@ took about 37 minutes on a home connection for 6.8 million rows (560 MB of raw P
 | `CITY_RADIUS_DEFAULT_KM` | all | Radius for big cities (default 25). Smaller kinds use 10 km; per-city overrides are in `config/city_radius.csv` |
 | `OVERTURE_RELEASE` | extract | Pin an Overture release instead of the latest from the STAC catalog |
 | `HF_TOKEN`, `FSQ_PLACES_PATH`, `FSQ_S3_REGION` | extract | Foursquare token and an optional other location (see below) |
+| `OSM_GROUPS` | extract | Comma list of Overpass query groups to fetch (`sights,amenity,shop,food`; default all). The `food` group (restaurants, cafes, bars) is by far the heaviest query |
 | `TRIPPR_DATA_OUT` | all | Output root instead of `pipelines/out/` |
 
 ## Layout
@@ -55,9 +62,14 @@ took about 37 minutes on a home connection for 6.8 million rows (560 MB of raw P
 | `config/taxonomy.csv` | Trippr's 33 place categories, each with one of the app's colour tags (sport, tech, nature, culture, food) or `other` |
 | `config/category_map_overture.csv` | Overture taxonomy label → Trippr category (or `exclude`) |
 | `config/category_map_foursquare.csv` | Foursquare label path → Trippr category (or `exclude`) |
+| `config/category_map_osm.csv` | OSM tags (`tourism=museum`, or `amenity=place_of_worship+religion=shinto`) → Trippr category; the first matching rule in file order wins, and the Overpass query is generated from it |
+| `config/category_map_wikidata.csv` | Wikidata instance-of class QIDs → Trippr category; the SPARQL query is generated from it |
+| `config/category_map_wikivoyage.csv` | Wikivoyage listing type (see, do, eat, drink, buy, sleep) → Trippr category |
+| `config/category_family.csv` | Category families: two places are only compared when their categories share one |
 | `config/city_radius.csv` | Per-city radius overrides (small towns and islands at 10 km, Macau at 10 km) |
 | `config/countries.csv` | Country bounding boxes (for the coordinate check) and local languages (for `name_local`) |
-| `src/trippr_data/` | `extract/` (one module per source), `stage.py`, `checks.py`, `report.py`, `storage.py`, `cli.py` |
+| `src/trippr_data/` | `extract/` (one module per source), `stage.py`, `match.py`, `similarity.py`, `eval_er.py`, `checks.py`, `report.py`, `storage.py`, `cli.py` |
+| `eval/` | The hand-labelled pairs for entity resolution and how they were labelled (`eval/README.md`) |
 | `tests/` | pytest; `tests/fixtures/` holds the two-city fixtures and the golden output |
 
 Cities come from `../seed/cities.json` (not modified). Each city's area is a circle of its radius; the
@@ -69,14 +81,14 @@ Shenzhen shop does not land in Hong Kong and a Zhuhai shop is not counted as Mac
 
 | Field | Notes |
 |---|---|
-| `source`, `source_id` | `overture` + GERS id, `foursquare` + `fsq_place_id` |
+| `source`, `source_id` | `overture` + GERS id, `foursquare` + `fsq_place_id`, `osm` + `node/123`, `wikidata` + QID, `wikivoyage` + `<page id>:<hash of type, name, coordinates>` |
 | `name`, `name_local`, `name_en` | `name` is the source's primary name after NFKC normalisation (full-width Latin → ASCII, half-width katakana → full-width, whitespace collapsed, separator punctuation trimmed). Scripts are kept: `name_local` is the name in one of the country's languages (Overture name rules) or the primary name when it is not Latin script; `name_en` is the English name rule or the primary name when it is Latin script |
 | `category_source`, `category` | The source's own category and Trippr's |
 | `lat`, `lon`, `city_code` | WGS84; the nearest Trippr city within its radius |
-| `address`, `website`, `phone`, `opening_hours` | When the source has them (neither source has opening hours) |
-| `wikidata_qid` | Empty for now: Overture places have no place-level QID (only a brand QID, kept in `signals.brand_wikidata`); OSM and Wikivoyage fill it in PR 2 |
-| `signals` | `confidence` (Overture), `providers` (Overture's upstream datasets), `brand_wikidata`; `wikidata_sitelinks` and `wikivoyage_listed` arrive in PR 2 |
-| `licence`, `fetched_at`, `raw_ref` | Per-record licence (Overture's `sources[].license`), fetch time and the raw file it came from |
+| `address`, `website`, `phone`, `opening_hours` | When the source has them (opening hours come from OSM and Wikivoyage) |
+| `wikidata_qid` | OSM's `wikidata` tag, a Wikivoyage listing's `wikidata`, or the Wikidata item itself. Overture and Foursquare places have none (Overture only has a brand QID, kept in `signals.brand_wikidata`) |
+| `signals` | `confidence` (Overture), `providers` (Overture's upstream datasets), `brand_wikidata`; `wikidata_sitelinks` (Wikidata items), `wikivoyage_listed` (true for Wikivoyage listings); `description` with `description_licence` (Wikivoyage's `content`, flagged `CC-BY-SA-4.0`, or a Wikidata description, `CC0-1.0`) and `wikipedia_url` |
+| `licence`, `fetched_at`, `raw_ref` | Per-record licence (Overture's `sources[].license`, `ODbL-1.0` for OSM, `CC0-1.0` for Wikidata, `CC-BY-SA-4.0` for Wikivoyage), fetch time and the raw file it came from |
 
 Staging also drops duplicate source ids, permanently closed places, places outside every city's
 radius, places whose country does not match, and places without a name. Each step's count is in
@@ -105,6 +117,11 @@ stays empty until OpenStreetMap arrives in PR 2.
 | `licence.present`, `licence.registered` | A place has no licence, or one not listed for its source in `sources.yaml` |
 | `duplicates.source_id` | A source id appears twice |
 | `categories.in_taxonomy` | A category is not in `taxonomy.csv` |
+| `match.cluster_spread` | A cluster is wider than 500 m |
+| `match.links` | A link points at a record that does not exist, a record has no link or two, or a link has no golden record |
+| `match.golden_licences` | A golden record has no licence list, its `sources[]` do not match its record count, or a licence is not in `sources.yaml` |
+| `match.duplicate_golden` | More than 0.5% of golden records have another within 50 m with the same name (warns on any) |
+| `match.eval` | Precision on the labelled pairs is under 95% (fails) or recall under 85% (warns) |
 
 ## Sources
 
@@ -140,6 +157,86 @@ for it by name (`--source foursquare`) fails instead.
 
 `config/category_map_foursquare.csv` was written from Foursquare's published taxonomy; check the
 unmapped categories in the report after the first real run.
+
+### OpenStreetMap (enabled)
+
+- Access: the **Overpass API**, one query per city per group (`sights`, `amenity`, `shop`, `food`) over the
+  city's bounding box, generated from `config/category_map_osm.csv`, only features with a `name`, with
+  `out center` so ways and relations get a point. Responses are cached as `<CITY>.<group>.overpass.json.gz`
+  next to the raw Parquet, so re-running never queries again.
+- Why Overpass and not Geofabrik: 108 circles of 10 to 25 km are a few hundred MB of tagged features, while
+  the country extracts that cover them (Japan, China, Indonesia, ...) are over 10 GB and need a PBF reader and
+  a node-location index to cut out. Overpass is the right size for a monthly run. In practice the public
+  server is often at capacity (502/504); the extractor waits for a free slot (`/api/status`), sends one query
+  at a time at least 10 s apart with a User-Agent that names the app, retries with backoff, falls back to
+  `overpass.private.coffee`, keeps finished groups cached and exits non-zero (`OverpassIncompleteError`)
+  naming what is missing, so running the same command again completes the rest. If the pipeline ever runs
+  weekly, switch to Geofabrik extracts (nothing else changes: raw rows are `osm_type, osm_id, lat, lon, tags`).
+- Staging: `name`, `name:en` and `name:<local language>` become the name variants; `wikidata` the QID;
+  `opening_hours`, `website` and `phone` are copied; the category is the first rule of the CSV the tags
+  satisfy (so `tourism=museum` beats `historic=building`).
+
+### Wikidata (enabled)
+
+- Access: the SPARQL endpoint, politely (one query at a time, at least 6 s apart, `Retry-After` honoured, 60 s
+  query limit). Per city, one `wikibase:around` query for items inside the circle whose **direct** instance-of
+  class is in `config/category_map_wikidata.csv` and that have at least one sitelink, then batched `VALUES`
+  queries (150 QIDs) for labels (English and the country's languages), description, website, English
+  Wikipedia link, coordinates and sitelink count. Subclass paths (`P31/P279*`) were tried and took 55 s for
+  Kyoto against 3 s, so the CSV lists specific classes instead.
+- QIDs that OSM and Wikivoyage name in the same city are fetched too (`via = linked`) even when their class is
+  not in the CSV, so the matched place can carry the sitelink count. Run `extract` for Wikidata after OSM and
+  Wikivoyage (the CLI orders sources that way).
+
+### Wikivoyage (enabled)
+
+- Access: the English Wikivoyage monthly dump (`enwikivoyage-latest-pages-articles.xml.bz2`, about 130 MB),
+  downloaded once into `<out>/downloads/wikivoyage/<dump date>/`, checked against the published sha1, and
+  parsed locally with the standard library (no scraping). `{{see}}`, `{{do}}`, `{{eat}}`, `{{drink}}`,
+  `{{sleep}}`, `{{buy}}` and `{{listing|type=...}}` are read, with name, alt, url, address, lat, long, phone,
+  hours, wikidata, wikipedia, lastedit and content; links, refs and templates are stripped from the text.
+- A listing goes to every city whose bounding box holds its coordinates (staging keeps the nearest city inside
+  its radius). Listings without coordinates inside an article named for a Trippr city (`Tokyo`, `Tokyo/Shibuya`)
+  are kept in that city's raw file with empty coordinates and counted, but cannot be staged: nothing places
+  them. `sleep` listings are excluded (hotels come in a later PR).
+- `content` is CC BY-SA 4.0 text: it stays in `signals.description` with `description_licence =
+  CC-BY-SA-4.0`, and a golden record that uses it says so.
+
+## Entity resolution
+
+`match` (also run by `run`) reads every staged source and writes `matched/<date>/links.parquet` (source
+record -> cluster id, score, rule), `golden.parquet` (one record per cluster, with `sources[]`, `licences`,
+`field_sources` and the Wikivoyage text flagged by licence) and `match.stats.json`. Per city:
+
+1. **Blocking**: different sources, same or neighbouring geohash-7 cells (360/2^18 degrees, about 150 m; so
+   pairs more than roughly 150 to 300 m apart are never compared), within 500 m, categories sharing a family
+   (`config/category_family.csv`).
+2. **Strong links** (score 1): a shared Wikidata QID, or a shared website host (first path segment on shared
+   hosts like facebook.com) within 300 m and some name similarity. A QID or website used by four or more
+   places of one source (a chain) is not a strong link.
+3. **Scored pairs**: `0.55 name + 0.30 distance + 0.15 category + 0.15 phone-or-address bonus`, capped at 1.
+   Name similarity is the best over every `name` / `name_en` / `name_local` variant pair of the larger of
+   Jaro-Winkler (rescaled so 0.7 and below count as 0) and a length-weighted token-set measure; Han, kana,
+   Hangul and Thai text is compared as character bigrams (no word-splitting assumed) and different scripts are
+   only compared through the variants they share. Distance is 1 under 75 m falling to 0 at 500 m (30 m to
+   150 m for chain names). A pair needs name similarity of 0.6 (or a matching phone) and a score of 0.82.
+   The weights are hand-set in `MatchConfig`; the eval below checks them.
+4. **Pruning**: a pair is kept when each record is within 0.12 of the other's best partner in its source
+   (so near-duplicate listings of one place both join), or its score is 0.92 or more.
+5. **Clustering**: union-find, strong links first; a merge that would make the cluster wider than 500 m is
+   refused.
+6. **Survivorship** (first available wins): names from Wikidata, then Wikivoyage, OSM, Overture, Foursquare;
+   coordinates from OSM, then Overture; websites from Overture, then Wikidata; opening hours from OSM, then
+   Wikivoyage; descriptions from Wikivoyage, then Wikidata; category from OSM, Wikidata, Overture, then the
+   generic Wikivoyage one. The sitelink count is the maximum over the cluster and the Wikidata item.
+
+### Evaluation
+
+`eval/er_pairs.csv` has 408 candidate pairs in six cities (Kyoto, Shanghai, Busan, Hanoi, Chiang Mai,
+Taichung), **labelled by the pipeline's author (an AI assistant) and in need of human review**; see
+`eval/README.md`. `eval-er` re-runs the matcher for those cities and reports precision and recall of "same
+cluster" at the chosen threshold plus a sweep, writes `matched/<date>/eval.json`, and the run report and the
+`match.eval` check show it (precision under 95% fails the run, recall under 85% warns).
 
 ## Scheduled runs
 

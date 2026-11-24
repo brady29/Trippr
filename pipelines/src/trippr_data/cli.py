@@ -173,7 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--source", help="comma list (default: every source with raw data for the date)")
 
     p = add("match", cmd_match, "entity resolution: links.parquet and golden.parquet in matched/")
-    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.78)")
+    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.82)")
 
     p = add("sample-er", cmd_sample_er, "sample candidate pairs into a labelling CSV")
     p.add_argument("--labels", type=Path, default=ER_LABELS, help="CSV to write (default eval/er_pairs.csv)")
@@ -182,7 +182,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = add("eval-er", cmd_eval_er, "precision and recall of the matcher on the labelled pairs")
     p.add_argument("--labels", type=Path, default=ER_LABELS)
-    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.78)")
+    p.add_argument("--threshold", type=float, help="score needed to accept a pair (default 0.82)")
     p.add_argument("--strict", action="store_true", help="exit 1 when the 95% / 85% targets are not met")
 
     add("check", cmd_check, "run the data quality checks; exits 1 on failure")

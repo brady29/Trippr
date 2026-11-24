@@ -62,6 +62,6 @@ uv run python -m trippr_data eval-er --threshold 0.85
 uv run python -m trippr_data sample-er        # rewrite the file with a fresh sample, keeping labels of pairs still in it
 ```
 
-`eval-er` re-runs the matcher for the labelled cities and counts a pair as predicted-same when both
+The sampling bands were set when the default threshold was 0.78 and are kept so the sample can be reproduced. `eval-er` re-runs the matcher for the labelled cities and counts a pair as predicted-same when both
 records end up in the same cluster (so the best-partner pruning and the spread guard are included).
 Results are written to `matched/<date>/eval.json` and shown in the run report.

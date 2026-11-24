@@ -68,7 +68,7 @@ class MatchConfig:
     w_dist: float = 0.30
     w_cat: float = 0.15
     contact_bonus: float = 0.15
-    threshold: float = 0.78
+    threshold: float = 0.82
     name_floor: float = 0.6
     full_score_m: float = 75.0
     zero_score_m: float = 500.0
@@ -176,13 +176,36 @@ def score_candidates(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
     """Create `scored` from `cand`: name similarity, distance score, category score, contact match, score."""
     run(
         con,
-        """CREATE OR REPLACE TABLE variants AS
-           SELECT rid, key, name_tokens(key) AS tok,
-                  coalesce(list_sum(list_transform(name_tokens(key), lambda t: len(t))), 0) AS tw
+        """CREATE OR REPLACE TABLE variants0 AS
+           SELECT rid, key, name_tokens(key) AS tok
            FROM (SELECT DISTINCT rid, name_key(v) AS key FROM (
                    SELECT rid, unnest([name, name_en, name_local]) AS v FROM recs
                    WHERE rid IN (SELECT ra FROM cand UNION SELECT rb FROM cand))
                  WHERE v IS NOT NULL) WHERE key IS NOT NULL""",
+    )
+    # Token weights: a token that many places in the city share ("店", "河原町", "coffee", a mall's name)
+    # says little about identity, so each token counts log(N / df) / log(N), times its length.
+    run(
+        con,
+        """CREATE OR REPLACE TABLE tok_weight AS
+           WITH n AS (SELECT count(DISTINCT rid) AS n FROM variants0),
+                df AS (SELECT tok, count(DISTINCT rid) AS df FROM (SELECT rid, unnest(tok) AS tok FROM variants0)
+                       GROUP BY tok)
+           SELECT df.tok, greatest(0.0, ln((n.n + 1.0) / df.df) / ln(n.n + 1.0)) * len(df.tok) AS w
+           FROM df, n""",
+    )
+    run(
+        con,
+        """CREATE OR REPLACE TABLE variants AS
+           WITH weighted AS (
+             SELECT v.rid, v.key, t.tok, w.w
+             FROM variants0 v, unnest(v.tok) AS t(tok) JOIN tok_weight w ON w.tok = t.tok),
+           agg AS (
+             SELECT rid, key, list(tok) AS tok, map(list(tok), list(w)) AS wm, sum(w) AS tw
+             FROM weighted GROUP BY rid, key)
+           SELECT v.rid, v.key, coalesce(a.tok, []::VARCHAR[]) AS tok,
+                  coalesce(a.wm, MAP {}::MAP(VARCHAR, DOUBLE)) AS wm, coalesce(a.tw, 0.0) AS tw
+           FROM variants0 v LEFT JOIN agg a ON a.rid = v.rid AND a.key = v.key""",
     )
     run(
         con,
@@ -197,7 +220,7 @@ def score_candidates(con: duckdb.DuckDBPyConnection, cfg: MatchConfig) -> None:
                ELSE greatest(
                  greatest(0.0, (jaro_winkler_similarity(va.key, vb.key) - {cfg.jw_floor}) / (1.0 - {cfg.jw_floor})),
                  CASE WHEN va.tw + vb.tw = 0 THEN 0.0 ELSE
-                   2.0 * coalesce(list_sum(list_transform(list_intersect(va.tok, vb.tok), lambda t: len(t))), 0)
+                   2.0 * coalesce(list_sum(list_transform(list_intersect(va.tok, vb.tok), lambda t: va.wm[t])), 0)
                    / (va.tw + vb.tw) END)
              END) AS name_sim
            FROM cand c JOIN variants va ON va.rid = c.ra JOIN variants vb ON vb.rid = c.rb

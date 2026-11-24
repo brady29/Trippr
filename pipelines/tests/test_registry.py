@@ -79,10 +79,20 @@ def test_run_skips_an_unconfigured_foursquare(tmp_path, monkeypatch):
     def no_token(cities, **kwargs):
         raise foursquare.FoursquareNotConfiguredError("no token")
 
+    def fake(name):
+        def extract(cities, **kwargs):
+            calls.append(name)
+            return {"version": "test", "row_count": 0}
+
+        return extract
+
     monkeypatch.setitem(cli.EXTRACTORS, "overture", fake_overture)
     monkeypatch.setitem(cli.EXTRACTORS, "foursquare", no_token)
+    for name in ("osm", "wikivoyage", "wikidata"):  # never touch the network in tests
+        monkeypatch.setitem(cli.EXTRACTORS, name, fake(name))
     args = cli.build_parser().parse_args(["--out", str(tmp_path), "extract", "--cities", "TYO"])
-    assert cli._extract(args, load_registry(), tmp_path) == ["overture"]
+    # Wikidata runs last: it also fetches the QIDs that OpenStreetMap and Wikivoyage name
+    assert cli._extract(args, load_registry(), tmp_path) == ["overture", "osm", "wikivoyage", "wikidata"]
     named = cli.build_parser().parse_args(["extract", "--cities", "TYO", "--source", "foursquare"])
     with pytest.raises(SystemExit):
         cli._extract(named, load_registry(), tmp_path)

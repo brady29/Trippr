@@ -43,8 +43,8 @@ All licences and coverage below must be confirmed when each source is added, and
 |---|---|---|---|---|
 | **Overture Maps Places** | Name, category, coordinates, address, website, confidence, source references | GeoParquet on public cloud storage, read with DuckDB using a bounding box for each city (no full download) | CDLA Permissive 2.0 | Monthly releases |
 | **Foursquare Open Source Places** | Name, category, coordinates, address, website | Parquet files, read with DuckDB | Apache 2.0 | As released |
-| **OpenStreetMap** | Tourism, leisure, historic and amenity features, opening hours, `wikidata` tags | Overpass API, one query per city with polite rate limits, or a Geofabrik regional extract | ODbL (share-alike for the database; attribution required) | Monthly |
-| **Wikidata** | Notability (how many Wikipedia sitelinks), descriptions, Wikipedia links, official websites | SPARQL by QID, batched | CC0 | Monthly |
+| **OpenStreetMap** | Tourism, leisure, historic and amenity features, opening hours, `wikidata` tags | Overpass API, one bounded query per city and query group (sights, amenities, shops, food), cached, one at a time with a fallback instance (built in PR 2; a Geofabrik regional extract is the fallback if the pipeline ever runs more often than monthly) | ODbL (share-alike for the database; attribution required) | Monthly |
+| **Wikidata** | Notability (how many Wikipedia sitelinks), descriptions, Wikipedia links, official websites | SPARQL: one `wikibase:around` query per city for items of the listed classes, then batched queries by QID (also for the QIDs OSM and Wikivoyage name) | CC0 | Monthly |
 | **Wikivoyage** | "See", "Do", "Eat", "Drink" and "Sleep" listings with short descriptions | Monthly XML dumps, parsed from listing templates | CC BY-SA 4.0 (attribution, share-alike for text) | Monthly |
 | **Inside Airbnb** | Listings (neighbourhood, room type, price, reviews, coordinates) and calendars | CSV snapshots for each covered city | CC BY 4.0 | Quarterly snapshots |
 | **Hotel prices** (one provider, chosen in a spike) | Nightly rates for the stop's dates and group size | LiteAPI, Hotelbeds or the Booking.com affiliate API: whichever offers a free sandbox and acceptable terms | Provider terms | On demand, cached 6 hours |
@@ -97,7 +97,7 @@ The pipeline is a new Python package in the repo. Python, DuckDB and Parquet are
 | `city_code` | The nearest Trippr city within that city's radius; otherwise dropped |
 | `address`, `website`, `phone`, `opening_hours` | When the source has them |
 | `wikidata_qid` | From OSM tags, Overture source references or Wikivoyage |
-| `signals` | Source confidence, Wikidata sitelink count, whether Wikivoyage lists it |
+| `signals` | Source confidence, Wikidata sitelink count, whether Wikivoyage lists it, plus `description` with its `description_licence` (Wikivoyage text is CC BY-SA 4.0) and `wikipedia_url` |
 | `licence`, `fetched_at`, `raw_ref` | Provenance |
 
 ### Taxonomy
@@ -110,23 +110,23 @@ A fixed list of about 30 categories (viewpoint, museum, temple or shrine, park o
 
 The same place appears in several sources under different names, scripts and coordinates ("Shibuya Sky", "SHIBUYA SKY", "渋谷スカイ", 40 m apart).
 
-1. **Blocking**: only compare places in the same city, within neighbouring geohash-7 cells (about 150 m), whose categories are compatible.
-2. **Strong links first**: a shared Wikidata QID, or a shared website domain plus a distance under 300 m, is a match.
+1. **Blocking**: only compare places of different sources in the same city, within neighbouring geohash-7 cells (about 150 m, so pairs further apart than 150 to 300 m are never compared), up to 500 m apart, whose categories share a family (`config/category_family.csv`).
+2. **Strong links first**: a shared Wikidata QID, or a shared website domain plus a distance under 300 m (and a little name similarity), is a match. A QID or domain used by four or more places of one source is a brand, not an identity, and is not a strong link.
 3. **Scored pairs**, combining:
    - name similarity: the best of token-set ratio and Jaro-Winkler across the `name`, `name_en` and `name_local` variants
    - distance: full score under 75 m, falling to zero at 500 m
    - category agreement
    - matching phone numbers or addresses
 
-   It starts as a hand-weighted score. If it isn't accurate enough, it moves to logistic regression trained on the labelled pairs.
-4. **Clustering**: union-find over accepted pairs, with a guard that splits clusters wider than 500 m.
+   It starts as a hand-weighted score (0.55 name, 0.30 distance, 0.15 category, plus 0.15 for a matching phone or address, accepted at 0.82 with a name similarity of at least 0.6). Token weights are inverse document frequency within the city, so shared place or branch words ("店", "coffee", a mall's name) count for little, and a chain name needs the places to be much closer (full score under 30 m, zero at 150 m). If it isn't accurate enough, it moves to logistic regression trained on the labelled pairs.
+4. **Pruning and clustering**: a pair is kept when each record is within 0.12 of the other's best partner in its source (so duplicate listings of one place both join) or scores 0.92 or more; then union-find over accepted pairs, strong links first, refusing any merge that would make a cluster wider than 500 m.
 5. **Survivorship**: one golden record per cluster, with a field-level precedence per source:
    - names and descriptions from Wikidata or Wikivoyage
    - coordinates from OSM or Overture
    - websites from Overture or Wikidata
-   - opening hours from OSM
+   - opening hours from OSM, then Wikivoyage
 
-   Every golden record keeps its list of `sources[]`.
+   Every golden record keeps its list of `sources[]`, its licences, and which source supplied the name, coordinates, website, opening hours and category.
 6. **Evaluation**: about 400 hand-labelled candidate pairs across 6 cities (Japan, China, Korea, Vietnam and Thailand, so several scripts are represented) give precision and recall at the chosen threshold, reported on every run. The target is 95% precision and 85% recall; false merges are worse than missed ones.
 
 ### Ranking and curation

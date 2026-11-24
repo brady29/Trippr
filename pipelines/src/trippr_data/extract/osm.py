@@ -22,6 +22,7 @@ from __future__ import annotations
 import gzip
 import json
 import logging
+import os
 import re
 import time
 from collections.abc import Callable
@@ -144,7 +145,8 @@ def query_groups(fetch: dict[str, list[str]]) -> dict[str, dict[str, list[str]]]
             else:
                 name = key if key in ("amenity", "shop") else "sights"
             groups[name].setdefault(key, []).append(value)
-    return {name: tags for name, tags in groups.items() if tags}
+    wanted = {g.strip() for g in os.environ.get("OSM_GROUPS", "").split(",") if g.strip()}
+    return {name: tags for name, tags in groups.items() if tags and (not wanted or name in wanted)}
 
 
 def fetch_group(
@@ -168,7 +170,10 @@ def fetch_group(
         try:
             wait_for_slot(client, status_url)
             payload = client.request(
-                endpoint, data={"data": query}, headers={"Accept": "application/json"}, retries=2
+                endpoint,
+                data={"data": query},
+                headers={"Accept": "application/json"},
+                retries=2 if endpoint == endpoints[0][0] else 1,
             )
             json.loads(payload)  # a busy server can answer 200 with an HTML or remark page
         except (HttpError, ValueError) as err:
