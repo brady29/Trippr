@@ -1,11 +1,13 @@
 import json
 from pathlib import Path
 
+import duckdb
 import pytest
 
 from trippr_data.cli import main
 from trippr_data.enrich import client as client_mod
 from trippr_data.enrich.evaluate import load_eval_set
+from trippr_data.enrich.settings import budget_usd
 
 from .fakes import FakeAnthropic, reference_responder
 
@@ -156,6 +158,27 @@ def test_eval_enrich_dry_run_offline_and_compare(tmp_path, monkeypatch, capsys):
     out = ["--out", str(tmp_path / "out")]
     assert main([*out, "eval-enrich", "--yes", "--limit", "30", "--models", "haiku,sonnet"]) == 0
     assert "Cheapest model that meets the targets: claude-haiku-5-5" in capsys.readouterr().out
+
+
+def test_enrich_reads_the_newest_curated_run_by_default(curated_out, monkeypatch, capsys):
+    from trippr_data.enrich.inputs import default_input, read_places
+
+    expected = read_places(default_input(curated_out))
+    fake = use_fake(monkeypatch, FakeAnthropic())
+    out = ["--out", str(curated_out)]
+    assert main([*out, "enrich", "--dry-run", "--offline"]) == 0
+    assert f"{len(expected)} places" in capsys.readouterr().out
+    assert main([*out, "enrich", "--yes"]) == 0
+    assert fake.requests_sent == len({p.content_hash() for p in expected})
+    target = curated_out / "enriched" / "2026-11-18" / "enrichment.parquet"
+    query = f"SELECT place_id FROM read_parquet('{target.as_posix()}')"
+    assert {r[0] for r in duckdb.connect().execute(query).fetchall()} == {p.place_id for p in expected}
+
+
+def test_default_budget_is_25_dollars(monkeypatch):
+    assert budget_usd() == 25.0
+    monkeypatch.setenv("ENRICH_BUDGET_USD", "40")
+    assert budget_usd() == 40.0
 
 
 def test_eval_enrich_exits_1_when_no_model_meets_the_targets(tmp_path, monkeypatch):

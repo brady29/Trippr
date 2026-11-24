@@ -289,35 +289,60 @@ Then add the repository variable `DATA_BUCKET=trippr-bucket-data`.
 
 ## LLM enrichment (PR 4, pipeline half)
 
-`enrich` adds `tags`, a one-line `summary`, `duration_min`, `best_time`, `indoor`, `price_level` and
-`good_for` to each curated place with Claude's **Message Batches API** (half price). It does not run in the
-scheduled workflow yet: it reads curated places, which arrive with PR 3.
+`enrich` adds `tags`, a one-line `summary`, `duration_min`, `best_time`, `indoor`, `price_level`,
+`good_for` and a `display_name` / `is_generic_name` suggestion to each curated place with Claude's **Message Batches API** (half price). It does not run in the
+scheduled workflow yet: it reads the curate stage's `curated_place.parquet` (or a bundle's
+`places.parquet` / `places.jsonl.gz`).
 
 ```sh
 export ANTHROPIC_API_KEY=...        # read from the environment only; never stored in a file
 
 # 1. Cost first. Counts tokens on a sample of the real requests (free) and prints the estimate.
-uv run python -m trippr_data enrich --input curated/places.parquet --dry-run
+uv run python -m trippr_data enrich --dry-run                       # newest out/curated/<date>/curated_place.parquet
 # no key yet? --dry-run --offline estimates from character counts, no API call
 # 2. Spend, only with --yes and only under the cap
-uv run python -m trippr_data enrich --input curated/places.parquet --yes
+uv run python -m trippr_data enrich --yes
 ```
 
 | | |
 |---|---|
-| Input | Parquet or JSON lines. Columns are named in one place, `enrich/inputs.py`: `place_id`, `name`, `name_local`, `name_en`, `category`, `city_code`, `address`, `opening_hours`, `descriptions` (list of `{source, text}`), `sources`. Staged places work too (`source:source_id` becomes the id). `--column-map place_id=golden_id ...` points it at PR 3's names. The default path, `out/curated/<date>/places.parquet`, is also set there |
-| Output | `out/enriched/<date>/enrichment.parquet`: the fields above, `content_hash`, `ai` (true), `ai_label` ("Summary written by AI from Wikivoyage and OpenStreetMap") and a `provenance` struct (`summary_ai`, `model`, `prompt_version`, `enriched_at`, `batch_id`, `input_sources`) |
+| Input | Parquet or JSON lines. Columns are named in one place, `enrich/inputs.py`: `place_id`, `name`, `name_local`, `name_en`, `category`, `city_code`, `address`, `opening_hours`, `description` (the golden record's one description), `sources` (names, or records with a `source` field). `place_id` falls back to `id` (bundle), `golden_id`, then `source:source_id` (staged). `--column-map ours=theirs ...` handles any rename. The default path, the newest `out/curated/<date>/curated_place.parquet`, is also set there |
+| Output | `out/enriched/<date>/enrichment.parquet`: the fields above, `content_hash`, `display_name` and `is_generic_name` (suggestions only, nothing is renamed: see below), `ai` (true), `ai_label` ("Summary written by AI from Wikivoyage and OpenStreetMap") and a `provenance` struct (`summary_ai`, `model`, `prompt_version`, `enriched_at`, `batch_id`, `input_sources`) |
 | Model | `--model haiku` (`claude-haiku-5-5`, default) or `sonnet` (`claude-sonnet-5-5`), or `ENRICH_MODEL`. Choose with `eval-enrich --models haiku,sonnet`; the spec's rule is the small model unless it misses the targets |
 | Request | Strict JSON schema in `output_config.format`, `effort: low`, no sampling parameters and no thinking budget (current models reject both), a one-hour prompt cache on the shared system prompt. Place text goes in the user turn as data |
 | Cache | `out/enrich/enrich.cache.jsonl`, keyed by sha256(kind, model, prompt version, content hash) of exactly the fields the model sees. Unchanged places are never sent again; editing a place, the model or `PROMPT_VERSION` (`enrich/prompt.py`) re-enriches just those |
 | Resume | Each batch is recorded in `out/enrich/enrich.state.json` the moment it is created. `--no-wait` submits and returns; rerunning the same command (or `enrich-status --collect`) collects finished batches and never resubmits a key already in flight. A key that fails validation three times is left out until its input changes |
-| Cost guard | The estimate must be within `ENRICH_BUDGET_USD` (default 10, or `--budget-usd`) or nothing is submitted (exit 3). `--yes` is required to spend at all (exit 3 without it). The cap is re-checked before each batch of `--batch-size` (2000). Output tokens are an assumption (350 each, `--output-tokens`); `eval-enrich` prints the measured average to calibrate it |
+| Cost guard | The estimate must be within `ENRICH_BUDGET_USD` (default **25** for the first full run, or `--budget-usd`) or nothing is submitted (exit 3). `--yes` is required to spend at all (exit 3 without it). The cap is re-checked before each batch of `--batch-size` (2000). Output tokens are an assumption (350 each, `--output-tokens`); `eval-enrich` prints the measured average to calibrate it |
 | Guardrails | Output is pydantic-validated: tags must be taxonomy categories, at most 4; summary at most 140 characters (code points, so CJK gets the same room), one line, URLs dropped, no replacement characters; duration 5 to 1440 minutes |
+
+### Names and cost
+
+`display_name` / `is_generic_name` are written for curation to use later; enrichment never changes a name.
+`is_generic_name` is true for a record whose name is not a place name: only a city or country ("Tokyo,
+Japan"), only a type ("City Park"), an operator or legal entity ("Independent Administrative Institution
+National Museum", Tokyo's second place in the bundle), or an address. `display_name` is then the name with the
+formal part removed, or the common name when the description, address, category and city identify it
+("Tokyo National Museum"), else null. The summary of a generic-named place says only what category and city
+support. `eval-enrich` scores generic-name recall and precision and display-name matches on the 12 labelled
+cases, and rule-checks every display name against the input.
+
+Estimate for the full curated set (character heuristic; run `enrich --dry-run` with a key for exact counts).
+Each request is about 1,900 tokens (the shared prompt and schema are about 1,800 of them, cacheable) plus
+250 to 600 output tokens (assumed):
+
+| Model | 8,000 places | 40,000 places (5x) | Fits the $25 cap |
+|---|---|---|---|
+| `claude-haiku-5-5` (default) | $1.3 to $2.2 (about $1.5 expected) | $6.4 to $10.9 (about $7.4) | yes, both |
+| `claude-sonnet-5-5` | $25 to $43 (about $30) | $127 to $217 (about $148) | no |
+
+Prices are batch rates (50% off) cached 2026-11-03 in `enrich/pricing.py`; with the shared prompt served from
+the cache the Haiku figures drop by about 45%. Worst case, every answer running to the 1,024-token cap, is
+$2.8 to $3.0 for 8,000 Haiku places.
 
 ### Eval
 
-`eval-enrich` runs a model over `eval/enrich_places.jsonl` (162 hand-labelled places in 17 countries and 9
-scripts; see `eval/ENRICH.md`) and scores tag precision, recall and F1, duration within ±30 minutes,
+`eval-enrich` runs a model over `eval/enrich_places.jsonl` (174 hand-labelled places in 17 countries and 9
+scripts, 12 of them formal or city-named records; see `eval/ENRICH.md`) and scores tag precision, recall and F1, duration within ±30 minutes,
 best-time and indoor accuracy, and summary faithfulness (rule checks for numbers, proper nouns and
 non-Latin names that are not in the input; `--judge` adds a second cheap-model rubric check). Targets from
 the spec: tag F1 0.85, at most 2% unsupported summaries. It prints per-script and per-country tables, the

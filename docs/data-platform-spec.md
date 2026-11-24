@@ -159,8 +159,8 @@ The same place appears in several sources under different names, scripts and coo
   - Results are keyed by content hash, so unchanged places are never sent again.
   - The model is chosen by the eval: start with a small model and use a larger one only if the small one misses the targets.
 - **Eval:** 200 places labelled by hand, measured per field: tag F1, duration within ±30 minutes, bestTime accuracy. Summaries are checked for unsupported claims by a separate check (a second model call with a rubric), and a sample is also read by a person. Targets are 0.85 tag F1 and at most 2% summaries with unsupported claims.
-- **Cost:** the pipeline prints an estimate before submitting a batch (records × average tokens × price) and refuses to submit without `--yes` when it's over a set limit (`ENRICH_BUDGET_USD`, default 10).
-- **As built (PR 4, pipeline half):** `enrich` and `eval-enrich` in `pipelines/` (see `pipelines/README.md`). The estimate comes from the token counting endpoint on a sample, and the cap is stricter than above: nothing is submitted over `ENRICH_BUDGET_USD`, and nothing at all without `--yes`. The eval set is 162 places so far (target 200).
+- **Cost:** the pipeline prints an estimate before submitting a batch (records × average tokens × price) and refuses to submit without `--yes` when it's over a set limit (`ENRICH_BUDGET_USD`, default 25 for the first full run).
+- **As built (PR 4, pipeline half):** `enrich` and `eval-enrich` in `pipelines/` (see `pipelines/README.md`). The estimate comes from the token counting endpoint on a sample, and the cap is stricter than above: nothing is submitted over `ENRICH_BUDGET_USD`, and nothing at all without `--yes`. The eval set is 174 places so far (target 200). Output also carries `display_name` and `is_generic_name` suggestions for formal or city-named records, for curation to use later.
 - **Guardrails:** the output is schema-checked; a URL in a summary is dropped; enriched fields are marked `ai: true` in the app ("Summary written by AI from Wikivoyage and OpenStreetMap").
 
 ## Feature 4: Semantic search and recommendations

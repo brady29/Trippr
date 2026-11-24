@@ -1,6 +1,6 @@
 # Enrichment eval set
 
-`enrich_places.jsonl`: 162 places, one JSON object per line, hand-labelled for the `eval-enrich` command.
+`enrich_places.jsonl`: 174 places, one JSON object per line, hand-labelled for the `eval-enrich` command.
 
 | Key | Meaning |
 |---|---|
@@ -11,6 +11,8 @@
 | `dur` | Typical first-visit time in minutes |
 | `best` | `morning`, `afternoon`, `evening`, `night` or `any` |
 | `indoor` | `true`, `false`, or `null` when mixed |
+| `addr` | Optional address |
+| `generic`, `display` | `generic: true` marks a formal or city-named record (`gn-*` ids: "Tokyo, Japan", "Independent Administrative Institution National Museum"); `display` is the name an app should show, where one is knowable. Omitted means a normal name |
 
 Coverage: Japan 33, China 25, South Korea 15, Vietnam 13, Taiwan 12, Thailand 12, Indonesia 8, Malaysia 7,
 Singapore 7, Hong Kong 6, Cambodia 6, Macau 4, Laos 4, Philippines 3, Nepal 3, Mongolia 2, Sri Lanka 2.
@@ -23,6 +25,6 @@ knowledge; they are not copied from Wikipedia, Wikivoyage or any other source, w
 share-alike text. When labels are fixed or places added, keep ids unique and tags inside
 `config/taxonomy.csv` (a test checks both).
 
-The spec asks for about 200 labelled places; this is the first 162. Treat the F1 it reports as an early
+The spec asks for about 200 labelled places; this is the first 174. Treat the F1 it reports as an early
 signal, and extend the set (especially descriptions as real as Wikivoyage's, once PR 2 and 3 land) before
 trusting small differences between two models.
