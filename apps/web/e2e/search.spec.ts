@@ -24,7 +24,7 @@ test.describe.configure({ mode: "serial" });
 
 test.describe("Activities: search by meaning", () => {
   test.beforeEach(async ({ page, request }) => {
-    const login = await request.post(`${E2E_API_URL}/auth/dev-login`, { data: { name: "E2E Searcher" } });
+    const login = await request.post(`${E2E_API_URL}/auth/dev-login`, { data: { name: "E2E Owner" } });
     const token = (await login.json()).token as string;
     await request.post(`${E2E_API_URL}/invites/${E2E_OWNER_INVITE}/accept`, { headers: { authorization: `Bearer ${token}` } });
     await page.addInitScript((t) => window.localStorage.setItem("trippr.token", t), token);

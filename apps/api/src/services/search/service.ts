@@ -12,8 +12,6 @@ import { byScore, combine, dbTokens, fold, haversineKm, lexicalScore, worthShowi
 const INDEX_COOL_OFF_MS = 5 * 60_000;
 /** The most rows the words-only query returns for ranking. */
 const LEXICAL_CAP = 400;
-/** How long the "what are the loaded vectors" answer is reused; a new load shows up within this. */
-const STATE_TTL_MS = 10_000;
 
 export interface SearchDeps {
   repos: Repositories;
@@ -26,6 +24,7 @@ export interface SearchDeps {
     | "CLOUDFLARE_EMBED_MODEL"
     | "SEARCH_EMBED_TIMEOUT_MS"
     | "SEARCH_VECTOR_PATH"
+    | "SEARCH_STATE_TTL_MS"
     | "SEARCH_RATE_PER_MINUTE"
     | "SEARCH_DAILY_LIMIT"
   >;
@@ -62,7 +61,7 @@ export function createSearch(deps: SearchDeps) {
   let stateCache: { at: number; value: IndexState | null } | null = null;
 
   async function indexState(): Promise<IndexState | null> {
-    const ttl = deps.stateTtlMs ?? STATE_TTL_MS;
+    const ttl = deps.stateTtlMs ?? config.SEARCH_STATE_TTL_MS;
     if (stateCache && now() - stateCache.at < ttl) return stateCache.value;
     const value = await repos.search.indexState();
     stateCache = { at: now(), value };

@@ -88,6 +88,8 @@ const envSchema = z.object({
   SEARCH_EMBED_TIMEOUT_MS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(100).default(2500)),
   /** auto: the database's vector index, the exact in-memory scan when filtered or if the index fails; or force one. */
   SEARCH_VECTOR_PATH: z.enum(["auto", "index", "exact"]).default("auto"),
+  /** How long the API reuses what it knows about the loaded vectors; a new load shows up within this (tests set 0). */
+  SEARCH_STATE_TTL_MS: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(0).default(10_000)),
   /** Searches per member per minute (429 above this). */
   SEARCH_RATE_PER_MINUTE: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(1).default(30)),
   /** Meaning-based searches (the ones that call the embedder) per member per UTC day; above it, words only. */

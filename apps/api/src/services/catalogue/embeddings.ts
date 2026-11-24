@@ -142,7 +142,7 @@ export async function loadEmbeddings(
   if (options.dryRun) return { ...base, written: changed.length, unchanged: todo.length - changed.length, rebuilt: rebuild };
 
   if (rebuild) {
-    await repos.search.dropVectorIndex();
+    await repos.search.dropVectorIndex((await repos.search.indexState())?.dims);
     await repos.search.clearEmbeddings();
     await repos.search.forgetIndexState();
   }

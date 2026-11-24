@@ -17,7 +17,11 @@ import { buildMatrix, MatrixCache } from "../src/services/search/matrix";
 import { renderMarkdown, scoreQuery, summarise } from "../src/services/search/metrics";
 import { combine, dbTokens, haversineKm, lexicalScore, tokens, WEIGHTS } from "../src/services/search/ranking";
 import { createSearch } from "../src/services/search/service";
-import { place } from "./bundle-kit";
+import { GOLDEN_BUNDLE_DIR, place, tempBundleRoot, writeBundle } from "./bundle-kit";
+import { P, PLACES } from "./search-fixtures";
+import type { ExistingActivity } from "../src/repositories/catalogue";
+import { readBundle, selectBundle } from "../src/services/catalogue/bundle";
+import { planLoad } from "../src/services/catalogue/loader";
 
 // No database in this file: everything here is pure or runs against stand-ins.
 
@@ -32,6 +36,45 @@ const cand = (over: Partial<SearchCandidate> & { id: string; title: string }): S
   cityName: "Kyoto",
   tags: [],
   ...over,
+});
+
+/** The seed's hand-written activities as the load job sees them in a freshly seeded graph. */
+function seededActivities(): ExistingActivity[] {
+  const seed = (name: string) => JSON.parse(readFileSync(join(import.meta.dirname, "../../../seed", name), "utf8")) as unknown;
+  const cities = new Map((seed("cities.json") as { code: string; name: string }[]).map((c) => [c.code, c.name]));
+  return (seed("activities.json") as { id: string; city: string; title: string; mapsQuery?: string }[]).map((a) => ({
+    id: a.id, title: a.title, mapsQuery: a.mapsQuery ?? null, lat: null, lon: null, placeStatus: "unplaced", geoSource: null,
+    catalogue: false, adopted: false, catalogueId: null, sourceKeys: [], listed: true, hidden: false, edited: false, contentHash: null,
+    cityCode: a.city, cityName: cities.get(a.city) ?? a.city, votes: 0, plans: 0, comments: 0,
+  }));
+}
+
+describe("the test fixtures and the seed", () => {
+  it("never adopts a fixture place into a hand-written activity (an adopted place has the idea's id, not its own)", async () => {
+    const root = tempBundleRoot();
+    writeBundle(root, { date: "2026-11-24", places: PLACES });
+    const bundle = await readBundle(localStore(root), "2026-11-24");
+    const plan = planLoad(seededActivities(), bundle, "2026-11-24T00:00:00Z");
+    const taken = plan.adopted.map((a) => `${a.placeId} adopted by ${a.activityId} (${a.title})`);
+    expect(taken, "rename the fixture place or move it: the seed already has an activity with that name in that city").toEqual([]);
+    expect(plan.create.map((r) => r.id).sort()).toEqual(PLACES.map((p) => p.id).sort());
+    expect(Object.keys(P)).toHaveLength(PLACES.length);
+    // The check can fail: the seed's own Osaka Castle is adopted when a bundle has it.
+    const osaka = place({ name: "Osaka Castle", city_code: "OSA", category: "castle_palace", lat: 34.687, lon: 135.526 });
+    const root2 = tempBundleRoot();
+    writeBundle(root2, { date: "2026-11-24", places: [osaka] });
+    const adopted = planLoad(seededActivities(), await readBundle(localStore(root2), "2026-11-24"), "2026-11-24T00:00:00Z").adopted;
+    expect(adopted).toEqual([expect.objectContaining({ activityId: "act-osa-castle", placeId: osaka.id })]);
+  });
+
+  it("knows which golden-bundle places the seed adopts, so the end-to-end search can avoid them", async () => {
+    const { bundle } = await selectBundle(localStore(GOLDEN_BUNDLE_DIR));
+    const plan = planLoad(seededActivities(), bundle!, "2026-11-24T00:00:00Z");
+    const adoptedIds = new Set(plan.adopted.map((a) => a.placeId));
+    const asakura = bundle!.places.find((p) => (p.name_en ?? p.name) === "Asakura Museum of Sculpture");
+    expect(asakura, "the end-to-end search looks for this golden place").toBeDefined();
+    expect(adoptedIds.has(asakura!.id)).toBe(false);
+  });
 });
 
 describe("words", () => {
@@ -385,7 +428,7 @@ describe("the search service, with stand-in repositories", () => {
     const log = { warn: vi.fn(), info: vi.fn() };
     const config = {
       SEARCH_FAKE_DIMS: 32, CLOUDFLARE_EMBED_MODEL: "@cf/baai/bge-m3", SEARCH_EMBED_TIMEOUT_MS: 200,
-      SEARCH_VECTOR_PATH: options.path ?? "auto", SEARCH_RATE_PER_MINUTE: 100, SEARCH_DAILY_LIMIT: options.daily ?? 5,
+      SEARCH_VECTOR_PATH: options.path ?? "auto", SEARCH_STATE_TTL_MS: 10_000, SEARCH_RATE_PER_MINUTE: 100, SEARCH_DAILY_LIMIT: options.daily ?? 5,
     } as const;
     const search = createSearch({ repos, config, log, embedder });
     const run = (q: string, extra = {}, caller = { id: "u1", isDemo: false }): Promise<SearchResponse> => search.run(caller, "trip", searchQuery.parse({ q, ...extra }));
@@ -536,6 +579,7 @@ describe("the vector never leaves through an ordinary query", () => {
       "search/embedding-write.neo4j.cypher",
       "search/index-create.falkordb.cypher",
       "search/index-create.neo4j.cypher",
+      "search/index-drop-alt.falkordb.cypher",
       "search/index-drop.falkordb.cypher",
       "search/nearest.falkordb.cypher",
       "search/nearest.neo4j.cypher",

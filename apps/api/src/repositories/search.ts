@@ -123,14 +123,41 @@ export function searchRepository(db: GraphClient) {
       }
     },
 
-    async dropVectorIndex() {
-      try {
-        await db.query(q("search/index-drop"));
-      } catch (error) {
-        // Nothing to drop is the state we want.
-        if (error instanceof Error && /no such index|not indexed|does not exist|unable to drop|not found|failed to find|no index/i.test(error.message)) return;
-        throw error;
+    /**
+     * Drop the vector index. With `probeDims` (the size it was built with) it checks that the index has stopped
+     * answering, trying a second spelling of the statement if it has not, and fails loudly if it still does: a
+     * rebuild that silently kept an index of the old size would fail later with a worse message.
+     */
+    async dropVectorIndex(probeDims?: number) {
+      const answers = async () => {
+        if (probeDims === undefined) return false;
+        const unit = Array.from({ length: probeDims }, (_, i) => (i === 0 ? 1 : 0));
+        try {
+          return (await db.query(q("search/nearest"), { vector: unit, k: 1 }, read)).length > 0;
+        } catch {
+          return false; // an index that is gone errors ("no such index" / "failed to find")
+        }
+      };
+      const tried: string[] = [];
+      let accepted = false;
+      for (const name of ["search/index-drop", "search/index-drop-alt"]) {
+        try {
+          await db.query(q(name));
+          accepted = true;
+          tried.push(`${name}: accepted`);
+        } catch (error) {
+          tried.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        for (let wait = 0; wait < 6; wait++) {
+          if (!(await answers())) {
+            if (probeDims !== undefined || accepted) return;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
+      if (probeDims === undefined && tried.every((t) => /no such index|not indexed|does not exist|unable to drop|not found|failed to find|no index/i.test(t))) return; // nothing to drop
+      throw new Error(`The ${db.dialect} vector index could not be dropped${probeDims !== undefined ? " (it still answers)" : ""}: ${tried.join("; ")}`);
     },
 
     /** Neo4j builds the index in the background; FalkorDB has nothing to wait for. */
