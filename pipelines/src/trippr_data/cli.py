@@ -13,6 +13,7 @@ from .cities import load_cities, select_cities
 from .curation import curate, default_date
 from .enrich.cli import register as register_enrich
 from .eval_er import EVAL_CITIES, evaluate, format_eval, sample_pairs
+from .embed.cli import register as register_embed
 from .extract import EXTRACTORS
 from .extract.foursquare import FoursquareNotConfiguredError
 from .layout import latest_curated_date, latest_raw_date, latest_staging_date
@@ -228,6 +229,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     register_enrich(sub)  # enrich, enrich-status, eval-enrich
+    register_embed(sub)
     return parser
 
 

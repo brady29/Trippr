@@ -1,0 +1,82 @@
+# Labelled search queries for `trippr-data eval-search` (see eval/search/README.md for how they were made).
+#
+# kind: name      a landmark by one of its names, often in a script other than the one in its records.
+#                 Relevant = every corpus record for that landmark (`anchor` column of places.csv).
+# kind: category  "temples in Kyoto" in six languages. Relevant = the corpus places of that city and
+#                 taxonomy category (`match`).
+# kind: intent    the same, phrased as what the traveller wants rather than the category's name.
+
+queries:
+  # ---- name queries -------------------------------------------------------------------------
+  - {id: n-ja-sensoji, text: 浅草寺, lang: ja, kind: name, match: {anchor: sensoji}}
+  - {id: n-en-sensoji, text: Sensoji temple Asakusa, lang: en, kind: name, match: {anchor: sensoji}}
+  - {id: n-ko-sensoji, text: 센소지, lang: ko, kind: name, match: {anchor: sensoji}}
+  - {id: n-zh-tokyo-tower, text: 东京塔, lang: zh, kind: name, match: {anchor: tokyo_tower}}
+  - {id: n-en-imperial-palace, text: Tokyo Imperial Palace, lang: en, kind: name, match: {anchor: imperial_palace}}
+  - {id: n-ja-shibuya-sky, text: 渋谷スカイ, lang: ja, kind: name, match: {anchor: shibuya_sky}}
+  - {id: n-ko-osaka-castle, text: 오사카성, lang: ko, kind: name, match: {anchor: osaka_castle}}
+  - {id: n-en-usj, text: Universal Studios Japan Osaka, lang: en, kind: name, match: {anchor: usj}}
+  - {id: n-en-kaiyukan, text: Osaka Aquarium Kaiyukan, lang: en, kind: name, match: {anchor: kaiyukan}}
+  - {id: n-en-kinkakuji, text: Golden Pavilion Kinkaku-ji Kyoto, lang: en, kind: name, match: {anchor: kinkakuji}}
+  - {id: n-en-kiyomizu, text: Kiyomizu-dera temple, lang: en, kind: name, match: {anchor: kiyomizudera}}
+  - {id: n-en-fushimi, text: Fushimi Inari Taisha shrine, lang: en, kind: name, match: {anchor: fushimi_inari}}
+  - {id: n-en-gyeongbokgung, text: Gyeongbokgung Palace, lang: en, kind: name, match: {anchor: gyeongbokgung}}
+  - {id: n-ja-gyeongbokgung, text: 景福宮, lang: ja, kind: name, match: {anchor: gyeongbokgung}}
+  - {id: n-en-n-seoul-tower, text: Namsan N Seoul Tower, lang: en, kind: name, match: {anchor: n_seoul_tower}}
+  - {id: n-th-wat-arun, text: วัดอรุณ, lang: th, kind: name, match: {anchor: wat_arun}}
+  - {id: n-en-wat-arun, text: Wat Arun Temple of Dawn, lang: en, kind: name, match: {anchor: wat_arun}}
+  - {id: n-en-grand-palace, text: Grand Palace Bangkok, lang: en, kind: name, match: {anchor: grand_palace}}
+  - {id: n-zh-grand-palace, text: 曼谷大皇宫, lang: zh, kind: name, match: {anchor: grand_palace}}
+  - {id: n-vi-temple-literature, text: Văn Miếu Quốc Tử Giám, lang: vi, kind: name, match: {anchor: temple_of_literature}}
+  - {id: n-vi-notre-dame, text: Nhà thờ Đức Bà Sài Gòn, lang: vi, kind: name, match: {anchor: notre_dame_saigon}}
+  - {id: n-en-war-remnants, text: War Remnants Museum, lang: en, kind: name, match: {anchor: war_remnants}}
+  - {id: n-zh-taipei-101, text: 台北101, lang: zh, kind: name, match: {anchor: taipei_101}}
+  - {id: n-en-palace-museum, text: National Palace Museum Taipei, lang: en, kind: name, match: {anchor: palace_museum_tw}}
+  - {id: n-en-shilin, text: Shilin Night Market, lang: en, kind: name, match: {anchor: shilin}}
+  - {id: n-zh-avenue-of-stars, text: 星光大道, lang: zh, kind: name, match: {anchor: avenue_of_stars}}
+  - {id: n-en-victoria-peak, text: Victoria Peak, lang: en, kind: name, match: {anchor: victoria_peak}}
+  - {id: n-zh-oriental-pearl, text: 东方明珠塔, lang: zh, kind: name, match: {anchor: oriental_pearl}}
+  - {id: n-en-yu-garden, text: Yu Garden Shanghai, lang: en, kind: name, match: {anchor: yu_garden}}
+  - {id: n-ja-forbidden-city, text: 紫禁城, lang: ja, kind: name, match: {anchor: forbidden_city}}
+  - {id: n-en-temple-of-heaven, text: Temple of Heaven Beijing, lang: en, kind: name, match: {anchor: temple_of_heaven}}
+  - {id: n-en-summer-palace, text: Summer Palace Beijing, lang: en, kind: name, match: {anchor: summer_palace}}
+
+  # ---- category queries ---------------------------------------------------------------------
+  - {id: c-en-kyoto-temples, text: temples and shrines in Kyoto, lang: en, kind: category, match: {city_code: UKY, category: [temple_shrine]}}
+  - {id: c-ja-kyoto-temples, text: 京都のお寺と神社, lang: ja, kind: category, match: {city_code: UKY, category: [temple_shrine]}}
+  - {id: c-zh-tokyo-museums, text: 东京的博物馆, lang: zh, kind: category, match: {city_code: TYO, category: [museum]}}
+  - {id: c-ko-seoul-museums, text: 서울 박물관, lang: ko, kind: category, match: {city_code: SEL, category: [museum]}}
+  - {id: c-vi-hanoi-museums, text: bảo tàng ở Hà Nội, lang: vi, kind: category, match: {city_code: HAN, category: [museum]}}
+  - {id: c-vi-saigon-markets, text: chợ ở Sài Gòn, lang: vi, kind: category, match: {city_code: SGN, category: [market]}}
+  - {id: c-th-bangkok-temples, text: วัดในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [temple_shrine]}}
+  - {id: c-th-bangkok-parks, text: สวนสาธารณะในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [park_garden]}}
+  - {id: c-zh-taipei-night-markets, text: 台北夜市, lang: zh, kind: category, match: {city_code: TPE, category: [market]}}
+  - {id: c-zh-shanghai-galleries, text: 上海的美术馆, lang: zh, kind: category, match: {city_code: SHA, category: [gallery]}}
+  - {id: c-ja-osaka-aquariums, text: 大阪の水族館や動物園, lang: ja, kind: category, match: {city_code: OSA, category: [aquarium_zoo]}}
+  - {id: c-ja-tokyo-onsen, text: 東京の温泉やスパ, lang: ja, kind: category, match: {city_code: TYO, category: [onsen_spa]}}
+  - {id: c-en-tokyo-theme-parks, text: theme parks in Tokyo, lang: en, kind: category, match: {city_code: TYO, category: [theme_park]}}
+  - {id: c-en-hk-viewpoints, text: viewpoints in Hong Kong, lang: en, kind: category, match: {city_code: HKG, category: [viewpoint]}}
+  - {id: c-en-taipei-hikes, text: hiking trails in Taipei, lang: en, kind: category, match: {city_code: TPE, category: [hike]}}
+  - {id: c-en-phuket-beaches, text: beaches in Phuket, lang: en, kind: category, match: {city_code: HKT, category: [beach]}}
+  - {id: c-ko-seoul-parks, text: 서울 공원, lang: ko, kind: category, match: {city_code: SEL, category: [park_garden]}}
+  - {id: c-zh-beijing-historic, text: 北京的历史古迹, lang: zh, kind: category, match: {city_code: BJS, category: [historic_site]}}
+  - {id: c-en-seoul-palaces, text: castles and palaces in Seoul, lang: en, kind: category, match: {city_code: SEL, category: [castle_palace]}}
+  - {id: c-vi-danang-beaches, text: bãi biển Đà Nẵng, lang: vi, kind: category, match: {city_code: DAD, category: [beach]}}
+  - {id: c-ja-tokyo-galleries, text: 東京の美術館とギャラリー, lang: ja, kind: category, match: {city_code: TYO, category: [gallery]}}
+  - {id: c-en-osaka-performance, text: live music and theatre in Osaka, lang: en, kind: category, match: {city_code: OSA, category: [performance]}}
+  - {id: c-en-seoul-cafes, text: cafes in Seoul, lang: en, kind: category, match: {city_code: SEL, category: [cafe]}}
+  - {id: c-th-bangkok-bars, text: บาร์ในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [bar]}}
+
+  # ---- intent queries -----------------------------------------------------------------------
+  - {id: i-en-tokyo-view, text: somewhere high up to see the whole city of Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [viewpoint]}}
+  - {id: i-en-tokyo-soak, text: relax and soak in hot water after a long walk in Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [onsen_spa]}}
+  - {id: i-en-osaka-sea-animals, text: kids will love seeing sea animals in Osaka, lang: en, kind: intent, match: {city_code: OSA, category: [aquarium_zoo]}}
+  - {id: i-en-tokyo-rides, text: rides and roller coasters near Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [theme_park]}}
+  - {id: i-en-hanoi-fresh-food, text: buy fresh food from local vendors in Hanoi, lang: en, kind: intent, match: {city_code: HAN, category: [market]}}
+  - {id: i-ja-seoul-palace, text: ソウルで伝統的な宮殿を見たい, lang: ja, kind: intent, match: {city_code: SEL, category: [castle_palace]}}
+  - {id: i-zh-shanghai-art, text: 想在上海看艺术展, lang: zh, kind: intent, match: {city_code: SHA, category: [gallery, museum]}}
+  - {id: i-en-shanghai-green, text: a quiet green place to walk in Shanghai, lang: en, kind: intent, match: {city_code: SHA, category: [park_garden]}}
+  - {id: i-ko-tokyo-night, text: 도쿄에서 밤에 놀 수 있는 곳, lang: ko, kind: intent, match: {city_code: TYO, category: [nightlife, bar]}}
+  - {id: i-en-osaka-stadium, text: watch a baseball or football match in Osaka, lang: en, kind: intent, match: {city_code: OSA, category: [sports_venue]}}
+  - {id: i-vi-hanoi-pagoda, text: đi chùa cầu an ở Hà Nội, lang: vi, kind: intent, match: {city_code: HAN, category: [temple_shrine, place_of_worship]}}
+  - {id: i-th-phuket-sunset, text: ดูพระอาทิตย์ตกริมทะเลที่ภูเก็ต, lang: th, kind: intent, match: {city_code: HKT, category: [beach]}}

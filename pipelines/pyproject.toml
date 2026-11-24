@@ -17,6 +17,15 @@ dependencies = [
 [project.scripts]
 trippr-data = "trippr_data.cli:main"
 
+[project.optional-dependencies]
+# Local embedding models (ONNX Runtime on the CPU, no PyTorch). Kept out of the default install so CI and
+# the other stages stay light; CI tests use the offline fake embedder and never download a model.
+embed = [
+    "huggingface-hub>=1.0",
+    "onnxruntime>=1.22",
+    "tokenizers>=0.22",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
@@ -42,6 +51,7 @@ ignore = ["E501"]
 "src/trippr_data/names.py" = ["RUF001"]
 "tests/test_names.py" = ["RUF001"]
 "tests/test_similarity.py" = ["RUF001"]
+"tests/test_embed.py" = ["RUF001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
