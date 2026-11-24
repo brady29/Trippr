@@ -83,6 +83,137 @@ Enrichment filters: `bestTime` (`morning`, `afternoon`, `evening`, `night`, `any
 
 The stop drawers and the route editor's library show catalogue places only once the group has engaged with them, so a city's few hundred places do not bury its ideas.
 
+## Semantic search
+
+PR 5 ([spike](embeddings-spike.md), [spec](data-platform-spec.md) Feature 4). Place vectors are made once a month on the owner's laptop with the `embed` stage (BGE-M3, 1,024 dimensions) and loaded with the bundle; only the short question is embedded at request time, by Cloudflare Workers AI (`@cf/baai/bge-m3`), so the 512 MiB API never loads a model.
+
+```
+laptop:  embed ─► out/embeddings/<date>/{manifest.json, embeddings.f32, ids.json, embeddings.parquet}
+                          │ upload next to the bundles (gs://bucket/embeddings/<date>)
+load job: verify checksums, model, size and place ids ─► Activity.embedding + vector index + EmbeddingIndex node
+API:      GET /trips/:id/search?q=… ─► embed q (hosted, cached, 2.5 s timeout) ─► nearest places ─► words ─► rank
+```
+
+### Make the vectors (on the laptop)
+
+```sh
+cd pipelines
+uv sync --extra embed                       # once: onnxruntime + tokenizers + huggingface-hub (no PyTorch)
+uv run python -m trippr_data embed          # newest bundle; default model bge-m3-q8; ~24 min for 8,000 places, first run downloads 570 MB
+```
+
+It writes `out/embeddings/<date>/`: `manifest.json` (model, exact weights, dimensions, text version, counts and sha256 of every file), `embeddings.f32` (the matrix: raw little-endian float32, one row per place), `ids.json` (place ids and content hashes in row order) and `embeddings.parquet` (the same, for the pipeline's own tools). The Node load job reads the first three, so it needs no Parquet library; their checksums are in the manifest and are checked before anything is written. A place whose text did not change is not embedded again (content-hash cache), so later runs take seconds. The enrich stage's summaries are added to the text automatically when `out/enriched/` has them.
+
+Upload it beside the bundles, with the same date (`bundles/<date>/` and `embeddings/<date>/`): `gcloud storage cp -r out/embeddings/<date> gs://$DATA_BUCKET/embeddings/` (an action for the owner; nothing in the repo does it).
+
+### Load the vectors
+
+```sh
+pnpm db:load-bundle --bundle pipelines/out/bundles                     # places, then vectors from ../embeddings/<same date>
+pnpm db:load-bundle --bundle gs://trippr-bucket-data/bundles           # vectors from gs://trippr-bucket-data/embeddings/<date>
+pnpm db:load-bundle --bundle pipelines/out/bundles --dry-run           # reports how many vectors it would write
+```
+
+| Option | Meaning |
+|---|---|
+| `--embeddings <folder or gs://…>` | Where the `embeddings/<date>/` runs are (default `$EMBEDDINGS_LOCATION`, else the `embeddings` folder next to the bundles folder) |
+| `--embeddings-date` | Use this run instead of the one with the bundle's date |
+| `--no-embeddings` | Load places only |
+| `--rebuild-index` | The model or vector size changed: drop the vector index and every stored vector, then load |
+
+What it checks, before writing anything:
+
+1. The manifest is valid and `embeddings.f32` and `ids.json` match its sha256 and its counts (rows x dimensions x 4 bytes). A run that fails is skipped with the reason, or is an error when you named it.
+2. The run covers the bundle: place ids must overlap (a run for another bundle is refused; places without a vector still load and are found by words).
+3. **Model and size.** If the graph already holds vectors (the `EmbeddingIndex` node records model, dimensions, text version and count), a run from another model family or another size is **refused and nothing at all is loaded**. `bge-m3` and `bge-m3-q8` count as the same model (the spike measured no loss). `--rebuild-index` drops the index and the old vectors and loads the new run.
+
+Then it creates the vector index (idempotent), writes only the vectors whose content hash changed, waits for the index where the database builds it in the background, and records the revision the API uses to refresh its copy. Running it twice writes nothing the second time.
+
+### Which path each database uses
+
+| | FalkorDB v4.22.1 | Neo4j 5.26 Community |
+|---|---|---|
+| Vector on the node | `SET a.embedding = vecf32($v)` | `CALL db.create.setNodeVectorProperty(a, 'embedding', $v)` |
+| Index | `CREATE VECTOR INDEX FOR (n:Activity) ON (n.embedding) OPTIONS {dimension: 1024, similarityFunction: 'cosine'}` | `CREATE VECTOR INDEX activity_embedding IF NOT EXISTS FOR (n:Activity) ON n.embedding OPTIONS {indexConfig: {`vector.dimensions`: 1024, `vector.similarity_function`: 'cosine'}}` |
+| Query | `CALL db.idx.vector.queryNodes('Activity', 'embedding', $k, vecf32($q)) YIELD node, score` | `CALL db.index.vector.queryNodes('activity_embedding', $k, $q) YIELD node, score` |
+| Score | cosine **distance**, ascending; similarity = `1 - score` | `(1 + cosine) / 2`, descending; similarity = `2 * score - 1` |
+| Default use | unfiltered questions: the index | unfiltered questions: the index |
+
+The index is created by the load job with the dimension from the manifest, not by `db:migrate`, so a database or version without vector support cannot break the schema step for everything else. The statements are in `apps/api/src/repositories/cypher/search/`, one dialect file each.
+
+Neither index can filter. So a question with a city, tag, category or `near` filter, and any question when the index errors or comes back empty, is answered by the **exact path**: every vector in one `Float32Array` in the API (8,000 x 1,024 float32 = 33 MB), filled page by page from the graph on first use and again when the load job writes new vectors, and scanned with a dot product. It is exact, applies filters before ranking (a filtered answer is never short), and needs no index. Measured on a laptop with 8,000 random 1,024-dimension vectors: 0.7 s to fill, 33 MB matrix, process memory from 69 MB to about 200 MB right after the fill (that includes garbage not yet collected), 15 ms per query. That fits the 512 MiB instance; `matrix.ts` refuses to load more than 160 MB. **Check the real instance's memory after the first load**: it was not measured on Cloud Run.
+
+`SEARCH_VECTOR_PATH=auto` (default) is the rule above; `index` or `exact` forces one. If CI shows that a database lacks vector support or a feature, `exact` is the supported answer for that database and needs no code change. The integration tests (`apps/api/test/search.test.ts`, both databases in CI) check, with messages that print the database, the scores and the exact cosine they were compared with:
+
+- the index is created, filled and answers; its scores equal the exact cosine (this settles FalkorDB's distance and Neo4j's 0..1 scale in code);
+- the index and the exact scan return the same places in the same order;
+- dropping the index falls back to the exact scan;
+- no ordinary query returns a vector (a static scan of every `.cypher` file, and the JSON of the library endpoints).
+
+**Status: written from the vendor documentation and the `falkordb` client's own index API; not executed locally** (Docker would not start on the machine this was written on). CI is the first run. Only CI can settle: that `neo4j:5.26-community` accepts `CREATE VECTOR INDEX` and `db.create.setNodeVectorProperty`, that FalkorDB v4.22.1's `queryNodes` runs in a read-only query, and the exact `DROP VECTOR INDEX` behaviour that `--rebuild-index` relies on.
+
+### The endpoint
+
+`GET /trips/:id/search?q=&city=&tag=&category=&near=lat,lon&km=&limit=` (viewers can search; non-members get 404, signed-out callers 401).
+
+- **Hybrid ranking**: vector similarity (cosine, scaled so 0.3 counts for nothing and 0.75 for everything), a words score (the question equal to a name 1.0, inside a name 0.9, each word found in a name up to 0.8, in the address, category or city name up to 0.5 together) and a small prior from the place's rank in its city. Weights 0.55 / 0.40 / 0.05, so an exact name beats a place that is only close in meaning, but a very close meaning beats a weak name match. Candidates are the index's nearest list (over-fetched 4 to 10 times the page) plus the database's word matches; filters apply to both, and `truncated: true` says a filter left fewer than asked on the index path.
+- Each hit carries the same card the Activities page shows (votes, tags, sources and licences), `match` (`meaning`, `name`, `both`, `words`), a `reason` sentence, the similarity, and the distance when `near` was given.
+- **Words only** (`mode: "lexical"`, with a `notice` the page shows) when: no query embedder is configured (`no_embedder`), no vectors are loaded (`no_vectors`), the loaded vectors are from another model or size (`model_mismatch`), the embedder failed or took longer than `SEARCH_EMBED_TIMEOUT_MS` (`embedder_unavailable`; after three failures in a row it is skipped for 30 s), the vectors could not be searched (`vectors_unavailable`), the member used today's allowance (`daily_limit`), or it is the demo account (`demo`, which never calls the hosted embedder).
+- **Limits** per member: `SEARCH_RATE_PER_MINUTE` (default 30) searches a minute, answered with 429 and `Retry-After`; `SEARCH_DAILY_LIMIT` (default 150) searches a UTC day that call the hosted embedder. A repeated question comes from a 300-entry cache and costs nothing. Counts live in the API process, so with several instances the ceiling is per instance (the app runs one to a few).
+- The assistant has a read-only `semantic_search` tool that calls this endpoint as the asking member, so it shares that member's limits and notices.
+
+### Configure Cloudflare Workers AI
+
+The owner created the credentials as Secret Manager secrets `trippr-cloudflare-account-id` and `trippr-cloudflare-api-token`. **No value is ever in the repo.**
+
+| Variable | Meaning |
+|---|---|
+| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Both set: the API uses `@cf/baai/bge-m3`. Either missing: words only. |
+| `SEARCH_EMBEDDER` | `cloudflare`, `off`, or `fake` (tests and the end-to-end run; refused in production) |
+| `CLOUDFLARE_EMBED_MODEL` | default `@cf/baai/bge-m3` |
+| `SEARCH_EMBED_TIMEOUT_MS`, `SEARCH_VECTOR_PATH`, `SEARCH_RATE_PER_MINUTE`, `SEARCH_DAILY_LIMIT` | see above |
+
+Deploy: `.github/workflows/deploy.yml` maps the two secrets into the Cloud Run service when the repository variable **`CLOUDFLARE_QUERY_EMBEDDING`** is `true` (the secret names can be overridden with the variables `CLOUDFLARE_ACCOUNT_ID_SECRET` and `CLOUDFLARE_API_TOKEN_SECRET`). It is off by default because the deploy replaces the whole secret list each time and a missing secret fails the deploy. Before turning it on, check that both secrets exist and that the Cloud Run runtime service account has `roles/secretmanager.secretAccessor` on them. Locally, set the two variables in your shell or in `.env` (gitignored).
+
+**Run the parity check before relying on it.** The hosted model must produce vectors that match the local ones (cosine above 0.98 for the same text). Nothing in this change calls the Cloudflare API: the request shape in `apps/api/src/services/search/embedder.ts` is from Cloudflare's documentation and a stubbed test. On the laptop, after `embed`:
+
+```sh
+cd pipelines
+CLOUDFLARE_ACCOUNT_ID=… CLOUDFLARE_API_TOKEN=… uv run python eval/search/parity_check.py bge-m3-q8 \
+    --endpoint cloudflare:@cf/baai/bge-m3 --embeddings-dir out/embeddings/<date> \
+    --corpus out/bundles/<date>/places.parquet --queries eval/search/queries_bundle.yaml
+```
+
+It sends 30 short query strings, prints the minimum and mean cosine between the local and hosted vectors and the top-10 overlap, and exits 1 below 0.98. If it fails, the fallback is a small Cloud Run service running the same model (option B in the spike): add an adapter next to `createCloudflareEmbedder` behind the same `QueryEmbedder` interface.
+
+### Is search any good? (`eval-search`)
+
+Two runs of the same labelled queries (89 on the bundle, 68 on the checked-in staged corpus, in `pipelines/eval/search/`), with the same metric definitions in Python and in TypeScript:
+
+```sh
+# 1. The model on the bundle, brute-force cosine (laptop; no database):
+cd pipelines && uv run python -m trippr_data eval-search \
+    --corpus out/bundles/<date>/places.parquet --queries eval/search/queries_bundle.yaml
+
+# 2. The loaded graph through the real search service (index or exact path, hosted query vectors, words, ranking):
+uv run python -m trippr_data eval-search --corpus out/bundles/<date>/places.parquet \
+    --queries eval/search/queries_bundle.yaml --export-queries out/search-queries.json
+cd .. && pnpm eval:search --queries pipelines/out/search-queries.json [--path index|exact|auto] [--min-mrr 0.5]
+```
+
+Run (2) once with the Cloudflare variables set and once without (words only) to see what the vectors add. The gap to (1) is the cost of the hosted query vector, the index and the word blending. In (2) a place the group adopted into an existing idea has that idea's id, so its hits do not count; that affects a few places, not the totals systematically.
+
+Numbers on record (the spike's: brute-force cosine on the 8,000-place bundle, 89 queries; see [embeddings-spike.md](embeddings-spike.md)):
+
+| | MRR | Success@1 | Recall@10 | NDCG@10 |
+|---|---|---|---|---|
+| fake hashing baseline (words-like) | 0.201 | 0.157 | 0.178 | 0.166 |
+| BGE-M3 8-bit (what the app loads) | 0.680 | 0.584 | 0.563 | 0.594 |
+
+**The graph eval (2) has not been run**: it needs the loaded graph and a Cloudflare token, neither available when this was written. Record its numbers here after the first load.
+
+The web app has a "Search by meaning" box on the Activities page (press Search; the page's city, tag and category filters narrow it). A search box on the map tab is not built.
+
 ## Running it in Cloud Run (nothing here is created by the code)
 
 The job is the API image run with another command. After the one-time setup below, `deploy.yml` keeps its image current and `load-catalogue.yml` runs it, both only when the repository variable `CATALOGUE_LOAD_JOB` is set.
@@ -105,5 +236,6 @@ Then add the repository variable `CATALOGUE_LOAD_JOB=trippr-load-bundle`. Run it
 |---|---|---|
 | `DATA_BUCKET` | pipeline and job | Bucket name; the job reads `gs://$DATA_BUCKET/bundles` |
 | `BUNDLE_LOCATION` | job | A folder or `gs://` location instead |
+| `EMBEDDINGS_LOCATION` | job | Where the `embeddings/<date>/` runs are; default: `embeddings` next to the bundles folder |
 | `CATALOGUE_TRIP_ID` | job | The trip that gets the places when there is more than one |
 | `CURATE_BUDGET` | pipeline | Total places in the graph (default 8000) |

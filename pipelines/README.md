@@ -283,7 +283,10 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
 - The text per place is "names (every script) · category · city · summary · description"
   (`embed/text.py`; bump `TEXT_VERSION` when the template changes).
 - Output: `out/embeddings/<date>/embeddings.parquet` (`place_id`, `content_hash`, `vector`) and
-  `manifest.json` (model, exact weights version, dims, text version, counts, checksum). Vectors are unit
+  `manifest.json` (model, exact weights version, dims, text version, counts, checksums), plus the sidecar the
+  Node load job reads without a Parquet library: `embeddings.f32` (raw little-endian float32, row-major) and
+  `ids.json` (place ids and content hashes in row order), both checksummed in the manifest. How the API loads
+  and queries them: [docs/data-platform.md](../docs/data-platform.md#semantic-search). Vectors are unit
   length, so cosine similarity is a dot product.
 - Cache: `out/cache/embeddings/<model>.parquet`, keyed by a hash of the model, its version, the text
   version and the text, so only new or changed places are embedded.
@@ -292,7 +295,10 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
   brute-force cosine; it writes `reports/<date>.search-eval.json` and takes `--min-mrr` and
   `--min-recall10` thresholds. For the real bundle use `--corpus out/bundles/<date>/places.parquet
   --queries eval/search/queries_bundle.yaml` (89 queries with rule-based labels). `model_spike.py` is
-  the spike's measuring script and `parity_check.py` checks that a hosted endpoint serves the same model.
+  the spike's measuring script and `parity_check.py` checks that a hosted endpoint serves the same model
+  (`--embeddings-dir out/embeddings/<date>`; credentials `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`).
+  `eval-search --export-queries FILE` writes the queries with their labels resolved to place ids, for the API's
+  `pnpm eval:search`, which scores the loaded graph.
 - The enrich stage's AI `summary` is added to a place's text from the newest
   `out/enriched/<date>/enrichment.parquet` (`--enriched FILE` to choose, `--no-enriched` to skip).
 - Default model: `bge-m3-q8` (8-bit BGE-M3, 1024 dims, about 24 minutes for 8,000 places on 4 CPU

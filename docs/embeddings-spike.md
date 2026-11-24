@@ -207,6 +207,8 @@ How it fits the repo, without writing it:
 
 ## What remains for the app half
 
+**As built (PR 5, app half):** items 1 and 3 are written and covered by CI integration tests (not run locally: no Docker); the vector index statements are in `apps/api/src/repositories/cypher/search/`, the load step, endpoint, assistant tool, web box and the exact in-memory fallback are described in [data-platform.md](data-platform.md#semantic-search). The model is BGE-M3 queried through Cloudflare Workers AI; items 2 (the parity check, which needs the laptop), 4 (the real `embed` run and upload) and 6 are still the owner's. The long-tail Parquet index is not built: search covers the graph only.
+
 1. Run the two vector-index statements and queries in the integration harness on both databases; settle the
    FalkorDB score semantics and the Neo4j community-edition question.
 2. Cloudflare account, token, and `parity_check.py` (or build the tiny service, option B).

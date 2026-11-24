@@ -184,6 +184,8 @@ The same place appears in several sources under different names, scripts and coo
 - **Web:** a search box on the Activities and Map tabs; results show on the map with "Add idea" and "Plan at stop".
 - **Assistant:** a new read-only `semantic_search` tool, so "quiet viewpoints at sunset near our Osaka hotel" runs the hybrid search.
 
+- **As built (PR 5):** `GET /trips/:id/search`, the `semantic_search` assistant tool and a "Search by meaning" box on the Activities page, with BGE-M3 (1,024 dimensions) place vectors made on the laptop and queries embedded by Cloudflare Workers AI. No map-tab box, no long-tail index. See [data-platform.md](data-platform.md#semantic-search).
+
 ### Recommendations
 
 - **Group taste:** the average embedding of what the group upvoted and planned, minus a weighted average of what it downvoted. Each member also gets their own taste vector.
