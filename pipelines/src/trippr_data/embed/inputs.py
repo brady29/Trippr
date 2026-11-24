@@ -1,12 +1,10 @@
 """Where the embed stage reads its places from.
 
-Everything that depends on the shape of the input table is in this file. The curated places Parquet
-(PR 3) was not final when this was written, so the column names are a mapping from the fields the
-embed text needs to the columns that may hold them, first present column wins. When PR 3 lands, change
-`FIELD_COLUMNS` (and `ID_COLUMNS`) here and nothing else.
-
-The input can be a Parquet file, a glob of Parquet files (the staged `staging/<date>/*.parquet` work
-as they are) or a CSV, which is how the search eval's labelled corpus is stored.
+Everything that depends on the shape of the input table is in this file. The default input is the
+curated bundle's `bundles/<date>/places.parquet` (see bundle.py: `id`, `name`, `name_local`, `name_en`,
+`category`, `city_code`, `description`, ...). `FIELD_COLUMNS` maps the fields the embed text uses to the
+columns that may hold them, first present column wins, so the enrich stage's `summary` is picked up when
+it is added to the table. The staged Parquet files and CSVs (the search eval's corpus) work as they are.
 """
 
 from __future__ import annotations
@@ -16,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..duck import connect, sql_str
+from ..layout import bundle_dir, dated_dirs
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ FIELD_COLUMNS: dict[str, tuple[str, ...]] = {
     "category": ("category",),
     "city": ("city_name", "city_code"),
     "summary": ("summary",),
-    "description": ("wikivoyage_text", "description"),
+    "description": ("description", "wikivoyage_text"),
 }
 
 # The place id: the first of these columns that exists, else the pairs below joined with ":".
@@ -51,9 +50,14 @@ class PlaceRow:
     description: str = ""
 
 
-def curated_places_path(out: Path, date: str) -> Path:
-    """Default input: the curated places of a run (PR 3 writes curated/<date>/places.parquet)."""
-    return out / "curated" / date / "places.parquet"
+def bundle_places_path(out: Path, date: str) -> Path:
+    """Default input: the places of a bundle."""
+    return bundle_dir(out, date) / "places.parquet"
+
+
+def latest_bundle_date(out: Path) -> str | None:
+    dates = [d for d in dated_dirs(out / "bundles") if bundle_places_path(out, d).is_file()]
+    return dates[-1] if dates else None
 
 
 def _scan(path: str) -> str:

@@ -11,9 +11,9 @@ from . import checks as checks_mod
 from .bundle import append_bundle_report, build_bundle
 from .cities import load_cities, select_cities
 from .curation import curate, default_date
+from .embed.cli import register as register_embed
 from .enrich.cli import register as register_enrich
 from .eval_er import EVAL_CITIES, evaluate, format_eval, sample_pairs
-from .embed.cli import register as register_embed
 from .extract import EXTRACTORS
 from .extract.foursquare import FoursquareNotConfiguredError
 from .layout import latest_curated_date, latest_raw_date, latest_staging_date

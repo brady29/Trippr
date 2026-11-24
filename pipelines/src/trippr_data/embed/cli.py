@@ -7,12 +7,12 @@ import json
 import logging
 from pathlib import Path
 
-from ..layout import dated_dirs, read_json
+from ..layout import read_json
 from ..registry import Registry
 from ..settings import PIPELINE_ROOT, today
 from .embedders import available_models, make_embedder
 from .evaluate import render_markdown, run_eval_search
-from .inputs import curated_places_path
+from .inputs import bundle_places_path, latest_bundle_date
 from .run import MANIFEST_FILE, embeddings_dir, latest_embeddings_date, run_embed
 
 log = logging.getLogger(__name__)
@@ -22,14 +22,16 @@ EVAL_DIR = PIPELINE_ROOT / "eval" / "search"
 
 
 def cmd_embed(args: argparse.Namespace, registry: Registry, out: Path) -> int:
-    curated = dated_dirs(out / "curated")
+    bundle = args.date or latest_bundle_date(out)
     if args.input:
         input_path: str | Path = args.input
-    elif curated:
-        input_path = curated_places_path(out, args.date or curated[-1])
+    elif bundle and bundle_places_path(out, bundle).is_file():
+        input_path = bundle_places_path(out, bundle)
     else:
-        raise SystemExit(f"No curated places under {out / 'curated'}; pass --input (Parquet or CSV)")
-    date = args.date or (curated[-1] if curated and not args.input else today())
+        raise SystemExit(
+            f"No bundle under {out / 'bundles'}; run `bundle` first or pass --input (Parquet or CSV)"
+        )
+    date = bundle or today()
     embedder = make_embedder(args.model, threads=args.threads)
     result = run_embed(
         input_path,
@@ -71,8 +73,8 @@ def cmd_eval_search(args: argparse.Namespace, registry: Registry, out: Path) -> 
 def register(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("embed", help="embed curated places into vectors (cached by content hash)")
     p.set_defaults(fn=cmd_embed)
-    p.add_argument("--date", help="run folder, YYYY-MM-DD (default: the newest curated run, else today)")
-    p.add_argument("--input", help="places Parquet/CSV or glob (default: curated/<date>/places.parquet)")
+    p.add_argument("--date", help="run folder, YYYY-MM-DD (default: the newest bundle, else today)")
+    p.add_argument("--input", help="places Parquet/CSV or glob (default: bundles/<date>/places.parquet)")
     p.add_argument("--model", default=DEFAULT_MODEL, help=f"one of: {', '.join(available_models())}")
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--threads", type=int, help="cap CPU threads (default: all)")

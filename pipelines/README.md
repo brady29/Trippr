@@ -269,7 +269,7 @@ switch to Geofabrik extracts, then `stage`, `match` and `eval-er`; nothing else 
 ## Embeddings and search eval
 
 `embed` turns places into vectors for semantic search ([spike and recommendation](../docs/embeddings-spike.md)).
-It is not part of `run` yet: it reads curated places, which arrive with PR 3.
+It is not part of `run`: it reads the curated bundle and is run on a laptop (see the spike for why).
 
 ```sh
 uv sync --extra embed                       # onnxruntime + tokenizers + huggingface-hub (no PyTorch)
@@ -278,7 +278,7 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
 ```
 
 - Input columns are mapped in one file, `src/trippr_data/embed/inputs.py` (`FIELD_COLUMNS`, `ID_COLUMNS`),
-  and default to `out/curated/<date>/places.parquet`. Staged Parquet, other Parquet and CSV work as they are.
+  and default to `out/bundles/<date>/places.parquet` (the newest bundle). Staged Parquet, other Parquet and CSV work as they are.
 - The text per place is "names (every script) · category · city · summary · description"
   (`embed/text.py`; bump `TEXT_VERSION` when the template changes).
 - Output: `out/embeddings/<date>/embeddings.parquet` (`place_id`, `content_hash`, `vector`) and
