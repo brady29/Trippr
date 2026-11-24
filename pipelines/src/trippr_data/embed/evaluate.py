@@ -128,6 +128,20 @@ def load_queries(path: Path, corpus: str | Path | None = None, id_column: str = 
     return queries
 
 
+def export_queries(queries_path: Path, corpus: str | Path, dest: Path) -> int:
+    """Write the labelled queries with their labels resolved to place ids as JSON, for the API's
+    `eval:search` script (Node has no YAML reader and must not re-implement the label rules)."""
+    queries = load_queries(queries_path, corpus)
+    payload = {
+        "queries": [
+            {"id": q.id, "text": q.text, "lang": q.lang, "kind": q.kind, "relevant": sorted(q.relevant)}
+            for q in queries
+        ]
+    }
+    write_json(dest, payload)
+    return len(queries)
+
+
 def rank_all(query_vectors: np.ndarray, matrix: np.ndarray, ids: Sequence[str], top: int) -> list[list[str]]:
     """Brute-force cosine (the vectors are unit length, so a dot product), best first, ties by id."""
     scores = query_vectors @ matrix.T

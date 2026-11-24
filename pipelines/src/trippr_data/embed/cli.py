@@ -11,7 +11,7 @@ from ..layout import read_json
 from ..registry import Registry
 from ..settings import PIPELINE_ROOT, today
 from .embedders import available_models, make_embedder
-from .evaluate import render_markdown, run_eval_search
+from .evaluate import export_queries, render_markdown, run_eval_search
 from .inputs import bundle_places_path, latest_bundle_date, latest_enriched_path, read_summaries
 from .run import MANIFEST_FILE, embeddings_dir, latest_embeddings_date, run_embed
 
@@ -53,6 +53,10 @@ def cmd_embed(args: argparse.Namespace, registry: Registry, out: Path) -> int:
 
 
 def cmd_eval_search(args: argparse.Namespace, registry: Registry, out: Path) -> int:
+    if args.export_queries:
+        n = export_queries(Path(args.queries), args.corpus, Path(args.export_queries))
+        print(f"wrote {n} labelled queries with resolved place ids to {args.export_queries}")
+        return 0
     date = args.date or latest_embeddings_date(out)
     if not date:
         raise SystemExit(f"No embeddings under {out / 'embeddings'}; run `embed` first or pass --date")
@@ -99,3 +103,9 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--threads", type=int)
     p.add_argument("--min-mrr", type=float, help="exit 1 below this MRR")
     p.add_argument("--min-recall10", type=float, help="exit 1 below this recall@10")
+    p.add_argument(
+        "--export-queries",
+        metavar="FILE",
+        help="write the queries with their labels resolved to place ids as JSON and stop "
+        "(input for the API's `pnpm eval:search`, which scores the loaded graph)",
+    )

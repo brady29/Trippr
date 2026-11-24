@@ -1,6 +1,8 @@
 """The embed stage: curated places in, a Parquet of vectors and a manifest out.
 
     out/embeddings/<date>/embeddings.parquet   place_id, content_hash, vector
+    out/embeddings/<date>/embeddings.f32       the same matrix, raw little-endian float32 (for the Node load job)
+    out/embeddings/<date>/ids.json             place ids and content hashes, in the matrix's row order
     out/embeddings/<date>/manifest.json        model, version, dims, text version, counts, checksums
     out/cache/embeddings/<model>.parquet       content_hash -> vector, kept between runs
 
@@ -28,7 +30,7 @@ from ..settings import utc_now
 from .embedders import Embedder, fingerprint
 from .inputs import PlaceRow, read_places
 from .text import TEXT_VERSION, build_texts
-from .vectors import read_vectors, write_vectors
+from .vectors import IDS_FILE, MATRIX_FILE, read_vectors, write_sidecar, write_vectors
 
 log = logging.getLogger(__name__)
 
@@ -134,6 +136,7 @@ def embed_places(
     directory = embeddings_dir(out, date)
     vectors_path = directory / VECTORS_FILE
     write_vectors(vectors_path, ids, hashes, matrix)
+    write_sidecar(directory, ids, hashes, matrix)
     if use_cache:
         keys = list(lookup)
         write_vectors(cache_path, keys, keys, np.stack([lookup[h] for h in keys]) if keys else matrix)
@@ -154,6 +157,11 @@ def embed_places(
         "input": input_label,
         "vectors_file": VECTORS_FILE,
         "vectors_sha256": _sha256(vectors_path),
+        # The sidecar the API's load job reads (no Parquet library in Node): same rows, same order.
+        "matrix_file": MATRIX_FILE,
+        "matrix_sha256": _sha256(directory / MATRIX_FILE),
+        "ids_file": IDS_FILE,
+        "ids_sha256": _sha256(directory / IDS_FILE),
         "created_at": utc_now().isoformat(),
         "seconds": round(time.monotonic() - started, 2),
     }
@@ -209,4 +217,9 @@ def load_run(directory: Path) -> tuple[dict[str, Any], list[str], np.ndarray]:
     ids, _, matrix = read_vectors(path)
     if matrix.shape != (manifest["count"], manifest["dims"]):
         raise ValueError(f"{path}: shape {matrix.shape} does not match the manifest")
+    # Older runs have no sidecar; when there is one it must match its own checksums and the Parquet.
+    if "matrix_file" in manifest:
+        for name, key in ((manifest["matrix_file"], "matrix_sha256"), (manifest["ids_file"], "ids_sha256")):
+            if _sha256(directory / name) != manifest[key]:
+                raise ValueError(f"{directory / name} does not match its manifest checksum")
     return manifest, ids, matrix

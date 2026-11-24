@@ -1,7 +1,13 @@
-"""Vector Parquet files (id, content_hash, vector FLOAT[]) read and written with DuckDB."""
+"""Vector Parquet files (id, content_hash, vector FLOAT[]) read and written with DuckDB.
+
+Besides the Parquet, a run writes a plain sidecar the Node load job can read without a Parquet library:
+`embeddings.f32` (the matrix: row-major little-endian float32, rows in the order of `ids.json`) and
+`ids.json` (`{"place_ids": [...], "content_hashes": [...]}`). Both are covered by the run manifest's checksums.
+"""
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -51,3 +57,28 @@ def read_vectors(path: Path) -> tuple[list[str], list[str], np.ndarray]:
         con.close()
     matrix = np.array(vectors, dtype=np.float32) if vectors else np.zeros((0, 0), dtype=np.float32)
     return ids, hashes, matrix
+
+
+MATRIX_FILE = "embeddings.f32"
+IDS_FILE = "ids.json"
+
+
+def write_sidecar(directory: Path, ids: Sequence[str], hashes: Sequence[str], matrix: np.ndarray) -> None:
+    """Write `embeddings.f32` and `ids.json` next to the Parquet, rows in the given order."""
+    if not (len(ids) == len(hashes) == len(matrix)):
+        raise ValueError("ids, hashes and matrix must have the same length")
+    directory.mkdir(parents=True, exist_ok=True)
+    # "<f4" is little-endian float32 whatever the machine, so the file reads the same everywhere.
+    (directory / MATRIX_FILE).write_bytes(np.ascontiguousarray(matrix, dtype="<f4").tobytes())
+    payload = {"place_ids": list(ids), "content_hashes": list(hashes)}
+    (directory / IDS_FILE).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
+def read_sidecar(directory: Path, dims: int) -> tuple[list[str], list[str], np.ndarray]:
+    """(ids, content hashes, (n, dims) float32 matrix) in the sidecar's row order."""
+    payload = json.loads((directory / IDS_FILE).read_text(encoding="utf-8"))
+    raw = np.frombuffer((directory / MATRIX_FILE).read_bytes(), dtype="<f4")
+    ids = payload["place_ids"]
+    if raw.size != len(ids) * dims:
+        raise ValueError(f"{directory / MATRIX_FILE}: {raw.size} floats is not {len(ids)} rows of {dims}")
+    return ids, payload["content_hashes"], raw.reshape(len(ids), dims).astype(np.float32)

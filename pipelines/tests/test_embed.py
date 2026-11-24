@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import sys
 from pathlib import Path
 
@@ -30,7 +31,7 @@ from trippr_data.embed.run import (
     run_embed,
 )
 from trippr_data.embed.text import SEPARATOR, build_text, build_texts
-from trippr_data.embed.vectors import read_vectors, write_vectors
+from trippr_data.embed.vectors import read_sidecar, read_vectors, write_vectors
 from trippr_data.layout import read_json, staging_dir
 
 from .conftest import FIXTURE_DATE
@@ -242,6 +243,43 @@ def test_a_tampered_vectors_file_fails_the_manifest_check(tmp_path: Path) -> Non
     write_vectors(result.vectors_path, ["p00"], ["x"], np.ones((1, 16), dtype=np.float32))
     with pytest.raises(ValueError, match="checksum"):
         load_run(result.directory)
+
+
+def test_the_node_sidecar_matches_the_parquet_and_the_manifest(tmp_path: Path) -> None:
+    """The load job reads embeddings.f32 + ids.json, not Parquet; they must carry the same rows."""
+    places = make_places(7)
+    result = embed_places(places, build_texts(places), FakeEmbedder(dims=24), tmp_path, "2026-01-01")
+    m = result.manifest
+    assert (m["matrix_file"], m["ids_file"]) == ("embeddings.f32", "ids.json")
+    f32 = result.directory / "embeddings.f32"
+    assert f32.stat().st_size == 7 * 24 * 4  # raw float32, no header
+    for key, name in (("matrix_sha256", "embeddings.f32"), ("ids_sha256", "ids.json")):
+        assert m[key] == hashlib.sha256((result.directory / name).read_bytes()).hexdigest()
+    ids, hashes, matrix = read_sidecar(result.directory, 24)
+    parquet_ids, parquet_hashes, parquet_matrix = read_vectors(result.vectors_path)
+    assert ids == [p.place_id for p in places]
+    order = [ids.index(i) for i in parquet_ids]  # the Parquet is read back sorted by id
+    assert np.array_equal(matrix[order], parquet_matrix) and [hashes[i] for i in order] == parquet_hashes
+    # Explicitly little-endian, whatever the machine.
+    assert np.frombuffer(f32.read_bytes(), dtype="<f4")[:24].tolist() == matrix[0].tolist()
+
+
+def test_a_tampered_sidecar_fails_the_manifest_check(tmp_path: Path) -> None:
+    places = make_places(3)
+    result = embed_places(places, build_texts(places), FakeEmbedder(dims=16), tmp_path, "2026-01-01")
+    (result.directory / "embeddings.f32").write_bytes(bytes(3 * 16 * 4))
+    with pytest.raises(ValueError, match=r"embeddings\.f32 does not match"):
+        load_run(result.directory)
+
+
+def test_export_queries_resolves_labels_to_place_ids(tmp_path: Path) -> None:
+    dest = tmp_path / "queries.json"
+    assert main(["eval-search", "--export-queries", str(dest), "--corpus", str(EVAL_DIR / "places.csv")]) == 0
+    exported = read_json(dest)["queries"]
+    queries = load_queries(EVAL_DIR / "queries.yaml", EVAL_DIR / "places.csv")
+    assert [q["id"] for q in exported] == [q.id for q in queries]
+    assert all(q["relevant"] and q["kind"] and q["lang"] for q in exported)
+    assert {tuple(e["relevant"]) for e in exported} == {tuple(sorted(q.relevant)) for q in queries}
 
 
 def test_run_embed_reads_staged_places(staged_out: Path, tmp_path: Path) -> None:
