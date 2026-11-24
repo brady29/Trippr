@@ -1,0 +1,113 @@
+# Labelled search queries over the curated bundle's places.parquet (about 8,000 places in 108 cities, each
+# with English and local names and, for about 60%, a Wikivoyage/Wikidata description).
+#
+#   uv run python -m trippr_data eval-search --corpus out/bundles/<date>/places.parquet \
+#       --queries eval/search/queries_bundle.yaml
+#
+# Labels are rules over the bundle's columns, not place ids, so they survive a re-curation.
+# kind: name         a well-known place asked for by one of its names, often in another script or
+#                    romanisation than the record's primary name. Relevant = the record(s) with that
+#                    English name in that city.
+# kind: category     "temples in Kyoto" in six languages. Relevant = the places of that city and category.
+# kind: intent       the same, phrased as what the traveller wants.
+# kind: description  about what the place is, answered from its description text. Relevant = places whose
+#                    description matches the regex (a trailing ~ on a field name means regex), so these
+#                    labels are approximate: recall is understated, precision is fair.
+
+queries:
+  # ---- name queries -------------------------------------------------------------------------
+  - {id: n-ja-sensoji, text: 浅草寺, lang: ja, kind: name, match: {city_code: TYO, name_en: Sensō-ji Temple}}
+  - {id: n-ko-sensoji, text: 센소지, lang: ko, kind: name, match: {city_code: TYO, name_en: Sensō-ji Temple}}
+  - {id: n-zh-tokyo-tower, text: 东京塔, lang: zh, kind: name, match: {city_code: TYO, name_en: Tokyo Tower}}
+  - {id: n-ja-imperial-palace, text: 皇居, lang: ja, kind: name, match: {city_code: TYO, name_en: Imperial Palace}}
+  - {id: n-en-meiji, text: Meiji Jingu shrine, lang: en, kind: name, match: {city_code: TYO, name_en: Meiji Jingū}}
+  - {id: n-th-skytree, text: โตเกียวสกายทรี, lang: th, kind: name, match: {city_code: TYO, name_en: Tokyo Skytree}}
+  - {id: n-ko-osaka-castle, text: 오사카성, lang: ko, kind: name, match: {city_code: OSA, name_en: Osaka Castle Park}}
+  - {id: n-en-usj, text: USJ Osaka theme park, lang: en, kind: name, match: {city_code: OSA, name_en: Universal Studios Japan}}
+  - {id: n-zh-kaiyukan, text: 大阪海游馆, lang: zh, kind: name, match: {city_code: OSA, name_en: Osaka Aquarium Kaiyukan}}
+  - {id: n-en-tsutenkaku, text: Tsutenkaku tower, lang: en, kind: name, match: {city_code: OSA, name_en: Tsūtenkaku}}
+  - {id: n-ko-abeno, text: 아베노 하루카스, lang: ko, kind: name, match: {city_code: OSA, name_en: Abeno Harukas}}
+  - {id: n-en-fushimi, text: Fushimi Inari thousand torii gates, lang: en, kind: name, match: {city_code: UKY, name_en: Fushimi Inari-taisha}}
+  - {id: n-zh-kiyomizu, text: 清水寺, lang: zh, kind: name, match: {city_code: UKY, name_en: Kiyomizu-dera}}
+  - {id: n-en-ryoanji, text: Ryoanji rock garden, lang: en, kind: name, match: {city_code: UKY, name_en: Ryōan-ji Temple}}
+  - {id: n-ja-gyeongbokgung, text: 景福宮, lang: ja, kind: name, match: {city_code: SEL, name_en: Gyeongbokgung}}
+  - {id: n-en-deoksugung, text: Deoksugung palace Seoul, lang: en, kind: name, match: {city_code: SEL, name_en: Deoksugung}}
+  - {id: n-en-jongmyo, text: Jongmyo royal ancestral shrine, lang: en, kind: name, match: {city_code: SEL, name_en: Jongmyo Shrine}}
+  - {id: n-zh-grand-palace, text: 曼谷大皇宫, lang: zh, kind: name, match: {city_code: BKK, name_en: Grand Palace}}
+  - {id: n-en-jim-thompson, text: Jim Thompson House museum, lang: en, kind: name, match: {city_code: BKK, name_en: Jim Thompson House}}
+  - {id: n-vi-temple-literature, text: Văn Miếu Quốc Tử Giám, lang: vi, kind: name, match: {city_code: HAN, name_en: Temple of Literature}}
+  - {id: n-en-hoa-lo, text: Hoa Lo Prison, lang: en, kind: name, match: {city_code: HAN, name_en: Hỏa Lò Prison}}
+  - {id: n-vi-one-pillar, text: Chùa Một Cột, lang: vi, kind: name, match: {city_code: HAN, name_en: One Pillar Pagoda}}
+  - {id: n-en-ho-chi-minh-mausoleum, text: Ho Chi Minh Mausoleum Hanoi, lang: en, kind: name, match: {city_code: HAN, name_en: Ho Chi Minh Mausoleum}}
+  - {id: n-en-ben-thanh, text: Ben Thanh Market, lang: en, kind: name, match: {city_code: SGN, name_en: Bến Thành Market}}
+  - {id: n-vi-war-remnants, text: Bảo tàng Chứng tích Chiến tranh, lang: vi, kind: name, match: {city_code: SGN, name_en: War Remnants Museum}}
+  - {id: n-en-saigon-notre-dame, text: Saigon Notre Dame Cathedral, lang: en, kind: name, match: {city_code: SGN, name_en: Saigon Notre-Dame Basilica}}
+  - {id: n-vi-cu-chi, text: Địa đạo Củ Chi, lang: vi, kind: name, match: {city_code: SGN, name_en: Cu Chi tunnels}}
+  - {id: n-vi-independence-palace, text: Dinh Độc Lập, lang: vi, kind: name, match: {city_code: SGN, name_en: Independence Palace}}
+  - {id: n-zh-taipei-101, text: 台北101, lang: zh, kind: name, match: {city_code: TPE, name_en: Taipei 101}}
+  - {id: n-en-longshan, text: Longshan Temple Taipei, lang: en, kind: name, match: {city_code: TPE, name_en: Bangka Lungshan Temple}}
+  - {id: n-zh-ckshall, text: 中正纪念堂, lang: zh, kind: name, match: {city_code: TPE, name_en: Chiang Kai-shek Memorial Hall}}
+  - {id: n-zh-hk-disneyland, text: 香港迪士尼乐园, lang: zh, kind: name, match: {city_code: HKG, name_en: Hong Kong Disneyland}}
+  - {id: n-zh-oriental-pearl, text: 东方明珠塔, lang: zh, kind: name, match: {city_code: SHA, name_en: Oriental Pearl Tower}}
+  - {id: n-zh-yu-garden, text: 豫园, lang: zh, kind: name, match: {city_code: SHA, name_en: Yu Garden}}
+  - {id: n-zh-temple-of-heaven, text: 天坛, lang: zh, kind: name, match: {city_code: BJS, name_en: Temple of Heaven}}
+  - {id: n-en-lama-temple, text: Lama Temple Beijing, lang: en, kind: name, match: {city_code: BJS, name_en: Yonghe Temple}}
+  - {id: n-en-birds-nest, text: Bird's Nest Olympic stadium, lang: en, kind: name, match: {city_code: BJS, name_en: Beijing National Stadium}}
+  - {id: n-zh-hongyadong, text: 洪崖洞, lang: zh, kind: name, match: {city_code: CKG, name_en: Hongyadong}}
+  - {id: n-en-liziba, text: monorail that goes through a building in Chongqing, lang: en, kind: name, match: {city_code: CKG, name_en: Liziba Station}}
+  - {id: n-vi-golden-bridge, text: Cầu Vàng Đà Nẵng, lang: vi, kind: name, match: {city_code: DAD, name_en: Golden Bridge}}
+  - {id: n-en-doi-suthep, text: Doi Suthep temple Chiang Mai, lang: en, kind: name, match: {city_code: CNX, name_en: Wat Phrathat Doi Suthep}}
+
+  # ---- category queries ---------------------------------------------------------------------
+  - {id: c-en-kyoto-temples, text: temples and shrines in Kyoto, lang: en, kind: category, match: {city_code: UKY, category: [temple_shrine]}}
+  - {id: c-ja-kyoto-temples, text: 京都のお寺と神社, lang: ja, kind: category, match: {city_code: UKY, category: [temple_shrine]}}
+  - {id: c-zh-tokyo-museums, text: 东京的博物馆, lang: zh, kind: category, match: {city_code: TYO, category: [museum]}}
+  - {id: c-ko-seoul-museums, text: 서울 박물관, lang: ko, kind: category, match: {city_code: SEL, category: [museum]}}
+  - {id: c-vi-hanoi-museums, text: bảo tàng ở Hà Nội, lang: vi, kind: category, match: {city_code: HAN, category: [museum]}}
+  - {id: c-vi-saigon-markets, text: chợ ở Sài Gòn, lang: vi, kind: category, match: {city_code: SGN, category: [market]}}
+  - {id: c-th-bangkok-temples, text: วัดในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [temple_shrine]}}
+  - {id: c-th-bangkok-parks, text: สวนสาธารณะในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [park_garden]}}
+  - {id: c-zh-taipei-markets, text: 台北夜市, lang: zh, kind: category, match: {city_code: TPE, category: [market]}}
+  - {id: c-zh-shanghai-museums, text: 上海的博物馆, lang: zh, kind: category, match: {city_code: SHA, category: [museum]}}
+  - {id: c-ja-osaka-aquariums, text: 大阪の水族館や動物園, lang: ja, kind: category, match: {city_code: OSA, category: [aquarium_zoo]}}
+  - {id: c-ja-tokyo-onsen, text: 東京の温泉やスパ, lang: ja, kind: category, match: {city_code: TYO, category: [onsen_spa]}}
+  - {id: c-en-tokyo-theme-parks, text: theme parks in Tokyo, lang: en, kind: category, match: {city_code: TYO, category: [theme_park]}}
+  - {id: c-en-shanghai-viewpoints, text: viewpoints in Shanghai, lang: en, kind: category, match: {city_code: SHA, category: [viewpoint]}}
+  - {id: c-en-taipei-hikes, text: hiking trails in Taipei, lang: en, kind: category, match: {city_code: TPE, category: [hike]}}
+  - {id: c-en-phuket-beaches, text: beaches in Phuket, lang: en, kind: category, match: {city_code: HKT, category: [beach]}}
+  - {id: c-ko-seoul-parks, text: 서울 공원, lang: ko, kind: category, match: {city_code: SEL, category: [park_garden]}}
+  - {id: c-zh-beijing-historic, text: 北京的历史古迹, lang: zh, kind: category, match: {city_code: BJS, category: [historic_site]}}
+  - {id: c-en-seoul-palaces, text: castles and palaces in Seoul, lang: en, kind: category, match: {city_code: SEL, category: [castle_palace]}}
+  - {id: c-vi-danang-beaches, text: bãi biển Đà Nẵng, lang: vi, kind: category, match: {city_code: DAD, category: [beach]}}
+  - {id: c-ja-tokyo-art-museums, text: 東京の美術館, lang: ja, kind: category, match: {city_code: TYO, category: [museum]}}
+  - {id: c-en-osaka-performance, text: live music and theatre in Osaka, lang: en, kind: category, match: {city_code: OSA, category: [performance]}}
+  - {id: c-en-bangkok-restaurants, text: restaurants in Bangkok, lang: en, kind: category, match: {city_code: BKK, category: [restaurant]}}
+  - {id: c-th-bangkok-bars, text: บาร์ในกรุงเทพ, lang: th, kind: category, match: {city_code: BKK, category: [bar]}}
+
+  # ---- intent queries -----------------------------------------------------------------------
+  - {id: i-en-tokyo-view, text: somewhere high up to see the whole city of Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [viewpoint]}}
+  - {id: i-en-tokyo-soak, text: relax and soak in hot water after a long walk in Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [onsen_spa]}}
+  - {id: i-en-osaka-sea-animals, text: kids will love seeing sea animals in Osaka, lang: en, kind: intent, match: {city_code: OSA, category: [aquarium_zoo]}}
+  - {id: i-en-tokyo-rides, text: rides and roller coasters near Tokyo, lang: en, kind: intent, match: {city_code: TYO, category: [theme_park]}}
+  - {id: i-en-hanoi-fresh-food, text: buy fresh food from local vendors in Hanoi, lang: en, kind: intent, match: {city_code: HAN, category: [market]}}
+  - {id: i-ja-seoul-palace, text: ソウルで伝統的な宮殿を見たい, lang: ja, kind: intent, match: {city_code: SEL, category: [castle_palace]}}
+  - {id: i-zh-shanghai-art, text: 想在上海看艺术展, lang: zh, kind: intent, match: {city_code: SHA, category: [gallery, museum]}}
+  - {id: i-en-shanghai-green, text: a quiet green place to walk in Shanghai, lang: en, kind: intent, match: {city_code: SHA, category: [park_garden]}}
+  - {id: i-ko-tokyo-night, text: 도쿄에서 밤에 놀 수 있는 곳, lang: ko, kind: intent, match: {city_code: TYO, category: [nightlife, bar]}}
+  - {id: i-en-osaka-stadium, text: watch a baseball or football match in Osaka, lang: en, kind: intent, match: {city_code: OSA, category: [sports_venue]}}
+  - {id: i-vi-hanoi-pagoda, text: đi chùa cầu an ở Hà Nội, lang: vi, kind: intent, match: {city_code: HAN, category: [temple_shrine, place_of_worship]}}
+  - {id: i-th-phuket-sunset, text: ดูพระอาทิตย์ตกริมทะเลที่ภูเก็ต, lang: th, kind: intent, match: {city_code: HKT, category: [beach]}}
+
+  # ---- description queries (answered from the Wikivoyage / Wikidata text) ------------------------
+  - {id: d-en-pandas, text: see giant pandas, lang: en, kind: description, match: {"description~": "panda"}}
+  - {id: d-zh-pandas, text: 看大熊猫的地方, lang: zh, kind: description, match: {"description~": "panda"}}
+  - {id: d-en-unesco, text: UNESCO World Heritage site, lang: en, kind: description, match: {"description~": "UNESCO"}}
+  - {id: d-ko-unesco, text: 유네스코 세계유산, lang: ko, kind: description, match: {"description~": "UNESCO"}}
+  - {id: d-th-unesco, text: มรดกโลกขององค์การยูเนสโก, lang: th, kind: description, match: {"description~": "UNESCO"}}
+  - {id: d-en-zen, text: Zen rock garden, lang: en, kind: description, match: {"description~": "zen|rock garden"}}
+  - {id: d-ja-zen, text: 枯山水の庭, lang: ja, kind: description, match: {"description~": "zen|rock garden"}}
+  - {id: d-en-french-colonial, text: French colonial era building, lang: en, kind: description, match: {"description~": "french"}}
+  - {id: d-vi-french-colonial, text: công trình kiến trúc thời Pháp thuộc, lang: vi, kind: description, match: {"description~": "french"}}
+  - {id: d-en-tallest, text: tallest building with an observation deck, lang: en, kind: description, match: {"description~": "tallest|observation deck|skydeck"}}
+  - {id: d-zh-tallest, text: 最高的大楼和观景台, lang: zh, kind: description, match: {"description~": "tallest|observation deck|skydeck"}}
+  - {id: d-en-ancestors, text: shrine honouring royal ancestors, lang: en, kind: description, match: {"description~": "ancestor"}}

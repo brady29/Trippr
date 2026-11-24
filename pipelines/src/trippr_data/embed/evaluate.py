@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -66,7 +67,11 @@ def _corpus_rows(corpus: str | Path) -> list[dict[str, Any]]:
             source = f"read_csv({sql_str(path)}, header=true, all_varchar=true)"
         else:
             source = f"read_parquet({sql_str(path)}, union_by_name=true)"
-        return rows(con, f"SELECT * FROM {source}")
+        # Labels use plain columns only; skip structs, lists and timestamps.
+        plain = ("VARCHAR", "DOUBLE", "FLOAT", "INTEGER", "BIGINT", "BOOLEAN")
+        described = con.execute(f"DESCRIBE SELECT * FROM {source}").fetchall()
+        columns = [f'"{name}"' for name, kind, *_ in described if kind in plain]
+        return rows(con, f"SELECT {', '.join(columns)} FROM {source}")
     finally:
         con.close()
 
@@ -74,10 +79,19 @@ def _corpus_rows(corpus: str | Path) -> list[dict[str, Any]]:
 def resolve_match(
     rule: Mapping[str, Any], corpus_rows: Sequence[Mapping[str, Any]], id_column: str
 ) -> set[str]:
-    """Ids of corpus rows where every field in the rule equals (or, for a list, is one of) its value."""
+    """Ids of corpus rows where every field in the rule equals (or, for a list, is one of) its value.
+
+    A field written with a trailing `~` is a case-insensitive regex searched in that column instead
+    (`"description~": "panda"`); an empty column never matches.
+    """
     found: set[str] = set()
     for row in corpus_rows:
         for field, wanted in rule.items():
+            if field.endswith("~"):
+                text = row.get(field[:-1])
+                if not text or not re.search(wanted, str(text), re.IGNORECASE):
+                    break
+                continue
             allowed = wanted if isinstance(wanted, list) else [wanted]
             if field not in row or row[field] not in allowed:
                 break
