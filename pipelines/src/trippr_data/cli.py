@@ -1,4 +1,4 @@
-"""Command line: python -m trippr_data <extract|stage|match|sample-er|eval-er|check|report|curate|bundle|upload|run> [options]."""
+"""Command line: python -m trippr_data <extract|stage|match|sample-er|eval-er|check|report|curate|bundle|enrich|eval-enrich|upload|run> [options]."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from . import checks as checks_mod
 from .bundle import append_bundle_report, build_bundle
 from .cities import load_cities, select_cities
 from .curation import curate, default_date
+from .enrich.cli import register as register_enrich
 from .eval_er import EVAL_CITIES, evaluate, format_eval, sample_pairs
 from .extract import EXTRACTORS
 from .extract.foursquare import FoursquareNotConfiguredError
@@ -225,6 +226,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--no-bundle", action="store_true", help="stop after the checks and report (no curate or bundle)"
     )
+
+    register_enrich(sub)  # enrich, enrich-status, eval-enrich
     return parser
 
 

@@ -286,3 +286,47 @@ gcloud storage buckets add-iam-policy-binding gs://trippr-bucket-data \
 ```
 
 Then add the repository variable `DATA_BUCKET=trippr-bucket-data`.
+
+## LLM enrichment (PR 4, pipeline half)
+
+`enrich` adds `tags`, a one-line `summary`, `duration_min`, `best_time`, `indoor`, `price_level` and
+`good_for` to each curated place with Claude's **Message Batches API** (half price). It does not run in the
+scheduled workflow yet: it reads curated places, which arrive with PR 3.
+
+```sh
+export ANTHROPIC_API_KEY=...        # read from the environment only; never stored in a file
+
+# 1. Cost first. Counts tokens on a sample of the real requests (free) and prints the estimate.
+uv run python -m trippr_data enrich --input curated/places.parquet --dry-run
+# no key yet? --dry-run --offline estimates from character counts, no API call
+# 2. Spend, only with --yes and only under the cap
+uv run python -m trippr_data enrich --input curated/places.parquet --yes
+```
+
+| | |
+|---|---|
+| Input | Parquet or JSON lines. Columns are named in one place, `enrich/inputs.py`: `place_id`, `name`, `name_local`, `name_en`, `category`, `city_code`, `address`, `opening_hours`, `descriptions` (list of `{source, text}`), `sources`. Staged places work too (`source:source_id` becomes the id). `--column-map place_id=golden_id ...` points it at PR 3's names. The default path, `out/curated/<date>/places.parquet`, is also set there |
+| Output | `out/enriched/<date>/enrichment.parquet`: the fields above, `content_hash`, `ai` (true), `ai_label` ("Summary written by AI from Wikivoyage and OpenStreetMap") and a `provenance` struct (`summary_ai`, `model`, `prompt_version`, `enriched_at`, `batch_id`, `input_sources`) |
+| Model | `--model haiku` (`claude-haiku-5-5`, default) or `sonnet` (`claude-sonnet-5-5`), or `ENRICH_MODEL`. Choose with `eval-enrich --models haiku,sonnet`; the spec's rule is the small model unless it misses the targets |
+| Request | Strict JSON schema in `output_config.format`, `effort: low`, no sampling parameters and no thinking budget (current models reject both), a one-hour prompt cache on the shared system prompt. Place text goes in the user turn as data |
+| Cache | `out/enrich/enrich.cache.jsonl`, keyed by sha256(kind, model, prompt version, content hash) of exactly the fields the model sees. Unchanged places are never sent again; editing a place, the model or `PROMPT_VERSION` (`enrich/prompt.py`) re-enriches just those |
+| Resume | Each batch is recorded in `out/enrich/enrich.state.json` the moment it is created. `--no-wait` submits and returns; rerunning the same command (or `enrich-status --collect`) collects finished batches and never resubmits a key already in flight. A key that fails validation three times is left out until its input changes |
+| Cost guard | The estimate must be within `ENRICH_BUDGET_USD` (default 10, or `--budget-usd`) or nothing is submitted (exit 3). `--yes` is required to spend at all (exit 3 without it). The cap is re-checked before each batch of `--batch-size` (2000). Output tokens are an assumption (350 each, `--output-tokens`); `eval-enrich` prints the measured average to calibrate it |
+| Guardrails | Output is pydantic-validated: tags must be taxonomy categories, at most 4; summary at most 140 characters (code points, so CJK gets the same room), one line, URLs dropped, no replacement characters; duration 5 to 1440 minutes |
+
+### Eval
+
+`eval-enrich` runs a model over `eval/enrich_places.jsonl` (162 hand-labelled places in 17 countries and 9
+scripts; see `eval/ENRICH.md`) and scores tag precision, recall and F1, duration within ±30 minutes,
+best-time and indoor accuracy, and summary faithfulness (rule checks for numbers, proper nouns and
+non-Latin names that are not in the input; `--judge` adds a second cheap-model rubric check). Targets from
+the spec: tag F1 0.85, at most 2% unsupported summaries. It prints per-script and per-country tables, the
+places worth reading and the cost per 1,000 places, and exits 1 if no model meets the targets.
+
+```sh
+uv run python -m trippr_data eval-enrich --dry-run --offline --extrapolate-to 8000   # estimate only
+uv run python -m trippr_data eval-enrich --models haiku,sonnet --judge --yes          # cents to about a dollar
+```
+
+Tests (`tests/enrich/`) use a fake client that implements the Batch API surface. They never touch the
+network, and a guard fails any test that constructs a real `anthropic.Anthropic`.
