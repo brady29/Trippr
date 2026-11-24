@@ -186,7 +186,7 @@ def test_polite_client_retries_and_identifies_itself(monkeypatch):
     client = PoliteClient(min_interval=2, retries=3, backoff=1, sleep=slept.append)
     assert client.request("https://example.test/") == b"ok"
     assert all("Trippr" in a and "github.com/brady29/Trippr" in a for a in attempts)
-    assert max(slept) >= 7  # waited for Retry-After
+    assert max(slept) >= 6.9  # waited for Retry-After (minus a few microseconds of elapsed time)
 
 
 # Wikidata -----------------------------------------------------------------------------------
