@@ -121,6 +121,20 @@ wheels = [
 ]
 
 [[package]]
+name = "h3"
+version = "4.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/a8/307aba523fae45079c7e940ec394ffc81ffe9231f07a982ca97f73b2fa36/h3-4.5.1.tar.gz", hash = "sha256:be7fd86fcf742d23c7e7e249b5a416b5cb36ecc2b2169c585f7d7a17df7f7e66", size = 182858, upload-time = "2026-11-18T20:36:00.935Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b4/dd/9ef5d76e6f8977f3b2aa6ed3c87cddc97e538dd435140444d5be7039fe9e/h3-4.5.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:142a25eccd0ed411792a929d9c381aa270d81a50cbcf3c26fa65d8f3547e50df", size = 874670, upload-time = "2026-11-18T20:35:17.281Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/08/fefeb57f403620d1044d2de4a21aa45b2d7afcd2af6f55119c7662d75763/h3-4.5.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:166ad618b9594f8fd07a249a82a42fd0487b9dce1889bc6aaf11a77a1394cb0f", size = 1034428, upload-time = "2026-11-18T20:35:18.702Z" },
+    { url = "https://files.pythonhosted.org/packages/22/c3/4f7ad7dd3ada1787cc76892b5a923a43ef23aa542c3cf4ff5d485dddd344/h3-4.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e28c6a89de48c8048be789c92d860402f6636de6fd50af0da5710f4fe79ea53e", size = 1087710, upload-time = "2026-11-18T20:35:19.908Z" },
+    { url = "https://files.pythonhosted.org/packages/71/b1/98219168e524d36c16bb79ea02a309376ba409e15d0e66996aa48df61941/h3-4.5.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:51efa05102ea52c30031632a69a55fc703b4c4ffbc82b3324db248d3010b9334", size = 1097918, upload-time = "2026-11-18T20:35:21.051Z" },
+    { url = "https://files.pythonhosted.org/packages/49/f1/ebea8dba0a25c5ab717fe6cedabfc7d3ea678a53eb5b5eefdafecb9ca188/h3-4.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:b3105bac92b5b31909f278e9bdefbce50394b15d030314780b85547b6e5668e1", size = 847031, upload-time = "2026-11-18T20:35:22.101Z" },
+    { url = "https://files.pythonhosted.org/packages/84/f6/0cce2b7ca60233ab6ce367f6782f102f88aea2d9f8f92cd8a1f183e36338/h3-4.5.1-cp312-cp312-win_arm64.whl", hash = "sha256:f7b4eed2234080d8e171bd00871d91cd62dd523591fe8d383986c5bec7b4d4c9", size = 776078, upload-time = "2026-11-18T20:35:23.142Z" },
+]
+
+[[package]]
 name = "hf-xet"
 version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -489,6 +503,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "duckdb" },
+    { name = "h3" },
     { name = "numpy" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -512,6 +527,7 @@ dev = [
 requires-dist = [
     { name = "anthropic", specifier = ">=1.0" },
     { name = "duckdb", specifier = ">=2.0.1" },
+    { name = "h3", specifier = ">=4.5.1" },
     { name = "huggingface-hub", marker = "extra == 'embed'", specifier = ">=1.0" },
     { name = "numpy", specifier = ">=2.5.5" },
     { name = "onnxruntime", marker = "extra == 'embed'", specifier = ">=1.22" },
