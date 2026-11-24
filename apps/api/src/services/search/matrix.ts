@@ -76,7 +76,8 @@ export class VectorMatrix {
         const pin = this.pins[row];
         if (!pin || haversineKm(filter.near, { lat: pin[0], lon: pin[1] }) > filter.near.km) continue;
       }
-      hits.push({ row, similarity: this.dot(query, row) * this.inverseNorms[row]! * qScale });
+      // Rounded so that vectors that are the same up to float error tie, and ties fall back to the id.
+      hits.push({ row, similarity: Math.round(this.dot(query, row) * this.inverseNorms[row]! * qScale * 1e6) / 1e6 });
     }
     hits.sort((a, b) => b.similarity - a.similarity || (this.ids[a.row]! < this.ids[b.row]! ? -1 : 1));
     return hits.slice(0, k).map((h) => ({ id: this.ids[h.row]!, similarity: h.similarity }));
