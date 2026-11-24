@@ -37,6 +37,12 @@
       "rows": 80
     },
     {
+      "name": "enrichment.jsonl.gz",
+      "sha256": "b49a6bb61e8af5efac64f4be94b42da5e65747edda8b46c948995598135c44f4",
+      "bytes": 2608,
+      "rows": 40
+    },
+    {
       "name": "sources.json",
       "sha256": "228506d1dbceb735c046868581cc9e000125c328c05b5af179c37cf4f4067031",
       "bytes": 8041,
@@ -165,6 +171,18 @@
         "data": {}
       },
       {
+        "name": "enrichment.summary_provenance",
+        "status": "pass",
+        "detail": "all 39 summaries carry summary_ai provenance and an AI label",
+        "data": {}
+      },
+      {
+        "name": "enrichment.coverage",
+        "status": "info",
+        "detail": "40 of 80 places enriched",
+        "data": {}
+      },
+      {
         "name": "staging.checks",
         "status": "pass",
         "detail": "the staging quality checks passed",
@@ -262,5 +280,17 @@
       }
     ]
   },
-  "evals": {}
+  "evals": {},
+  "enrichment": {
+    "places": 40,
+    "with_summary": 39,
+    "models": [
+      "claude-haiku-5-5"
+    ],
+    "prompt_versions": [
+      "enrich-v1"
+    ],
+    "enriched_at": "2026-11-18T09:30:00Z",
+    "source_date": "2026-11-18"
+  }
 }

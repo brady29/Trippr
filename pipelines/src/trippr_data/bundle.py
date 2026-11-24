@@ -28,6 +28,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from . import __version__
 from .bundle_checks import BundleCheckContext, CheckResult, run_bundle_checks
+from .bundle_enrichment import (
+    ENRICHMENT_FILE,
+    ENRICHMENT_PARQUET_FILE,
+    BundleEnrichmentSummary,
+    eval_scores,
+    load_enrichment,
+    models_by_use,
+    summarise,
+    write_enrichment_jsonl,
+    write_enrichment_parquet,
+)
 from .cities import load_cities, load_countries
 from .curation import CurationConfig, load_curation_config
 from .duck import connect, rows, sql_str
@@ -167,6 +178,8 @@ class BundleManifest(BaseModel):
     counts: BundleCounts
     checks: BundleChecks
     evals: dict[str, Any] = Field(default_factory=dict)
+    # Present when the enrich stage has run: counts, model and date of enrichment.jsonl.gz.
+    enrichment: BundleEnrichmentSummary | None = None
 
 
 # --- writing ------------------------------------------------------------------------------------
@@ -324,6 +337,8 @@ def build_bundle(
     if checks_file(out, date).is_file():
         upstream = read_json(checks_file(out, date))
 
+    enrichment = load_enrichment(out, date, [p.id for p in places])
+
     ctx = BundleCheckContext(
         registry=registry,
         cities={c.code: c for c in load_cities(config_dir=config_dir)},
@@ -333,6 +348,7 @@ def build_bundle(
         curate_stats=curate_stats,
         upstream_checks=upstream,
         previous=previous_manifest(out, date),
+        enrichment=enrichment,
     )
     results: list[CheckResult] = run_bundle_checks(places, ctx)
     passed = not any(r.status == "fail" for r in results)
@@ -343,6 +359,12 @@ def build_bundle(
     target.mkdir(parents=True)
     n_places = write_places(target / PLACES_FILE, places)
     files = [BundleFile(name=PLACES_FILE, sha256=_sha256(target / PLACES_FILE), bytes=0, rows=n_places)]
+    if enrichment is not None:
+        n_enriched = write_enrichment_jsonl(target / ENRICHMENT_FILE, enrichment.rows)
+        files.append(BundleFile(name=ENRICHMENT_FILE, sha256="", bytes=0, rows=n_enriched))
+        if parquet:
+            write_enrichment_parquet(target / ENRICHMENT_PARQUET_FILE, enrichment)
+            files.append(BundleFile(name=ENRICHMENT_PARQUET_FILE, sha256="", bytes=0, rows=n_enriched))
     infos = source_infos(registry, places, out, date)
     write_json(target / SOURCES_FILE, [i.model_dump(mode="json") for i in infos])
     files.append(BundleFile(name=SOURCES_FILE, sha256="", bytes=0, rows=len(infos)))
@@ -381,7 +403,10 @@ def build_bundle(
         files=files,
         counts=counts,
         checks=BundleChecks(passed=passed, results=[BundleCheck(**asdict(r)) for r in results]),
+        enrichment=summarise(enrichment) if enrichment is not None else None,
     )
+    if enrichment is not None and (scores := eval_scores(out, models_by_use(enrichment))):
+        manifest.evals["enrich"] = scores
     write_json(target / MANIFEST_FILE, manifest.model_dump(mode="json"))
     for r in results:
         log.log(
@@ -418,6 +443,13 @@ def bundle_report(manifest: BundleManifest) -> str:
     lines += [
         f"| {t} | {n:,} | {n / c.places:.1%} |" for t, n in sorted(c.by_tag.items(), key=lambda kv: -kv[1])
     ]
+    if manifest.enrichment:
+        e = manifest.enrichment
+        lines += [
+            "",
+            f"Enrichment: {e.places:,} of {c.places:,} places ({e.with_summary:,} AI summaries) by "
+            f"{', '.join(e.models)}, newest answer {e.enriched_at}.",
+        ]
     lines += ["", "| Source | Places citing it |", "|---|---:|"]
     lines += [f"| {s} | {n:,} |" for s, n in sorted(c.by_source.items())]
     lines += ["", "| Check | Status | Detail |", "|---|---|---|"]

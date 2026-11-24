@@ -15,6 +15,7 @@ from .taxonomy import Category
 
 if TYPE_CHECKING:
     from .bundle import BundlePlace
+    from .bundle_enrichment import EnrichmentData
     from .curation import CurationConfig
 
 DUPLICATE_RADIUS_M = 50.0
@@ -33,6 +34,7 @@ class BundleCheckContext:
     curate_stats: dict[str, Any]
     upstream_checks: dict[str, Any] | None = None  # reports/<date>.checks.json from the check stage
     previous: dict[str, Any] | None = None  # the last passed bundle's manifest
+    enrichment: EnrichmentData | None = None  # the enrich stage's rows for these places, when there are any
 
 
 def _name_key(name: str) -> str:
@@ -291,6 +293,15 @@ def check_previous(places: list[BundlePlace], ctx: BundleCheckContext) -> list[C
     ]
 
 
+def check_enrichment_provenance(places: list[BundlePlace], ctx: BundleCheckContext) -> list[CheckResult]:
+    """A summary in the bundle must say it was written by AI (provenance.summary_ai, an AI label, the model)."""
+    if ctx.enrichment is None:
+        return []
+    from .bundle_enrichment import check_enrichment
+
+    return check_enrichment(ctx.enrichment.rows, len(places), ctx.enrichment.dropped)
+
+
 CHECKS = [
     check_not_empty,
     check_ids,
@@ -301,6 +312,7 @@ CHECKS = [
     check_budget,
     check_mix,
     check_previous,
+    check_enrichment_provenance,
     check_upstream,
 ]
 

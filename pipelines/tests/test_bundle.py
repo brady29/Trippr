@@ -14,6 +14,7 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
+import duckdb
 import pytest
 
 from trippr_data.bundle import (
@@ -36,6 +37,13 @@ from trippr_data.bundle_checks import (
     check_provenance,
     run_bundle_checks,
 )
+from trippr_data.bundle_enrichment import (
+    ENRICHMENT_FILE,
+    ENRICHMENT_PARQUET_FILE,
+    BundleEnrichment,
+    check_enrichment,
+    read_enrichment,
+)
 from trippr_data.checks import check
 from trippr_data.cities import load_cities, load_countries
 from trippr_data.curation import curate, load_curation_config
@@ -44,6 +52,7 @@ from trippr_data.match import match
 from trippr_data.taxonomy import load_taxonomy
 
 from .conftest import FIXTURE_DATE, FIXTURES
+from .enrichment_fixture import MODEL, write_fixture_enrichment
 
 EXPECTED_BUNDLE = FIXTURES / "expected" / "bundle" / FIXTURE_DATE
 CREATED_AT = datetime(2026, 11, 18, 12, 0, 0, tzinfo=UTC)
@@ -69,6 +78,7 @@ def built(staged_out: Path, tmp_path: Path, registry):
     check(out, FIXTURE_DATE, registry=registry, baseline=None)
     cfg = golden_config()
     curate(out, FIXTURE_DATE, config=cfg)
+    write_fixture_enrichment(out, FIXTURE_DATE)
     path, manifest = build_bundle(
         out, FIXTURE_DATE, registry=registry, config=cfg, created_at=CREATED_AT, parquet=False
     )
@@ -77,14 +87,19 @@ def built(staged_out: Path, tmp_path: Path, registry):
 
 def test_bundle_files_and_manifest(built):
     _, path, manifest = built
-    assert sorted(p.name for p in path.iterdir()) == [MANIFEST_FILE, PLACES_FILE, SOURCES_FILE]
+    assert sorted(p.name for p in path.iterdir()) == [
+        ENRICHMENT_FILE,
+        MANIFEST_FILE,
+        PLACES_FILE,
+        SOURCES_FILE,
+    ]
     assert manifest.checks.passed, [r for r in manifest.checks.results if r.status == "fail"]
     assert manifest.input == "golden" and manifest.format == 1
     assert (
         manifest.counts.places == sum(manifest.counts.by_city.values()) == 80 or manifest.counts.places <= 80
     )
     assert manifest.counts.with_licence == manifest.counts.places == manifest.counts.with_sources
-    assert {f.name for f in manifest.files} == {PLACES_FILE, SOURCES_FILE}
+    assert {f.name for f in manifest.files} == {ENRICHMENT_FILE, PLACES_FILE, SOURCES_FILE}
     assert verify_bundle(path).counts == manifest.counts
     # The manifest on disk is the one that was returned.
     assert (
@@ -102,6 +117,80 @@ def test_places_round_trip_with_provenance(built):
         assert p.id.startswith("cat-") and p.rank >= 1 and p.sources
         assert all(s.source_id and s.licence and s.fetched_at.endswith("Z") for s in p.sources)
     assert {"overture", "foursquare"} <= {s.source for p in places for s in p.sources}
+
+
+def test_enrichment_is_bundled_with_provenance(built):
+    _, path, manifest = built
+    places = read_places(path / PLACES_FILE)
+    items = read_enrichment(path / ENRICHMENT_FILE)
+    ids = [p.id for p in places]
+    assert [i.id for i in items] == [i for i in ids if i in {e.id for e in items}]  # same order as the places
+    assert 0 < len(items) < len(places)
+    e = manifest.enrichment
+    assert e and e.places == len(items) and e.models == [MODEL] and e.source_date == FIXTURE_DATE
+    assert e.with_summary == sum(1 for i in items if i.summary) == len(items) - 1
+    assert e.enriched_at == "2026-11-18T09:30:00Z"
+    assert next(f for f in manifest.files if f.name == ENRICHMENT_FILE).rows == len(items)
+    for i in items:
+        assert i.ai and i.provenance.model == MODEL and i.provenance.enriched_at.endswith("Z")
+        assert i.provenance.summary_ai is bool(i.summary)
+        assert bool(i.ai_label) is bool(i.summary)
+    # The check that guards the label passed.
+    assert {r.name: r.status for r in manifest.checks.results}["enrichment.summary_provenance"] == "pass"
+
+
+def test_enrichment_parquet_is_narrowed_to_the_bundle(staged_out, tmp_path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
+    cfg = golden_config()
+    curate(out, FIXTURE_DATE, config=cfg)
+    write_fixture_enrichment(out, FIXTURE_DATE)
+    path, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=cfg, created_at=CREATED_AT)
+    assert {f.name for f in manifest.files} >= {ENRICHMENT_FILE, ENRICHMENT_PARQUET_FILE}
+    assert verify_bundle(path).enrichment == manifest.enrichment
+    con = duckdb.connect()
+    n = con.execute(
+        f"SELECT count(*) FROM read_parquet('{(path / ENRICHMENT_PARQUET_FILE).as_posix()}')"
+    ).fetchone()[0]
+    assert n == manifest.enrichment.places
+
+
+def test_a_bundle_without_enrichment_has_no_enrichment_files(staged_out, tmp_path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
+    curate(out, FIXTURE_DATE, config=golden_config())
+    path, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=golden_config(), parquet=False)
+    assert manifest.enrichment is None and "enrich" not in manifest.evals
+    assert not (path / ENRICHMENT_FILE).exists()
+    assert "enrichment.summary_provenance" not in {r.name for r in manifest.checks.results}
+
+
+def test_enrichment_from_an_earlier_date_and_eval_scores(staged_out, tmp_path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
+    curate(out, FIXTURE_DATE, config=golden_config())
+    write_fixture_enrichment(out, FIXTURE_DATE)
+    folder = out / "enriched"
+    (folder / FIXTURE_DATE).rename(folder / "2026-11-10")  # enriched earlier; the bundle is built later
+    report = out / "enrich-eval" / MODEL / "report.json"
+    report.parent.mkdir(parents=True)
+    report.write_text(
+        json.dumps(
+            {
+                "model": MODEL,
+                "judge_model": "claude-haiku-5-5",
+                "metrics": {"n": 174, "tag_f1": 0.81, "valid_rate": 1.0, "misses_ignored": 3},
+                "targets": {"tag_f1": True},
+                "misses": [{"big": "x"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    _, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=golden_config(), parquet=False)
+    assert manifest.enrichment and manifest.enrichment.source_date == "2026-11-10"
+    assert manifest.evals["enrich"] == {
+        "model": MODEL,
+        "judge_model": "claude-haiku-5-5",
+        "metrics": {"n": 174, "valid_rate": 1.0, "tag_f1": 0.81},
+        "targets": {"tag_f1": True},
+    }
 
 
 def test_sources_json_has_licences_and_attribution(built):
@@ -193,6 +282,42 @@ def test_provenance_check(bctx):
     assert statuses(check_provenance([unregistered], bctx))["provenance.registered"] == "fail"
     unknown_source = place(4, sources=[{**place(4).sources[0].model_dump(), "source": "mystery"}])
     assert statuses(check_provenance([unknown_source], bctx))["provenance.registered"] == "fail"
+
+
+def enriched(i: int = 1, **over) -> BundleEnrichment:
+    base = {
+        "id": f"cat-{i:016d}", "tags": ["museum"], "summary": "A museum.", "duration_min": 90, "best_time": "any",
+        "indoor": True, "price_level": None, "good_for": [], "display_name": None, "is_generic_name": False,
+        "ai": True, "ai_label": "Summary written by AI",
+        "provenance": {"summary_ai": True, "model": MODEL, "prompt_version": "enrich-v1",
+                       "enriched_at": "2026-11-18T09:30:00Z", "batch_id": "b", "input_sources": []},
+    }  # fmt: skip
+    prov = {**base["provenance"], **over.pop("provenance", {})}
+    return BundleEnrichment.model_validate({**base, **over, "provenance": prov})
+
+
+def test_enrichment_check_requires_summary_ai_provenance():
+    quiet = enriched(2, summary="", ai_label=None, provenance={"summary_ai": False})
+    ok = check_enrichment([enriched(1), quiet], 5)
+    assert {r.name: r.status for r in ok} == {
+        "enrichment.summary_provenance": "pass",
+        "enrichment.coverage": "info",
+    }
+    for bad in (
+        enriched(3, provenance={"summary_ai": False}),  # a summary that does not say it is AI
+        enriched(4, ai_label=None),  # no label text to show
+        enriched(5, ai=False),
+        enriched(6, provenance={"model": ""}),
+        enriched(7, summary="", ai_label=None, provenance={"summary_ai": True}),  # claims a summary it lacks
+    ):
+        got = {r.name: r.status for r in check_enrichment([enriched(1), bad], 5)}
+        assert got["enrichment.summary_provenance"] == "fail", bad
+
+
+def test_enrichment_values_are_validated():
+    for over in ({"best_time": "dawn"}, {"price_level": "$$$$"}, {"duration_min": 2}, {"surprise": True}):
+        with pytest.raises(ValueError):
+            enriched(1, **over)
 
 
 def test_ids_and_duplicates(bctx):
