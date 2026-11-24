@@ -1,0 +1,41 @@
+# Lodging kind for each source category. Overture: taxonomy label (the place's primary label, then its ancestors).
+# Foursquare: category label path (longest matching prefix). OSM: the tourism tag value.
+# A lodging place whose category has no rule here is kept as kind "other" and counted in the report.
+# `exclude` drops it (camping and caravan sites are not hotels).
+# kinds: hotel, hostel, guest_house, apartment, resort, inn, motel, other
+source,source_category,kind
+overture,hotel,hotel
+overture,boutique_hotel,hotel
+overture,capsule_hotel,hostel
+overture,hostel,hostel
+overture,motel,motel
+overture,inn,inn
+overture,ryokan,inn
+overture,bed_and_breakfast,guest_house
+overture,guest_house,guest_house
+overture,vacation_rental,apartment
+overture,service_apartment,apartment
+overture,apartment,apartment
+overture,resort,resort
+overture,lodge,inn
+overture,cabin,exclude
+overture,campground,exclude
+overture,rv_park,exclude
+overture,lodging,other
+foursquare,Travel and Transportation > Lodging > Hotel,hotel
+foursquare,Travel and Transportation > Lodging > Hostel,hostel
+foursquare,Travel and Transportation > Lodging > Motel,motel
+foursquare,Travel and Transportation > Lodging > Inn,inn
+foursquare,Travel and Transportation > Lodging > Bed and Breakfast,guest_house
+foursquare,Travel and Transportation > Lodging > Resort,resort
+foursquare,Travel and Transportation > Lodging > Vacation Rental,apartment
+foursquare,Travel and Transportation > Lodging > Extended Stay,apartment
+foursquare,Travel and Transportation > Lodging > Campground,exclude
+foursquare,Travel and Transportation > Lodging > Cabin,exclude
+foursquare,Travel and Transportation > Lodging,other
+osm_lodging,hotel,hotel
+osm_lodging,hostel,hostel
+osm_lodging,motel,motel
+osm_lodging,guest_house,guest_house
+osm_lodging,apartment,apartment
+osm_lodging,chalet,exclude

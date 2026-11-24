@@ -22,6 +22,7 @@ from .layout import (
     report_md,
     staging_dir,
 )
+from .stay.layout import stay_checks_file, stay_report_md
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ def run_paths(out: Path, date: str) -> list[Path]:
     paths = [raw_dir(out, s, date) for s in raw_sources(out, date)]
     paths += [staging_dir(out, date), matched_dir(out, date), curated_dir(out, date), bundle_dir(out, date)]
     paths += [report_md(out, date), report_json(out, date)]
+    paths += [stay_report_md(out, date), stay_checks_file(out, date)]  # stay stages' own report and checks
     if latest_json(out).is_file():
         paths.append(latest_json(out))
     return [p for p in paths if p.exists()]

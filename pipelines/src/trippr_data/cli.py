@@ -22,6 +22,7 @@ from .registry import Registry, SourceDisabledError, SourceNotRegisteredError, l
 from .report import write_report
 from .settings import PIPELINE_ROOT, data_bucket, out_dir, today
 from .stage import stage
+from .stay.runner import add_commands as stay_commands
 from .storage import upload
 
 log = logging.getLogger("trippr_data")
@@ -31,7 +32,7 @@ ER_LABELS = PIPELINE_ROOT / "eval" / "er_pairs.csv"
 
 def _sources(spec: str | None, registry: Registry) -> list[str]:
     if not spec or spec == "enabled":
-        names = registry.enabled()
+        names = [s for s in registry.enabled() if s in EXTRACTORS]  # stay sources have their own commands
     else:
         names = [s.strip() for s in spec.split(",") if s.strip()]
         unknown = [s for s in names if s not in EXTRACTORS]
@@ -230,6 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     register_enrich(sub)  # enrich, enrich-status, eval-enrich
     register_embed(sub)
+    stay_commands(add)
     return parser
 
 

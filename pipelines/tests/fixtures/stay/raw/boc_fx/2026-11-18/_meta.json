@@ -1,0 +1,18 @@
+{
+  "source": "boc_fx",
+  "licence": "Bank of Canada Terms of Use (free use with attribution)",
+  "version": "2026-09-28",
+  "dataset_path": "fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T06:00:00+00:00",
+  "row_count": 11,
+  "fixture": true,
+  "files": {
+    "rates.json": {
+      "city": null,
+      "rows": 11,
+      "sha256": "3996851da00cdedb7129632f4863286dc6c653e8012fde48ce9e77c7e1a5c843",
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    }
+  }
+}

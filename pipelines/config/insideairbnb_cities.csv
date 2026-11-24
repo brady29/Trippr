@@ -1,0 +1,10 @@
+# Trippr city -> Inside Airbnb dataset (the path segments on https://insideairbnb.com/get-the-data/) and the
+# currency its listing prices are quoted in (Inside Airbnb shows local-currency prices with a "$" sign).
+# Checked 2026-11-23 against the index: these five are the only datasets in Trippr's 19 countries.
+# `stay-extract` warns when the index lists another dataset in one of those countries.
+code,country,region,city,currency
+TYO,japan,kantō,tokyo,JPY
+HKG,china,hk,hong-kong,HKD
+SIN,singapore,sg,singapore,SGD
+TPE,taiwan,northern-taiwan,taipei,TWD
+BKK,thailand,central-thailand,bangkok,THB

@@ -23,6 +23,7 @@ from .layout import (
 )
 from .registry import Registry
 from .settings import CONFIG_DIR
+from .stay.report import stay_section
 from .taxonomy import load_taxonomy
 
 log = logging.getLogger(__name__)
@@ -200,6 +201,8 @@ def build_report(
             f"| {r['name']} | {STATUS_ICON[r['status']]} | {_cell(r['detail'])} |" for r in checks["results"]
         ]
         lines.append("")
+
+    lines += stay_section(out, date, registry)  # empty unless the stay stages ran for this date
 
     lines += ["## Attribution", ""]
     lines += [

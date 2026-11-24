@@ -168,3 +168,86 @@ sources:
     notes: >-
       The `content` field is kept apart from the facts and flagged description_licence = CC-BY-SA-4.0 in
       signals, so downstream steps can attribute it. Images are not taken.
+
+  insideairbnb:
+    name: Inside Airbnb
+    enabled: true
+    url: https://insideairbnb.com/get-the-data/
+    access: >-
+      Per-city snapshot files on https://data.insideairbnb.com/<country>/<region>/<city>/<snapshot date>/,
+      found from the index page https://insideairbnb.com/get-the-data/ (read once per run). We download
+      data/listings.csv.gz, data/calendar.csv.gz, visualisations/reviews.csv (the review dates summary),
+      visualisations/neighbourhoods.csv and neighbourhoods.geojson for the cities in
+      config/insideairbnb_cities.csv: one file at a time with a pause between requests, only when the
+      snapshot is not already in raw/, with a generic User-Agent. The site's robots.txt only disallows
+      ia_archiver. No account or key is needed. Nothing is taken from Airbnb itself.
+    licence: CC-BY-4.0
+    licence_urls:
+      - https://creativecommons.org/licenses/by/4.0/
+    attribution: >-
+      Data from Inside Airbnb (insideairbnb.com), CC BY 4.0. Location and snapshot date are shown with
+      every figure.
+    terms_checked_on: 2026-11-23
+    terms_urls:
+      - https://insideairbnb.com/get-the-data/
+      - https://insideairbnb.com/data-policies/
+      - https://creativecommons.org/licenses/by/4.0/
+    allowed_uses:
+      - Aggregate (medians, counts, shares by area, neighbourhood and map cell) and show the aggregates with the attribution above
+      - Keep the downloaded snapshot in our own private bucket for reproducibility
+    notes: >-
+      The Data Policies ask users to take only the data they need, not to scrape the site, to download
+      once rather than on every run, and not to republish the data. So: raw and staged listing files stay
+      private (the bucket blocks public access), only aggregates leave the pipeline (no listing ids, host
+      ids, names, photos or links), and a snapshot already in raw/ is never fetched again. Coverage of
+      Trippr's cities is Tokyo, Hong Kong, Singapore, Taipei and Bangkok only. Prices are quoted in each
+      city's local currency with a "$" sign; they are converted to CAD at the Bank of Canada rate for the
+      snapshot date.
+
+  osm_lodging:
+    name: OpenStreetMap lodging (tourism=hotel|hostel|guest_house|apartment|motel)
+    enabled: true
+    url: https://wiki.openstreetmap.org/wiki/Key:tourism
+    access: >-
+      Overpass API (https://overpass-api.de/api/interpreter), one query per city bounding box for
+      nwr[tourism~"^(hotel|hostel|guest_house|apartment|motel)$"], run one at a time with a pause between
+      queries and a generic User-Agent, as the Overpass usage policy asks. A stand-in until PR 2's full
+      OpenStreetMap extractor lands, which will replace it.
+    licence: ODbL-1.0
+    licence_urls:
+      - https://opendatacommons.org/licenses/odbl/1-0/
+    attribution: © OpenStreetMap contributors, available under the Open Database Licence (openstreetmap.org/copyright).
+    terms_checked_on: 2026-11-23
+    terms_urls:
+      - https://www.openstreetmap.org/copyright
+      - https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances
+      - https://operations.osmfoundation.org/policies/api/
+    allowed_uses:
+      - Read, transform and combine with other data with attribution; a public database derived from it must be offered under ODbL
+      - Keep OSM-derived fields traceable per record (sources) and do not publish the curated bundle as a dataset
+    notes: >-
+      Share-alike applies to a published derived database; the pipeline's outputs stay private and the app
+      only shows attribution. See the spec's "Provenance and licences".
+
+  boc_fx:
+    name: Bank of Canada exchange rates (Valet API)
+    enabled: true
+    url: https://www.bankofcanada.ca/valet/docs
+    access: >-
+      https://www.bankofcanada.ca/valet/observations/<FX series>/json?start_date=..&end_date=.. (public, no
+      key), one request per run for the currencies and dates needed. Series FX<CCY>CAD are daily averages in
+      Canadian dollars per unit of the currency.
+    licence: Bank of Canada Terms of Use (free use with attribution)
+    licence_urls:
+      - https://www.bankofcanada.ca/terms/
+    attribution: Exchange rates from the Bank of Canada (bankofcanada.ca), daily average rates; converted prices are approximations.
+    terms_checked_on: 2026-11-23
+    terms_urls:
+      - https://www.bankofcanada.ca/terms/
+      - https://www.bankofcanada.ca/valet/docs
+    allowed_uses:
+      - Use, copy and distribute with attribution to the Bank of Canada and a note that changes were made
+      - Keep requests few (the terms forbid circumventing request limits)
+    notes: >-
+      Used to convert Inside Airbnb prices to CAD at the snapshot date's rate (the last business day on or
+      before the date).

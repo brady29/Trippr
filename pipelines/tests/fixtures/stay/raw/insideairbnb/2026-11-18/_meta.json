@@ -1,0 +1,124 @@
+{
+  "source": "insideairbnb",
+  "licence": "CC-BY-4.0",
+  "version": "2026-09-25",
+  "dataset_path": "fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T06:00:00+00:00",
+  "row_count": 145,
+  "fixture": true,
+  "attribution": "Data from Inside Airbnb (insideairbnb.com), CC BY 4.0. Location and snapshot date are shown with every figure.",
+  "snapshots": {
+    "SIN": "2026-09-23",
+    "TYO": "2026-09-25"
+  },
+  "coverage": {
+    "covered": [
+      "SIN",
+      "TYO"
+    ],
+    "not_covered_in_this_run": []
+  },
+  "files": {
+    "SIN/calendar.csv.gz": {
+      "city": "SIN",
+      "name": "calendar.csv.gz",
+      "snapshot": "2026-09-23",
+      "url": "fixture://SIN/calendar.csv.gz",
+      "bytes": 3201,
+      "sha256": "df0bb2503fb4dba04ed7f4977d61b257f6533a045f080151f197b5feee4f6d36",
+      "rows": 1120,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "SIN/listings.csv.gz": {
+      "city": "SIN",
+      "name": "listings.csv.gz",
+      "snapshot": "2026-09-23",
+      "url": "fixture://SIN/listings.csv.gz",
+      "bytes": 1776,
+      "sha256": "9e5a3361b655bbcb9038ff4da6cfea8511027ed949bcea73a926e8a4a811d5c8",
+      "rows": 28,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "SIN/neighbourhoods.csv": {
+      "city": "SIN",
+      "name": "neighbourhoods.csv",
+      "snapshot": "2026-09-23",
+      "url": "fixture://SIN/neighbourhoods.csv",
+      "bytes": 135,
+      "sha256": "0a1aef29e42261e9ef097bbcf526ada80b482e793a5a2b11c6e3778362f3b71c",
+      "rows": null,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "SIN/neighbourhoods.geojson": {
+      "city": "SIN",
+      "name": "neighbourhoods.geojson",
+      "snapshot": "2026-09-23",
+      "url": "fixture://SIN/neighbourhoods.geojson",
+      "bytes": 891,
+      "sha256": "69307275a25ffc4c2bd0b29ebee775bd17613e06f6df5f1929a962255c224dd0",
+      "rows": null,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "SIN/reviews.csv": {
+      "city": "SIN",
+      "name": "reviews.csv",
+      "snapshot": "2026-09-23",
+      "url": "fixture://SIN/reviews.csv",
+      "bytes": 3792,
+      "sha256": "e4d1ac6b8eb57c82b9696455f5aa17421230ade796afa7f36d2eb637c1e742a4",
+      "rows": 236,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO/calendar.csv.gz": {
+      "city": "TYO",
+      "name": "calendar.csv.gz",
+      "snapshot": "2026-09-25",
+      "url": "fixture://TYO/calendar.csv.gz",
+      "bytes": 13826,
+      "sha256": "12a4deb428d3be98279c350f3fb18eefad4d8cccd3e46005ff77b56f0bbae0e8",
+      "rows": 4680,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO/listings.csv.gz": {
+      "city": "TYO",
+      "name": "listings.csv.gz",
+      "snapshot": "2026-09-25",
+      "url": "fixture://TYO/listings.csv.gz",
+      "bytes": 5554,
+      "sha256": "90e648e44dbe8d5567ce28f91cb4a5e5d4cc46be23d3e4033bc86ce00c577324",
+      "rows": 117,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO/neighbourhoods.csv": {
+      "city": "TYO",
+      "name": "neighbourhoods.csv",
+      "snapshot": "2026-09-25",
+      "url": "fixture://TYO/neighbourhoods.csv",
+      "bytes": 105,
+      "sha256": "073e746f09b47c6eb5bde8bffa12c2dbce84f2782558c077a463c14cccb33ba7",
+      "rows": null,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO/neighbourhoods.geojson": {
+      "city": "TYO",
+      "name": "neighbourhoods.geojson",
+      "snapshot": "2026-09-25",
+      "url": "fixture://TYO/neighbourhoods.geojson",
+      "bytes": 1152,
+      "sha256": "c2ba4212a4e2b9f50222934695045957a436d07037d15d7a9568a59bc4d44c6f",
+      "rows": null,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO/reviews.csv": {
+      "city": "TYO",
+      "name": "reviews.csv",
+      "snapshot": "2026-09-25",
+      "url": "fixture://TYO/reviews.csv",
+      "bytes": 38352,
+      "sha256": "1658199dc081e27f50cebb591f46be85f3a7204e6e8db3f73ba9ae40ebd30c64",
+      "rows": 2396,
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    }
+  }
+}

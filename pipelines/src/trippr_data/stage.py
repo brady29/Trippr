@@ -495,7 +495,7 @@ def stage(
 ) -> dict[str, dict[str, Any]]:
     ctx = ctx or StageContext.load()
     available = raw_sources(out, date)
-    chosen = sources or available
+    chosen = sources or [s for s in available if s in PRE_SQL]
     missing = [s for s in chosen if s not in available]
     if missing:
         raise FileNotFoundError(f"No raw data for {missing} on {date} under {out / 'raw'}")

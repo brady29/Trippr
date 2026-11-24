@@ -1,0 +1,113 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API fixture",
+ "osm3s": {
+  "timestamp_osm_base": "2026-11-17T22:00:00Z"
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 101,
+   "tags": {
+    "tourism": "hotel",
+    "name": "Tokyu Stay Shibuya Shin-Minamiguchi",
+    "stars": "3",
+    "website": "https://www.tokyustay.example/shibuya",
+    "wikidata": "Q111",
+    "name:en": "Tokyu Stay Shibuya Shin-Minamiguchi",
+    "addr:country": "JP"
+   },
+   "lat": 35.65484,
+   "lon": 139.70506
+  },
+  {
+   "type": "way",
+   "id": 202,
+   "tags": {
+    "tourism": "hotel",
+    "name": "ANA Holiday Inn Tokyo Bay",
+    "stars": "4",
+    "phone": "+81 3 0000 0000"
+   },
+   "center": {
+    "lat": 35.69425,
+    "lon": 139.76457
+   }
+  },
+  {
+   "type": "node",
+   "id": 303,
+   "tags": {
+    "tourism": "guest_house",
+    "name": "浅草ゲストハウス",
+    "name:en": "Asakusa Guest House",
+    "name:ja": "浅草ゲストハウス",
+    "addr:street": "Kaminarimon",
+    "addr:housenumber": "1"
+   },
+   "lat": 35.715,
+   "lon": 139.796
+  },
+  {
+   "type": "node",
+   "id": 304,
+   "tags": {
+    "tourism": "guest_house",
+    "name": "浅草ゲストハウス",
+    "name:en": "Asakusa Guest House"
+   },
+   "lat": 35.71503,
+   "lon": 139.79604
+  },
+  {
+   "type": "node",
+   "id": 305,
+   "tags": {
+    "tourism": "apartment",
+    "name": "Shinjuku Fixture Apartments",
+    "stars": "2S"
+   },
+   "lat": 35.7,
+   "lon": 139.7
+  },
+  {
+   "type": "node",
+   "id": 306,
+   "tags": {
+    "tourism": "hostel",
+    "name": "Fixture Hostel Sumida"
+   },
+   "lat": 35.71,
+   "lon": 139.81
+  },
+  {
+   "type": "node",
+   "id": 307,
+   "tags": {
+    "tourism": "hotel"
+   },
+   "lat": 35.72,
+   "lon": 139.82
+  },
+  {
+   "type": "node",
+   "id": 308,
+   "tags": {
+    "tourism": "chalet",
+    "name": "Fixture Chalet"
+   },
+   "lat": 35.6,
+   "lon": 139.6
+  },
+  {
+   "type": "node",
+   "id": 309,
+   "tags": {
+    "tourism": "hotel",
+    "name": "Too Far Hotel"
+   },
+   "lat": 38.0,
+   "lon": 139.7
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+{
+  "source": "osm_lodging",
+  "licence": "ODbL-1.0",
+  "version": "2026-11-17T22:00:00Z",
+  "dataset_path": "fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T06:00:00+00:00",
+  "row_count": 11,
+  "fixture": true,
+  "files": {
+    "OSA.json": {
+      "city": "OSA",
+      "rows": 2,
+      "osm_base": "2026-11-17T22:00:00Z",
+      "sha256": "dc6ffe113d721add2d489ba2daeb86013b4fd3347f9ab4b901460b633fbbae58",
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO.json": {
+      "city": "TYO",
+      "rows": 9,
+      "osm_base": "2026-11-17T22:00:00Z",
+      "sha256": "10dbd6a5e5d6763131e0a360d7a0349f046c19e31b9844856ba40692d0b5c76d",
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+# Stay analytics settings (docs/data-platform-spec.md, Feature 5). The formulas are documented in
+# pipelines/README.md ("Stay analytics") and implemented in src/trippr_data/stay/scoring.py.
+version: 1
+
+# Weights of the stay score parts. A part a unit has no data for is left out and the rest are rescaled.
+weights:
+  value: 0.40
+  walkability: 0.30
+  quiet: 0.20
+  reviews: 0.10
+
+# A score needs parts worth at least this much of the total weight (0.5: for a city with no Inside Airbnb
+# data, walkability + quiet alone is enough; a single weak part is not).
+min_weight_coverage: 0.5
+
+# Listings with a price outside these limits are kept in staging but flagged and left out of price statistics.
+price:
+  floor_cad: 10             # below this a nightly price is a data error or a per-bed artefact
+  outlier_percentile: 0.99  # per city: above this percentile of CAD prices
+  max_min_nights: 28        # longer minimum stays are monthly rentals a traveller cannot book for a trip
+
+# A unit (area, neighbourhood or H3 cell) needs this many priced listings for a value or reviews part.
+min_priced_listings: 10
+
+reviews:
+  floor: 4.0                # median rating that maps to 0
+  ceiling: 5.0              # median rating that maps to 100
+  prior_weight: 10          # shrinks a unit's rating toward the city's, like this many extra rated listings
+
+walkability:
+  radius_km: 0.6
+  saturation_places: 120    # this many staged places within the radius is a full 100
+
+quiet:
+  radius_km: 0.3
+  saturation_nightlife: 12  # this many bars or nightlife venues within the radius is a full 0
+  nightlife_categories: [bar, nightlife]
+
+hosts:
+  multi_listing_min: 3      # a host with at least this many listings counts as a multi-listing host
+  top_hosts: 5
+
+# Trippr Areas (seed/areas.json) take their own radius when they have `radiusKm`, else this.
+areas:
+  default_radius_km: 1.5
+
+# A unit with fewer listings than this gets no listing statistics (and an H3 cell is not published at all),
+# so no single listing can be read from an aggregate.
+privacy:
+  min_listings: 3
+
+h3_resolution: 8
+
+# Hotels from different sources are one hotel when they are within these distances and their names agree
+# (Jaro-Winkler on lower-cased names). The first source with a value wins each field.
+hotels:
+  merge:
+    cross_source_km: 0.10
+    cross_source_name_similarity: 0.85
+    same_source_km: 0.03
+    same_source_name_similarity: 0.95
+    max_cluster_km: 0.20
+  source_precedence: [osm_lodging, overture, foursquare]

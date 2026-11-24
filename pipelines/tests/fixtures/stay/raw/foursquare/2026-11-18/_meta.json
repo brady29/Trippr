@@ -1,0 +1,24 @@
+{
+  "source": "foursquare",
+  "licence": "Apache-2.0",
+  "version": "fixture",
+  "dataset_path": "fixture",
+  "run_date": "2026-11-18",
+  "fetched_at": "2026-11-18T06:00:00+00:00",
+  "row_count": 8,
+  "fixture": true,
+  "files": {
+    "OSA.parquet": {
+      "city": "OSA",
+      "rows": 2,
+      "sha256": "229b2a639f7c0a1b06894a609d644238f69751aec35daff9a529931f6de49ebe",
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    },
+    "TYO.parquet": {
+      "city": "TYO",
+      "rows": 6,
+      "sha256": "09e27e90ad8599f141a683e6a3a8057c8b12847d15908859b4325cbba7bfd80a",
+      "fetched_at": "2026-11-18T06:00:00+00:00"
+    }
+  }
+}

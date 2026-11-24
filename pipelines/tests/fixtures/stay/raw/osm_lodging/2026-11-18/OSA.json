@@ -1,0 +1,30 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API fixture",
+ "osm3s": {
+  "timestamp_osm_base": "2026-11-17T22:00:00Z"
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 401,
+   "tags": {
+    "tourism": "hostel",
+    "name": "Lucky's hostel"
+   },
+   "lat": 34.6988,
+   "lon": 135.5353
+  },
+  {
+   "type": "node",
+   "id": 402,
+   "tags": {
+    "tourism": "motel",
+    "name": "Fixture Motel Osaka",
+    "addr:country": "JP"
+   },
+   "lat": 34.7,
+   "lon": 135.51
+  }
+ ]
+}
