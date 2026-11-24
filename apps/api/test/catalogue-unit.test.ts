@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ExistingActivity } from "../src/repositories/catalogue";
 import { localStore, readBundle, selectBundle } from "../src/services/catalogue/bundle";
@@ -152,6 +154,31 @@ describe("planning a load", () => {
     const first = planLoad([], bundle, now).create[0]!;
     const unlisted = existing({ id: sky.id, catalogue: true, catalogueId: sky.id, contentHash: first.contentHash, listed: false, votes: 1 });
     expect(planLoad([unlisted], bundle, now).refresh).toHaveLength(1);
+  });
+});
+
+describe("the real seed", () => {
+  const seedDir = resolve(import.meta.dirname, "../../../seed");
+  const acts = JSON.parse(readFileSync(resolve(seedDir, "activities.json"), "utf8")) as { id: string; city: string; title: string; mapsQuery?: string }[];
+  const cities = new Map((JSON.parse(readFileSync(resolve(seedDir, "cities.json"), "utf8")) as { code: string; name: string }[]).map((c) => [c.code, c.name]));
+  const seeded = acts.map((a) => existing({ id: a.id, title: a.title, mapsQuery: a.mapsQuery ?? null, cityCode: a.city, cityName: cities.get(a.city)! }));
+
+  it("adopts the seeded teamLab Planets into the catalogue place of that name and nothing else", async () => {
+    const teamlab = place({ name: "teamLab Planets TOKYO", name_en: "teamLab Planets TOKYO", category: "science_tech", tag: "tech", rank: 3 });
+    const others = [place({ name: "Catalogue Sky" }), place({ name: "Chongqing Hotpot Street", city_code: "CKG" }), place({ name: "Fushimi Inari Taisha", city_code: "OSA" })];
+    const bundle = await readBundle(bundleOf("2026-11-26", [teamlab, ...others]).store, "2026-11-26");
+    const plan = planLoad(seeded, bundle, "2026-11-26T00:00:00Z");
+    expect(plan.adopted).toEqual([{ activityId: "act-teamlab", placeId: teamlab.id, title: "teamLab Planets" }]);
+    expect(plan.create).toHaveLength(3);
+    expect(plan.adopt[0]).toMatchObject({ activityId: "act-teamlab", title: "teamLab Planets TOKYO" });
+  });
+
+  it("matches a Kyoto idea by name in its own city only", async () => {
+    const inari = place({ name: "Fushimi Inari Taisha torii trail", city_code: "UKY" });
+    const elsewhere = place({ name: "Fushimi Inari Taisha torii trail", city_code: "OSA" });
+    const bundle = await readBundle(bundleOf("2026-11-26", [inari, elsewhere]).store, "2026-11-26");
+    const plan = planLoad(seeded, bundle, "2026-11-26T00:00:00Z");
+    expect(plan.adopted.map((a) => [a.activityId, a.placeId])).toEqual([["act-uky-fushimi-inari", inari.id]]);
   });
 });
 

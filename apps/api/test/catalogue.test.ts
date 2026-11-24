@@ -37,7 +37,7 @@ const castle = place({
   sources: [{ source: "foursquare", source_id: "fsq-castle", licence: "Apache-2.0", fetched_at: "2026-11-18T00:00:00Z", raw_ref: "raw/foursquare/OSA.parquet" }],
 });
 // The same place as the seeded, hand-written "teamLab Planets" in Tokyo.
-const teamlab = place({ name: "teamLab Planets TOUKY", name_en: "teamLab Planets TOUKY", category: "science_tech", tag: "tech", score: 4.8, rank: 3, city_code: "TYO", lat: 35.6491, lon: 139.7898, address: "6 Chome-1-16 Toyosu" });
+const teamlab = place({ name: "teamLab Planets TOKYO", name_en: "teamLab Planets TOKYO", category: "science_tech", tag: "tech", score: 4.8, rank: 3, city_code: "TYO", lat: 35.6491, lon: 139.7898, address: "6 Chome-1-16 Toyosu" });
 
 const FIRST = [sky, tower, ramen, castle, teamlab];
 
@@ -171,7 +171,12 @@ describe("filters and paging", () => {
     place({ name: `Paged Place ${String(i + 1).padStart(2, "0")}`, city_code: "UKY", category: i < 4 ? "temple_shrine" : "park_garden", tag: i < 4 ? "culture" : "nature", score: 10 - i, rank: i + 1 }),
   );
 
+  // The seed has Kyoto ideas of its own; they show up beside the catalogue places in every unscoped count.
+  const own = { all: 0, culture: 0 };
+
   beforeAll(async () => {
+    own.all = (await page("?scope=mine&city=UKY")).total;
+    own.culture = (await page("?scope=mine&city=UKY&tag=culture")).total;
     writeBundle(root, { date: "2026-11-30", places: many });
     const res = await runLoadJob({ dryRun: false, json: false, help: false }, { db: h.db, store: localStore(root), log: () => {} });
     expect(res.exitCode).toBe(0);
@@ -189,18 +194,18 @@ describe("filters and paging", () => {
 
   it("filters by category, tag, text, source, score and rank", async () => {
     expect((await page("?city=UKY&category=park_garden")).total).toBe(3);
-    expect((await page("?city=UKY&tag=culture")).total).toBe(4);
+    expect((await page("?city=UKY&tag=culture")).total).toBe(4 + own.culture);
     expect(titles(await page("?city=UKY&q=PLACE%2005"))).toEqual(["Paged Place 05"]);
     expect((await page("?city=UKY&source=overture")).total).toBe(7);
     expect((await page("?city=UKY&source=foursquare")).total).toBe(0);
     expect((await page("?city=UKY&minScore=8")).total).toBe(3);
     expect((await page("?city=UKY&maxRank=2")).total).toBe(2);
-    expect((await page("?scope=mine&city=UKY")).total).toBe(0);
+    expect((await page("?scope=mine&city=UKY")).total).toBe(own.all);
   });
 
   it("offers the filter menus and the headline numbers", async () => {
     const f = (await owner.api.get<ActivityFacets>(`/trips/${TRIP}/activities/facets`)).body;
-    expect(f.cities.find((c) => c.code === "UKY")).toMatchObject({ count: 7 });
+    expect(f.cities.find((c) => c.code === "UKY")).toMatchObject({ count: 7 + own.all });
     expect(f.categories.map((c) => c.name)).toEqual(expect.arrayContaining(["temple_shrine", "park_garden"]));
     expect(f.sources.find((s) => s.id === "overture")?.count).toBeGreaterThanOrEqual(7);
     expect(f.totals.catalogue).toBeGreaterThanOrEqual(7);
@@ -221,7 +226,7 @@ describe("filters and paging", () => {
     expect(voted.status).toBe(200);
     expect(voted.body).toMatchObject({ votes: 1, myVote: 1, catalogue: true });
     expect((await owner.api.get<LibraryActivity[]>(`/trips/${TRIP}/activities`)).body.map((a) => a.id)).toContain(target.id);
-    expect((await page("?scope=mine&city=UKY")).total).toBe(1);
+    expect((await page("?scope=mine&city=UKY")).total).toBe(own.all + 1);
   });
 });
 
