@@ -109,6 +109,9 @@ class ModelSpec:
     onnx_file: str = "onnx/model.onnx"
     tokenizer_repo: str | None = None  # defaults to repo
     max_length: int = 256  # place texts are short; E5's limit is 512
+    pooling: str = "mean"  # "mean" (E5) or "cls" (BGE)
+    extra_files: tuple[str, ...] = ()  # files that must sit beside the ONNX file (external weights)
+    tokenizer_file: str = "tokenizer.json"
 
 
 E5 = {"doc_prefix": "passage: ", "query_prefix": "query: "}
@@ -137,6 +140,26 @@ MODELS: dict[str, ModelSpec] = {
             384,
         ),
         ModelSpec("st-bge-m3", "st", "BAAI/bge-m3", 1024),
+        # BGE-M3: the strongest multilingual model of the spike (CLS pooling, 1024 dims, 568M parameters).
+        # fp32 needs 2.3 GB of weights; the 8-bit build is 570 MB.
+        ModelSpec(
+            "bge-m3",
+            "onnx",
+            "BAAI/bge-m3",
+            1024,
+            onnx_file="onnx/model.onnx",
+            extra_files=("onnx/model.onnx_data",),
+            tokenizer_file="onnx/tokenizer.json",
+            pooling="cls",
+        ),
+        ModelSpec(
+            "bge-m3-q8",
+            "onnx",
+            "Xenova/bge-m3",
+            1024,
+            onnx_file="onnx/model_quantized.onnx",
+            pooling="cls",
+        ),
     )
 }
 
@@ -179,7 +202,9 @@ class OnnxEmbedder:
         except ImportError as err:  # pragma: no cover - depends on the extra
             raise RuntimeError("ONNX embedding needs the 'embed' extra: uv sync --extra embed") from err
         model_path = hf_hub_download(spec.repo, spec.onnx_file)
-        tokenizer_path = hf_hub_download(spec.tokenizer_repo or spec.repo, "tokenizer.json")
+        for extra in spec.extra_files:
+            hf_hub_download(spec.repo, extra)
+        tokenizer_path = hf_hub_download(spec.tokenizer_repo or spec.repo, spec.tokenizer_file)
         options = ort.SessionOptions()
         if threads:
             options.intra_op_num_threads = threads
@@ -194,6 +219,7 @@ class OnnxEmbedder:
         self.dims = spec.dims
         self.doc_prefix = spec.doc_prefix
         self.query_prefix = spec.query_prefix
+        self._pooling = spec.pooling
 
     def _embed(self, texts: Sequence[str]) -> np.ndarray:
         out = np.zeros((len(texts), self.dims), dtype=np.float32)
@@ -208,8 +234,11 @@ class OnnxEmbedder:
             if "token_type_ids" in self._input_names:
                 feed["token_type_ids"] = np.zeros_like(ids)
             hidden = self._session.run(None, feed)[0]
-            weights = mask[:, :, None].astype(np.float32)
-            pooled = (hidden * weights).sum(axis=1) / np.maximum(weights.sum(axis=1), 1e-9)
+            if self._pooling == "cls":
+                pooled = hidden[:, 0, :]
+            else:
+                weights = mask[:, :, None].astype(np.float32)
+                pooled = (hidden * weights).sum(axis=1) / np.maximum(weights.sum(axis=1), 1e-9)
             out[idx] = pooled
         return l2_normalise(out)
 
