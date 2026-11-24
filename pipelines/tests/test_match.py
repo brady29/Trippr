@@ -353,7 +353,7 @@ def test_near_duplicates_in_one_source_both_link_to_the_other_sources_record(tmp
 def test_chain_names_need_to_be_much_closer(tmp_path):
     """A chain name 120 m apart is probably two branches; a unique name 150 m apart can be one place."""
     chain = [place("overture", f"k{i}", "KFC", dx=1500 + 700 * i, category="restaurant") for i in range(4)]
-    con, cfg = matcher(
+    con, _ = matcher(
         tmp_path,
         [
             *chain,
@@ -373,7 +373,9 @@ def test_a_shared_website_needs_some_name_similarity(tmp_path):
         tmp_path,
         [
             place("foursquare", "spa", "Le Spa du Metropole", website="https://hotel.example/"),
-            place("overture", "restaurant", "Angelina Italian Lounge", dx=50, website="https://hotel.example/"),
+            place(
+                "overture", "restaurant", "Angelina Italian Lounge", dx=50, website="https://hotel.example/"
+            ),
             place("osm", "same", "Le Spa Metropole", dx=60, website="https://hotel.example/"),
         ],
     )
