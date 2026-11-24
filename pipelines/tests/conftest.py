@@ -41,3 +41,21 @@ def staged_out(tmp_path_factory: pytest.TempPathFactory, registry: Registry, ctx
     shutil.copytree(FIXTURE_DATA, out, dirs_exist_ok=True)
     stage(out, FIXTURE_DATE, registry=registry, ctx=ctx)
     return out
+
+
+STAY_FIXTURES = FIXTURES / "stay"
+
+
+@pytest.fixture(scope="session")
+def stay_out(tmp_path_factory: pytest.TempPathFactory, registry: Registry) -> Path:
+    """The stay fixtures (hotels, Inside Airbnb for Tokyo and Singapore, FX) staged and analysed once."""
+    from trippr_data.stay.airbnb import stage_airbnb
+    from trippr_data.stay.analytics import analyse
+    from trippr_data.stay.hotels import stage_hotels
+
+    out = tmp_path_factory.mktemp("stay_out")
+    shutil.copytree(STAY_FIXTURES / "raw", out / "raw")
+    stage_hotels(out, FIXTURE_DATE, registry=registry)
+    stage_airbnb(out, FIXTURE_DATE, registry=registry)
+    analyse(out, FIXTURE_DATE, places=STAY_FIXTURES / "places")
+    return out

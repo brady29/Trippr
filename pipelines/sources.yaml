@@ -209,7 +209,7 @@ sources:
     enabled: true
     url: https://wiki.openstreetmap.org/wiki/Key:tourism
     access: >-
-      Overpass API (https://overpass-api.de/api/interpreter), one query per city bounding box for
+      Overpass API on the community instance https://overpass.private.coffee/api/interpreter (the main instance's robots.txt disallows /api/ for generic clients), one query per city bounding box for
       nwr[tourism~"^(hotel|hostel|guest_house|apartment|motel)$"], run one at a time with a pause between
       queries and a generic User-Agent, as the Overpass usage policy asks. A stand-in until PR 2's full
       OpenStreetMap extractor lands, which will replace it.

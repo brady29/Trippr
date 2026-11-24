@@ -123,6 +123,7 @@ def score_units(
     base: list[dict[str, Any]],
     cfg: StayConfig,
     cities_with_places: set[str],
+    city_radius_km: dict[str, float],
 ) -> list[dict[str, Any]]:
     """Apply the privacy minimum, then the documented score formulas, to each unit's aggregates."""
     prices: dict[str, list[float]] = defaultdict(list)
@@ -149,7 +150,13 @@ def score_units(
         unit["low_sample"] = unit["n_priced"] < cfg.min_priced_listings
         if unit["area_km2"] and unit["n_listings"]:
             unit["listing_density_km2"] = round(unit["n_listings"] / unit["area_km2"], 2)
-        has_places = r["city_code"] in cities_with_places and r["unit_kind"] != "city"
+        # Places are only extracted inside a city's radius, so a unit centred beyond it has no place data
+        # (zero places there would mean "not covered", not "empty").
+        has_places = (
+            r["city_code"] in cities_with_places
+            and r["unit_kind"] != "city"
+            and (r["centre_km"] or 0) <= city_radius_km.get(r["city_code"], 0)
+        )
         unit["n_places"] = (r.get("n_places") or 0) if has_places else None
         unit["n_nightlife"] = (r.get("n_nightlife") or 0) if has_places else None
         unit["n_hotels"] = r.get("n_hotels") if r["unit_kind"] in ("area", "city") else None

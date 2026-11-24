@@ -24,7 +24,9 @@ from .polite_http import PoliteClient
 log = logging.getLogger(__name__)
 
 SOURCE = "osm_lodging"
-ENDPOINT = "https://overpass-api.de/api/interpreter"
+# The community instance (no robots.txt, asks only that projects identify themselves). The main instance's
+# robots.txt disallows /api/ for generic clients, and this extractor obeys robots.txt.
+ENDPOINT = "https://overpass.private.coffee/api/interpreter"
 TOURISM_VALUES = ("hotel", "hostel", "guest_house", "apartment", "motel")
 QUERY = (
     '[out:json][timeout:180];nwr["tourism"~"^({values})$"]({south},{west},{north},{east});out center tags;'

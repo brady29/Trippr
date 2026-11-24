@@ -155,7 +155,7 @@ def _listing_select(
           try_cast({col('host_id')} AS BIGINT) AS host_id,
           try_cast({col('calculated_host_listings_count')} AS INTEGER) AS host_listings,
           coalesce(trim({col('license')}) <> '', false) AS has_licence,
-          {rate} AS fx_cad_per_unit
+          CAST({rate} AS DOUBLE) AS fx_cad_per_unit
         FROM {_csv(path)}
     """
 

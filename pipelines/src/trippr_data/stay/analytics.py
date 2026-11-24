@@ -218,7 +218,7 @@ def analyse(
     date: str,
     *,
     places_date: str | None = None,
-    places_dir: Path | None = None,
+    places: Path | None = None,
     config_dir: Path = CONFIG_DIR,
     seed_dir: Path = SEED_DIR,
     cfg: StayConfig | None = None,
@@ -240,7 +240,7 @@ def analyse(
     build_units(con, cfg, cities, seed_dir)
     build_membership(con)
     build_metrics(con, cfg)
-    places_files = _places_files(out, places_date or date, places_dir)
+    places_files = _places_files(out, places_date or date, places)
     cities_with_places = build_place_counts(con, cfg, places_files)
     _hotel_counts(con)
     stations = _hubs_stations(seed_dir)
@@ -263,7 +263,7 @@ def analyse(
            LEFT JOIN hotel_count hc USING (unit_kind, unit_id)
            ORDER BY u.unit_kind, u.city_code, u.unit_id""",
     )
-    units = score_units(con, base, cfg, cities_with_places)
+    units = score_units(con, base, cfg, cities_with_places, {c.code: c.radius_km for c in cities.values()})
     write_units(con, out, date, units)
     summary = build_summary(date, units, cities, cfg, cities_with_places)
     con.close()
@@ -276,9 +276,17 @@ def analyse(
     return summary
 
 
-def _places_files(out: Path, date: str, places_dir: Path | None) -> list[Path]:
-    directory = places_dir or staging_dir(out, date)
-    return sorted(p for p in directory.glob("*.parquet") if p.is_file())
+def _places_files(out: Path, date: str, places: Path | None) -> list[Path]:
+    """Where the places for the walkability and quiet proxies come from (a file or a folder of Parquet files
+    with city_code, lat, lon, category). Default: the matched golden records (one row per real place, all
+    sources merged), else the staged places of the date. Pass the curated bundle's places.parquet to use
+    only the curated places."""
+    if places is not None:
+        return [places] if places.is_file() else sorted(places.glob("*.parquet"))
+    golden = out / "matched" / date / "golden.parquet"
+    if golden.is_file():
+        return [golden]
+    return sorted(p for p in staging_dir(out, date).glob("*.parquet") if p.is_file())
 
 
 def _hotel_counts(con: duckdb.DuckDBPyConnection) -> None:

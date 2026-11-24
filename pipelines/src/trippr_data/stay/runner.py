@@ -84,7 +84,7 @@ def cmd_stay_stage(args: argparse.Namespace, registry: Registry, out: Path) -> i
 def cmd_stay_analyse(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     from . import analytics
 
-    analytics.analyse(out, _date(args, out), places_date=args.places_date)
+    analytics.analyse(out, _date(args, out), places_date=args.places_date, places=args.places)
     return 0
 
 
@@ -107,7 +107,7 @@ def cmd_stay(args: argparse.Namespace, registry: Registry, out: Path) -> int:
 
     args.date = _date(args, out)
     cmd_stay_stage(args, registry, out)
-    analytics.analyse(out, args.date, places_date=args.places_date)
+    analytics.analyse(out, args.date, places_date=args.places_date, places=args.places)
     passed, _ = checks.check(out, args.date, registry=registry)
     print(report.write_stay_report(out, args.date, registry=registry))
     return 0 if passed else 1
@@ -131,8 +131,11 @@ def add_commands(add: Callable[[str, Callable, str], argparse.ArgumentParser]) -
     ):
         p = add(name, fn, text)
         if name in ("stay-analyse", "stay"):
+            p.add_argument("--places-date", help="date of the matched/staged places for walkability (default: --date)")
             p.add_argument(
-                "--places-date", help="staging date of the staged places used for walkability (default: --date)"
+                "--places",
+                type=Path,
+                help="a Parquet file or folder of places (city_code, lat, lon, category), e.g. a bundle's places.parquet",
             )
 
 
