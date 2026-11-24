@@ -216,7 +216,7 @@ record -> cluster id, score, rule), `golden.parquet` (one record per cluster, wi
    places of one source (a chain) is not a strong link.
 3. **Scored pairs**: `0.55 name + 0.30 distance + 0.15 category + 0.15 phone-or-address bonus`, capped at 1.
    Name similarity is the best over every `name` / `name_en` / `name_local` variant pair of the larger of
-   Jaro-Winkler (rescaled so 0.7 and below count as 0) and a length-weighted token-set measure; Han, kana,
+   Jaro-Winkler (rescaled so 0.7 and below count as 0) and a token-set measure weighted by token length and rarity in the city (so shared place or branch words count little); Han, kana,
    Hangul and Thai text is compared as character bigrams (no word-splitting assumed) and different scripts are
    only compared through the variants they share. Distance is 1 under 75 m falling to 0 at 500 m (30 m to
    150 m for chain names). A pair needs name similarity of 0.6 (or a matching phone) and a score of 0.82.
@@ -237,6 +237,28 @@ Taichung), **labelled by the pipeline's author (an AI assistant) and in need of 
 `eval/README.md`. `eval-er` re-runs the matcher for those cities and reports precision and recall of "same
 cluster" at the chosen threshold plus a sweep, writes `matched/<date>/eval.json`, and the run report and the
 `match.eval` check show it (precision under 95% fails the run, recall under 85% warns).
+
+### First full run (2026-11-22, all 108 cities)
+
+| Source | Raw rows | Staged | Notes |
+|---|---:|---:|---|
+| Overture 2026-11-18.0 | 6,821,810 | 2,276,026 | from PR 1 |
+| Foursquare dt=2026-11-17 | 13,560,332 | 3,729,418 | from PR 1 |
+| OpenStreetMap | 78,096 | 66,104 | **Tokyo and Guangzhou only** (see below) |
+| Wikidata (wdqs-2026-11-22) | 25,978 | 22,448 | 108 cities, 6.6% of rows in no mapped class |
+| Wikivoyage (dump 2026-11-01) | 20,660 | 10,867 | 108 cities; 443,714 listings in the dump |
+
+`match`: 6,104,863 records became 5,229,009 places (14.6% confirmed by more than one source, 34,037 by three
+or more; 92,196 places include an OSM, Wikidata or Wikivoyage record and 39,172 exist only there), in 111
+minutes on a laptop (Tokyo alone took 40, with 93 million candidate pairs). Evaluation on the 383 labelled
+pairs at threshold 0.82: precision 95.1%, recall 85.0%. The threshold was chosen on these same pairs
+(the 0.78 starting point gave 94.1% and 90.0%), so the numbers are optimistic until the labels are reviewed
+and a held-out set exists. Extraction took about 9 minutes for Wikivoyage (after a 30 s download), about
+95 minutes for Wikidata (public endpoint, with retries) and, for OpenStreetMap, far longer than that for
+almost nothing: **the public Overpass servers were at capacity (502/504) for most of the run**, so only
+Tokyo and Guangzhou completed in full. Re-run `extract --source osm --cities all` (finished groups are
+cached; `OSM_GROUPS=sights,amenity,shop` fetches the light queries first) when Overpass is quieter, or
+switch to Geofabrik extracts, then `stage`, `match` and `eval-er`; nothing else needs to change.
 
 ## Scheduled runs
 

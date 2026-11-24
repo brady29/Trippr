@@ -127,7 +127,7 @@ The same place appears in several sources under different names, scripts and coo
    - opening hours from OSM, then Wikivoyage
 
    Every golden record keeps its list of `sources[]`, its licences, and which source supplied the name, coordinates, website, opening hours and category.
-6. **Evaluation**: about 400 hand-labelled candidate pairs across 6 cities (Japan, China, Korea, Vietnam and Thailand, so several scripts are represented) give precision and recall at the chosen threshold, reported on every run. The target is 95% precision and 85% recall; false merges are worse than missed ones.
+6. **Evaluation**: about 400 hand-labelled candidate pairs across 6 cities (Japan, China, Korea, Vietnam and Thailand, so several scripts are represented) give precision and recall at the chosen threshold, reported on every run. The target is 95% precision and 85% recall; false merges are worse than missed ones. As built: 408 pairs in Kyoto, Shanghai, Busan, Hanoi, Chiang Mai and Taichung (`pipelines/eval/er_pairs.csv`), labelled by the pipeline author and awaiting human review; 383 are decided. At the chosen threshold of 0.82 the first run measured 95.1% precision and 85.0% recall; the threshold was tuned on these pairs, so they are not yet an independent test.
 
 ### Ranking and curation
 
