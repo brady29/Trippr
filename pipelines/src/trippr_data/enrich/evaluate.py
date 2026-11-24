@@ -53,6 +53,8 @@ class Reference(BaseModel):
     duration_min: int | None = None
     best_time: str | None = None
     indoor: bool | None = None
+    generic: bool = False  # the record's name is formal or generic (is_generic_name)
+    display: str | None = None  # the name to show, where a real one is knowable
 
 
 @dataclass(frozen=True)
@@ -109,7 +111,8 @@ def load_eval_set(path: Path = EVAL_SET_PATH) -> list[EvalPlace]:
                 name_en=raw.get("en"),
                 category=raw["cat"],
                 city_code=raw["city"],
-                descriptions=[{"source": "eval-notes", "text": desc}] if desc else [],
+                address=raw.get("addr"),
+                description=desc,
                 sources=["eval-notes"],
             )
             ref = Reference(
@@ -117,6 +120,8 @@ def load_eval_set(path: Path = EVAL_SET_PATH) -> list[EvalPlace]:
                 duration_min=raw.get("dur"),
                 best_time=raw.get("best"),
                 indoor=raw.get("indoor"),
+                generic=raw.get("generic", False),
+                display=raw.get("display"),
             )
             unknown = [t for t in ref.tags if t not in taxonomy()]
             if unknown:
@@ -142,6 +147,8 @@ def score(
     tp = fp = fn = 0
     dur_n = dur_ok = bt_n = bt_ok = in_n = in_ok = 0
     answered = nonempty = rule_flagged = fmt_bad = judged = judge_flagged = 0
+    g_tp = g_fp = g_fn = 0
+    disp_n = disp_ok = named = named_flagged = 0
     for item in items:
         pred = preds.get(item.place.place_id)
         ref_tags = set(item.ref.tags)
@@ -159,9 +166,19 @@ def score(
         if item.ref.indoor is not None:
             in_n += 1
             in_ok += bool(pred) and pred["indoor"] == item.ref.indoor
+        pred_generic = bool(pred and pred["is_generic_name"])
+        g_tp += pred_generic and item.ref.generic
+        g_fp += pred_generic and not item.ref.generic
+        g_fn += (not pred_generic) and item.ref.generic
+        if item.ref.display is not None:
+            disp_n += 1
+            disp_ok += bool(pred) and _same_name(pred["display_name"], item.ref.display)
         if not pred:
             continue
         answered += 1
+        if pred["display_name"]:
+            named += 1
+            named_flagged += bool(unsupported_terms(pred["display_name"], item.place, is_name=True))
         summary = pred["summary"]
         if summary:
             nonempty += 1
@@ -186,7 +203,23 @@ def score(
         "summary_format_problem_rate": _ratio(fmt_bad, nonempty),
         "summary_judge_unsupported_rate": _ratio(judge_flagged, judged) if verdicts is not None else None,
         "summaries_judged": judged,
+        "generic_precision": _ratio(g_tp, g_tp + g_fp),
+        "generic_recall": _ratio(g_tp, g_tp + g_fn),
+        "display_name_match": _ratio(disp_ok, disp_n),
+        "display_name_unsupported_rate": _ratio(named_flagged, named),
     }
+
+
+def _same_name(a: str | None, b: str) -> bool:
+    """Display names match ignoring case, width, accents, spacing and punctuation."""
+    if not a:
+        return False
+
+    def fold(text: str) -> str:
+        decomposed = unicodedata.normalize("NFKD", text)
+        return "".join(c for c in decomposed if not unicodedata.combining(c) and c.isalnum()).casefold()
+
+    return fold(a) == fold(b)
 
 
 def score_groups(
@@ -437,13 +470,14 @@ def _row(label: str, m: dict[str, Any]) -> str:
     return (
         f"| {label} | {m['n']} | {_pct(m['tag_precision'])} | {_pct(m['tag_recall'])} | {m['tag_f1']:.2f} | "
         f"{_pct(m['duration_within_tolerance'])} | {_pct(m['best_time_accuracy'])} | {_pct(m['indoor_accuracy'])} | "
-        f"{_pct(m['summary_rule_unsupported_rate'])} | {_pct(m['summary_judge_unsupported_rate'])} |"
+        f"{_pct(m['summary_rule_unsupported_rate'])} | {_pct(m['summary_judge_unsupported_rate'])} | "
+        f"{_pct(m['generic_recall'])} | {_pct(m['generic_precision'])} | {_pct(m['display_name_match'])} |"
     )
 
 
 _HEADER = (
-    "| | n | tag precision | tag recall | tag F1 | duration ±tol | best time | indoor | unsupported (rules) | unsupported (judge) |\n"
-    "|---|---|---|---|---|---|---|---|---|---|"
+    "| | n | tag precision | tag recall | tag F1 | duration ±tol | best time | indoor | unsupported (rules) | unsupported (judge) | generic recall | generic precision | display name |\n"
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|"
 )
 
 

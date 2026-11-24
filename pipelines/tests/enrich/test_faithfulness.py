@@ -9,12 +9,7 @@ SENSOJI = make_place(
     "浅草寺",
     name_en="Senso-ji",
     name_local="浅草寺",
-    descriptions=[
-        {
-            "source": "wikivoyage",
-            "text": "Buddhist temple in Asakusa, founded in 645, with the Kaminarimon gate.",
-        }
-    ],
+    description="Buddhist temple in Asakusa, founded in 645, with the Kaminarimon gate.",
 )
 
 
@@ -59,6 +54,20 @@ def test_vietnamese_diacritics_do_not_cause_false_flags():
     lake = make_place("d", "Hồ Hoàn Kiếm", "nature_spot", "HAN", name_en="Hoan Kiem Lake")
     assert unsupported_terms("Hồ Hoàn Kiếm is a lake in Hanoi.", lake) == []
     assert unsupported_terms("Hoan Kiem Lake is a nature spot in Hanoi, Vietnam.", lake) == []
+
+
+def test_display_names_are_checked_as_names_not_sentences():
+    museum = make_place(
+        "m",
+        "Independent Administrative Institution National Museum",
+        "museum",
+        "TYO",
+        address="13-9 Uenokoen, Taito City, Tokyo",
+    )
+    assert unsupported_terms("Tokyo National Museum", museum, is_name=True) == []
+    # a first word the data does not contain is flagged in a name, though a sentence may start with anything
+    assert unsupported_terms("Kyoto National Museum", museum, is_name=True) == ["Kyoto"]
+    assert unsupported_terms("Kyoto National Museum", museum) == []
 
 
 def test_format_problems():

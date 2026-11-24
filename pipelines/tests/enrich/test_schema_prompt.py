@@ -24,6 +24,8 @@ VALID = {
     "indoor": False,
     "price_level": "free",
     "good_for": ["views"],
+    "display_name": None,
+    "is_generic_name": False,
 }
 
 
@@ -143,10 +145,11 @@ def test_user_message_shows_only_what_the_record_has(places):
     assert "name: 浅草寺" in full
     assert "name (English): Senso-ji" in full
     assert "city: Tokyo, JP" in full
-    assert "- [wikivoyage] Buddhist temple in Asakusa." in full
+    assert "description: Buddhist temple in Asakusa." in full
+    assert "sources: osm, wikivoyage" in full
     sparse = user_message(places[2])
     assert "address" not in sparse and "opening hours" not in sparse
-    assert "descriptions: none" in sparse
+    assert "description: none" in sparse
     assert sparse.startswith("<place>") and sparse.endswith("</place>")
 
 

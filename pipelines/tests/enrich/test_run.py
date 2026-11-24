@@ -45,16 +45,16 @@ def test_first_run_enriches_everything_and_writes_parquet_with_provenance(places
     assert "浅草寺" in senso["summary"]  # CJK survives the whole round trip
     assert rows[1]["summary"].startswith("วัดโพธิ์")
     assert senso["ai"] is True
-    assert senso["ai_label"] == "Summary written by AI from Wikivoyage"
+    assert senso["ai_label"] == "Summary written by AI from OpenStreetMap and Wikivoyage"
     prov = senso["provenance"]
     assert prov["summary_ai"] is True
     assert prov["model"] == MODEL
     assert prov["prompt_version"]
     assert prov["batch_id"] == client.created[0]
-    assert prov["input_sources"] == ["wikivoyage"]
-    assert rows[2]["provenance"]["input_sources"] == ["overture"]  # no text read: the merged sources
-    assert rows[2]["ai_label"] == "Summary written by AI from Overture Maps"
-    assert rows[3]["ai_label"] == "Summary written by AI"  # no sources at all
+    assert prov["input_sources"] == ["osm", "wikivoyage"]
+    assert rows[2]["provenance"]["input_sources"] == []  # no description was read: no source is named
+    assert rows[2]["ai_label"] == "Summary written by AI"
+    assert rows[2]["is_generic_name"] is False and rows[2]["display_name"] is None
 
 
 def test_second_run_pays_for_nothing_and_third_run_only_for_the_changed_place(places, tmp_path):
@@ -217,6 +217,8 @@ def test_empty_summary_is_not_labelled_ai(tmp_path):
                 "indoor": None,
                 "price_level": None,
                 "good_for": [],
+                "display_name": None,
+                "is_generic_name": False,
             }
         )
 

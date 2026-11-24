@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 DEFAULT_MODEL = "claude-haiku-5-5"
-DEFAULT_BUDGET_USD = 10.0
+DEFAULT_BUDGET_USD = 25.0
 DEFAULT_EFFORT = "low"
 
 # Model aliases accepted on the command line.
@@ -18,7 +18,7 @@ def resolve_model(name: str) -> str:
 
 
 def budget_usd() -> float:
-    """ENRICH_BUDGET_USD (spec default 10): the most one enrich run may be estimated to cost."""
+    """ENRICH_BUDGET_USD (default 25: the cap for the first full run): the most one enrich run may be estimated to cost."""
     raw = (os.environ.get("ENRICH_BUDGET_USD") or "").strip()
     return float(raw) if raw else DEFAULT_BUDGET_USD
 

@@ -46,6 +46,8 @@ def default_responder(params: dict[str, Any]) -> str:
             "indoor": None,
             "price_level": None,
             "good_for": [],
+            "display_name": None,
+            "is_generic_name": False,
         },
         ensure_ascii=False,
     )
@@ -67,6 +69,8 @@ def reference_responder(items: list[EvalPlace]) -> Responder:
                 "indoor": item.ref.indoor,
                 "price_level": None,
                 "good_for": [],
+                "display_name": item.ref.display,
+                "is_generic_name": item.ref.generic,
             },
             ensure_ascii=False,
         )

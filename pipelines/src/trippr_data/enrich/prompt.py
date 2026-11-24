@@ -12,7 +12,7 @@ from typing import Any
 from .inputs import EnrichInput, cities_by_code, taxonomy
 from .schema import GOOD_FOR, MAX_SUMMARY_CHARS, response_schema
 
-PROMPT_VERSION = "2026-11-23.1"
+PROMPT_VERSION = "2026-11-24.1"
 
 # Short answers: a one-sentence summary and a handful of small fields. Thinking at low effort is the
 # main output cost; 1024 leaves room for it without letting a runaway response cost much.
@@ -44,10 +44,12 @@ null if you cannot tell.
 - price_level: free, $ (under about 15 USD), $$ (about 15 to 50 USD) or $$$ (more). null if you cannot tell.
 - good_for: any of {", ".join(GOOD_FOR)} that clearly apply: rain (works in bad weather), families, nightlife, views. \
 Empty list if none clearly apply.
+- display_name: the name the app should show, or null when the record's name is already a real, ordinary name. Fill it only when the name is formal or generic (see is_generic_name): remove the formal part (a legal-entity prefix, an address, a duplicated city and country), keeping the rest exactly as given in name, name (local script) or name (English); or give the place's common name when the description, address, category and city together identify it with certainty. null when you are not sure. At most 80 characters.
+- is_generic_name: true when the record's name does not name one specific place: it is only a city, region or country ("Tokyo, Japan"), only a type of place ("City Park", "Museum"), an operator or legal entity ("Independent Administrative Institution National Museum"), or reads like an address. false for any specific name, including a chain branch.
+- For a generic name, the summary says only what the category and city support (or is empty); never guess which place it is.
 
 Names and scripts
-- Names in Japanese, Chinese, Korean, Thai, Khmer, Lao, Vietnamese and other scripts must be copied exactly as given. Never \
-translate, romanise, respell or invent a name. Prefer the English name when the data has one; otherwise use the name as given.
+- Names in Japanese, Chinese, Korean, Thai, Khmer, Lao, Vietnamese and other scripts must be copied exactly as given. Never translate, romanise, respell or invent a name. In the summary use the English name when the data has one, otherwise the name as given.
 - Write the sentence in English even when the data is in another language.
 
 When unsure, leave the field empty (null, [] or "") rather than guess.
@@ -91,11 +93,7 @@ def user_message(place: EnrichInput) -> str:
         lines.append(f"opening hours: {_data(place.opening_hours)}")
     if place.sources:
         lines.append(f"sources: {', '.join(place.sources)}")
-    if place.descriptions:
-        lines.append("descriptions:")
-        lines.extend(f"- [{_data(d.source)}] {_data(d.text)}" for d in place.descriptions)
-    else:
-        lines.append("descriptions: none")
+    lines.append(f"description: {_data(place.description)}" if place.description else "description: none")
     body = chr(10).join(lines)
     return f"<place>{chr(10)}{body}{chr(10)}</place>"
 

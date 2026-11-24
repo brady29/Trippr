@@ -1,8 +1,27 @@
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
+
 import pytest
 
+from trippr_data.curation import curate
 from trippr_data.enrich.inputs import EnrichInput
+from trippr_data.match import match
+
+from ..conftest import FIXTURE_DATE
+
+CURATED_DATE = FIXTURE_DATE
+
+
+@pytest.fixture(scope="session")
+def curated_out(tmp_path_factory: pytest.TempPathFactory, staged_out: Path, registry) -> Path:
+    """The two-city fixtures taken through match and curate, as a real run would leave them."""
+    out = tmp_path_factory.mktemp("curated_out")
+    shutil.copytree(staged_out, out, dirs_exist_ok=True)
+    match(out, FIXTURE_DATE, registry=registry)
+    curate(out, FIXTURE_DATE)
+    return out
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +51,7 @@ def places() -> list[EnrichInput]:
             "浅草寺",
             name_en="Senso-ji",
             name_local="浅草寺",
-            descriptions=[{"source": "wikivoyage", "text": "Buddhist temple in Asakusa."}],
+            description="Buddhist temple in Asakusa.",
             sources=["osm", "wikivoyage"],
         ),
         make_place("p2", "วัดโพธิ์", "temple_shrine", "BKK", name_en="Wat Pho"),

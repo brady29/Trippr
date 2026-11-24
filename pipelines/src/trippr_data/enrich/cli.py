@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from ..layout import write_json
+from ..layout import latest_curated_date, write_json
 from ..registry import Registry
 from ..settings import today
 from . import client as client_mod
@@ -22,7 +22,7 @@ from .evaluate import (
     render_report,
     run_eval,
 )
-from .inputs import DEFAULT_INPUT_TEMPLATE, parse_column_map, read_places
+from .inputs import default_input, parse_column_map, read_places
 from .run import ConfirmationRequiredError, enrich_places, make_runner
 from .settings import (
     DEFAULT_EFFORT,
@@ -68,10 +68,10 @@ def _guard(fn):
 
 @_guard
 def cmd_enrich(args: argparse.Namespace, registry: Registry, out: Path) -> int:
-    date = args.date or today()
+    date = args.date or latest_curated_date(out) or today()
     model = resolve_model(args.model) if args.model else default_model()
     cap = args.budget_usd if args.budget_usd is not None else budget_usd()
-    path = args.input or out / DEFAULT_INPUT_TEMPLATE.format(date=date)
+    path = args.input or default_input(out, args.date)
     places = read_places(Path(path), parse_column_map(args.column_map))
     if args.limit:
         places = places[: args.limit]
@@ -204,8 +204,11 @@ def register(sub: Any) -> None:
         "enrich", help="LLM enrichment through the Batch API (tags, summary, duration, best time)"
     )
     p.set_defaults(fn=cmd_enrich)
-    p.add_argument("--date", help="run date folder, YYYY-MM-DD (default: today)")
-    p.add_argument("--input", help=f"places Parquet or JSONL (default: out/{DEFAULT_INPUT_TEMPLATE})")
+    p.add_argument("--date", help="run date folder, YYYY-MM-DD (default: the newest curated run)")
+    p.add_argument(
+        "--input",
+        help="curated places: Parquet or JSON lines (default: the newest out/curated/<date>/curated_place.parquet)",
+    )
     p.add_argument(
         "--column-map",
         nargs="*",
@@ -213,7 +216,7 @@ def register(sub: Any) -> None:
         help="input column names that differ, e.g. place_id=golden_id",
     )
     p.add_argument("--no-wait", action="store_true", help="submit and return; rerun later to collect")
-    _common(p, cap_help="spend cap in USD for this run (default: ENRICH_BUDGET_USD, else 10)")
+    _common(p, cap_help="spend cap in USD for this run (default: ENRICH_BUDGET_USD, else 25)")
 
     p = sub.add_parser("enrich-status", help="show submitted batches; --collect fetches the finished ones")
     p.set_defaults(fn=cmd_status)
@@ -233,7 +236,7 @@ def register(sub: Any) -> None:
     p.add_argument(
         "--tolerance", type=int, default=DURATION_TOLERANCE_MIN, help="minutes for the duration metric"
     )
-    _common(p, cap_help="spend cap in USD per step (default: ENRICH_BUDGET_USD, else 10)")
+    _common(p, cap_help="spend cap in USD per step (default: ENRICH_BUDGET_USD, else 25)")
 
 
 __all__ = ["register"]

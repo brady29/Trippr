@@ -1,25 +1,28 @@
-"""What enrichment reads: one curated place's golden-record fields and source descriptions.
+"""What enrichment reads: one curated place's golden-record fields and its source description.
 
-This module is the one place that names the input columns. Today it reads any Parquet (or JSON lines)
-with these columns; once PR 3's curated output exists, point it there by changing DEFAULT_COLUMN_MAP
-(our name -> its name) or by passing --column-map on the command line.
+This module is the one place that names the input columns. It reads the curate stage's
+`curated/<date>/curated_place.parquet`, a bundle's `places.parquet` or `places.jsonl.gz`, or any
+Parquet / JSON lines with the same names. If a later schema renames columns, change DEFAULT_COLUMN_MAP
+(our name -> its name) or pass --column-map.
 
 | Column | Required | Notes |
 |---|---|---|
-| place_id | yes | The golden record's id. Falls back to "source:source_id" for staged places |
+| place_id | yes | The curated place's stable id (`place_id` in curated_place.parquet, `id` in a bundle). Falls back to `id`, `golden_id`, then "source:source_id" for staged rows |
 | name | yes | Primary name |
 | name_local, name_en | no | Local-script and English names |
 | category | yes | A taxonomy category (config/taxonomy.csv) |
 | city_code | yes | A Trippr city code (seed/cities.json) |
 | address, opening_hours | no | When the sources have them |
-| descriptions | no | List of {source, text}: Wikidata, Wikivoyage or OSM text. The only prose the model sees |
-| sources | no | Names of the sources the golden record merges (overture, osm, ...) |
+| description | no | The golden record's description: Wikidata or Wikivoyage text. The only prose the model sees |
+| sources | no | The sources the golden record merges: a list of names, or of records with a `source` field |
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
+import re
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -29,10 +32,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..cities import City, load_cities
 from ..duck import connect, rows
+from ..layout import curated_file, latest_curated_date
 from ..taxonomy import Category, load_taxonomy
-
-# Where PR 3 is expected to write the curated places for a run (relative to the output root).
-DEFAULT_INPUT_TEMPLATE = "curated/{date}/places.parquet"
 
 # Our column name -> the column name in the input file. Edit here when the curated schema differs.
 DEFAULT_COLUMN_MAP: dict[str, str] = {}
@@ -46,14 +47,29 @@ INPUT_COLUMNS = (
     "city_code",
     "address",
     "opening_hours",
-    "descriptions",
+    "description",
     "sources",
 )
+# Read when place_id is not there.
+ID_FALLBACK_COLUMNS = ("id", "golden_id", "source", "source_id")
 REQUIRED_COLUMNS = ("place_id", "name", "category", "city_code")
 
 # Long source text costs tokens on every re-run; the first 1,500 characters carry the facts.
 MAX_DESCRIPTION_CHARS = 1500
-MAX_DESCRIPTIONS = 4
+
+# Zero-width and byte-order characters that Wikivoyage text carries.
+_INVISIBLE = {c: None for c in (0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x2060, 0xFEFF)}
+_FILE_MARKUP = re.compile(r"^\s*\d+px\s*\|\s*", re.IGNORECASE)
+
+
+def default_input(out: Path, date: str | None = None) -> Path:
+    """The curate stage's output for a date (default: the newest curated run)."""
+    chosen = date or latest_curated_date(out)
+    if not chosen:
+        raise FileNotFoundError(
+            f"No curated places under {out / 'curated'}; run curate first or pass --input"
+        )
+    return curated_file(out, chosen)
 
 
 @lru_cache(maxsize=1)
@@ -70,16 +86,11 @@ def _nfc(value: str) -> str:
     return unicodedata.normalize("NFC", value).strip()
 
 
-class Description(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    source: str
-    text: str
-
-    @field_validator("source", "text")
-    @classmethod
-    def _clean(cls, value: str) -> str:
-        return _nfc(value)
+def clean_description(text: str) -> str:
+    """Drop invisible characters and wiki file markup ("20px|"), collapse whitespace, cap the length."""
+    cleaned = unicodedata.normalize("NFC", text).translate(_INVISIBLE)
+    cleaned = _FILE_MARKUP.sub("", cleaned)
+    return " ".join(cleaned.split())[:MAX_DESCRIPTION_CHARS]
 
 
 class EnrichInput(BaseModel):
@@ -93,7 +104,7 @@ class EnrichInput(BaseModel):
     city_code: str = Field(min_length=1)
     address: str | None = None
     opening_hours: str | None = None
-    descriptions: list[Description] = Field(default_factory=list)
+    description: str | None = None
     sources: list[str] = Field(default_factory=list)
 
     @field_validator("name", "name_local", "name_en", "address", "opening_hours", mode="before")
@@ -101,7 +112,7 @@ class EnrichInput(BaseModel):
     def _text(cls, value: Any) -> Any:
         if value is None:
             return None
-        text = _nfc(str(value))
+        text = " ".join(_nfc(str(value)).split())
         return text or None
 
     @field_validator("category")
@@ -111,24 +122,20 @@ class EnrichInput(BaseModel):
             raise ValueError(f"category {value!r} is not in the taxonomy")
         return value
 
-    @field_validator("descriptions", mode="before")
+    @field_validator("description", mode="before")
     @classmethod
-    def _descriptions(cls, value: Any) -> Any:
+    def _description(cls, value: Any) -> Any:
         if value is None:
-            return []
-        out = []
-        for item in value:
-            if isinstance(item, str):
-                item = {"source": "unknown", "text": item}
-            text = _nfc(str(item.get("text") or ""))
-            if text:
-                out.append({"source": item.get("source") or "unknown", "text": text[:MAX_DESCRIPTION_CHARS]})
-        return out[:MAX_DESCRIPTIONS]
+            return None
+        return clean_description(str(value)) or None
 
     @field_validator("sources", mode="before")
     @classmethod
     def _sources(cls, value: Any) -> Any:
-        return sorted({str(s).strip() for s in (value or []) if str(s).strip()})
+        names = {
+            str(s.get("source") if isinstance(s, dict) else s).strip() for s in (value or []) if s is not None
+        }
+        return sorted(n for n in names if n and n != "None")
 
     # ---- what the model sees -------------------------------------------------------------------
 
@@ -142,10 +149,7 @@ class EnrichInput(BaseModel):
             "city_code": self.city_code,
             "address": self.address,
             "opening_hours": self.opening_hours,
-            "descriptions": sorted(
-                ({"source": d.source, "text": d.text} for d in self.descriptions),
-                key=lambda d: (d["source"], d["text"]),
-            ),
+            "description": self.description,
             "sources": list(self.sources),
         }
 
@@ -154,9 +158,9 @@ class EnrichInput(BaseModel):
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
     def label_sources(self) -> list[str]:
-        """Sources named in the AI label: the ones whose text the model read, else the merged sources."""
-        from_text = sorted({d.source for d in self.descriptions if d.source != "unknown"})
-        return from_text or list(self.sources)
+        """Sources named in the AI label. With no description the model wrote from the name, category and
+        city alone, so no source is named."""
+        return list(self.sources) if self.description else []
 
 
 def apply_column_map(row: dict[str, Any], column_map: dict[str, str]) -> dict[str, Any]:
@@ -176,21 +180,29 @@ def _read_parquet(path: Path, column_map: dict[str, str]) -> list[dict[str, Any]
         theirs = column_map.get(col, col)
         if theirs in available:
             selects.append(f'"{theirs}" AS "{col}"')
-    chosen = {s.split(" AS ")[1].strip('"') for s in selects}
-    if "place_id" not in chosen and {"source", "source_id"} <= available:
-        selects.append("source || ':' || source_id AS place_id")
+    selects += [f'"{c}" AS "{c}"' for c in ID_FALLBACK_COLUMNS if c in available and c not in INPUT_COLUMNS]
     if not selects:
         raise ValueError(f"{path}: none of the enrichment columns {INPUT_COLUMNS} are present")
     return rows(con, f"SELECT {', '.join(selects)} FROM {source}")
 
 
 def _read_jsonl(path: Path, column_map: dict[str, str]) -> list[dict[str, Any]]:
+    opener = gzip.open if path.suffix == ".gz" else open
     out = []
-    with open(path, encoding="utf-8") as fh:
+    with opener(path, "rt", encoding="utf-8") as fh:
         for line in fh:
             if line.strip():
                 out.append(apply_column_map(json.loads(line), column_map))
     return out
+
+
+def _with_place_id(row: dict[str, Any]) -> dict[str, Any]:
+    if row.get("place_id"):
+        return row
+    fallback = row.get("id") or row.get("golden_id")
+    if not fallback and row.get("source") and row.get("source_id"):
+        fallback = f"{row['source']}:{row['source_id']}"
+    return {**row, "place_id": fallback}
 
 
 def read_places(path: Path, column_map: dict[str, str] | None = None) -> list[EnrichInput]:
@@ -198,11 +210,12 @@ def read_places(path: Path, column_map: dict[str, str] | None = None) -> list[En
     mapping = {**DEFAULT_COLUMN_MAP, **(column_map or {})}
     if not path.is_file():
         raise FileNotFoundError(f"Enrichment input not found: {path}")
-    raw = _read_jsonl(path, mapping) if path.suffix in (".jsonl", ".ndjson") else _read_parquet(path, mapping)
+    is_json = path.suffix in (".jsonl", ".ndjson") or path.name.endswith((".jsonl.gz", ".ndjson.gz"))
+    raw = _read_jsonl(path, mapping) if is_json else _read_parquet(path, mapping)
     places: list[EnrichInput] = []
     problems: list[str] = []
     seen: set[str] = set()
-    for i, row in enumerate(raw):
+    for i, row in enumerate(map(_with_place_id, raw)):
         missing = [c for c in REQUIRED_COLUMNS if row.get(c) in (None, "")]
         if missing:
             problems.append(f"row {i}: missing {', '.join(missing)}")

@@ -84,7 +84,7 @@ def ai_label(place: EnrichInput, summary: str) -> str | None:
 
 ENRICHED_COLUMNS = """
     place_id VARCHAR, content_hash VARCHAR, tags VARCHAR[], summary VARCHAR, duration_min INTEGER,
-    best_time VARCHAR, indoor BOOLEAN, price_level VARCHAR, good_for VARCHAR[], ai BOOLEAN, ai_label VARCHAR,
+    best_time VARCHAR, indoor BOOLEAN, price_level VARCHAR, good_for VARCHAR[], display_name VARCHAR, is_generic_name BOOLEAN, ai BOOLEAN, ai_label VARCHAR,
     summary_ai BOOLEAN, model VARCHAR, prompt_version VARCHAR, enriched_at TIMESTAMP WITH TIME ZONE,
     batch_id VARCHAR, input_sources VARCHAR[]
 """
@@ -114,6 +114,8 @@ def write_enrichment(path: Path, places: list[EnrichInput], runner: BatchRunner)
                 v["indoor"],
                 v["price_level"],
                 v["good_for"],
+                v["display_name"],
+                v["is_generic_name"],
                 True,  # ai: every enriched field is model output
                 ai_label(place, v["summary"]),
                 bool(v["summary"]),  # the summary itself is AI-written (false when it came back empty)
@@ -127,13 +129,13 @@ def write_enrichment(path: Path, places: list[EnrichInput], runner: BatchRunner)
     con = connect()
     run(con, f"CREATE TABLE flat ({ENRICHED_COLUMNS})")
     if rows:
-        con.executemany(f"INSERT INTO flat VALUES ({', '.join('?' * 17)})", rows)
+        con.executemany(f"INSERT INTO flat VALUES ({', '.join('?' * 19)})", rows)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".parquet.tmp")
     run(
         con,
         "COPY (SELECT place_id, content_hash, tags, summary, duration_min, best_time, indoor, price_level, "
-        f"good_for, ai, ai_label, {PROVENANCE} AS provenance FROM flat ORDER BY place_id) "
+        f"good_for, display_name, is_generic_name, ai, ai_label, {PROVENANCE} AS provenance FROM flat ORDER BY place_id) "
         f"TO '{tmp.as_posix()}' (FORMAT parquet, COMPRESSION zstd)",
     )
     tmp.replace(path)

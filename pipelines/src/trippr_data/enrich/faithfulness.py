@@ -1,7 +1,7 @@
 """Rule checks on a summary, with no model call: does it only say what the place data says?
 
 This is the free half of the faithfulness rubric. It flags numbers, proper nouns and non-Latin names that
-appear in the summary but nowhere in the input (name, category, city, address, descriptions), plus
+appear in the summary but nowhere in the input (name, category, city, address, description), plus
 format problems (URL, length, line breaks, garbled text). It catches invented names and dates and any
 mangled CJK, Thai or Hangul name; it cannot catch a plausible claim made only with common words. The
 LLM judge (judge.py) covers those, and a person reads a sample.
@@ -126,7 +126,7 @@ def source_text(place: EnrichInput) -> str:
         place.opening_hours,
         city.name if city else place.city_code,
         COUNTRY_NAMES.get(city.country, city.country) if city else None,
-        *(d.text for d in place.descriptions),
+        place.description,
     ]
     return " ".join(p for p in parts if p)
 
@@ -176,7 +176,7 @@ def _sentence_initial(summary: str, start: int) -> bool:
     return not before or before[-1] in ".!?:;"
 
 
-def unsupported_terms(summary: str, place: EnrichInput) -> list[str]:
+def unsupported_terms(summary: str, place: EnrichInput, *, is_name: bool = False) -> list[str]:
     """Terms in the summary that the place data does not contain. Empty means nothing was flagged."""
     if not summary:
         return []
@@ -192,7 +192,7 @@ def unsupported_terms(summary: str, place: EnrichInput) -> list[str]:
             word = token
             if word.lower().endswith(("'s", chr(0x2019) + "s")):
                 word = word[:-2]
-            initial = _sentence_initial(summary, start)
+            initial = not is_name and _sentence_initial(summary, start)  # a name has no sentence start
             capitalised = token[0].isupper()
             acronym = len(word) >= 2 and word.isupper()
             if not capitalised or (initial and not acronym):

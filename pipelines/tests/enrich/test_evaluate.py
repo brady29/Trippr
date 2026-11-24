@@ -47,14 +47,53 @@ def test_every_eval_place_is_labelled_with_taxonomy_tags_and_sane_values(eval_it
     for item in eval_items:
         r = item.ref
         assert 1 <= len(r.tags) <= 4 and set(r.tags) <= set(taxonomy()), item.place.place_id
+        if r.generic and r.duration_min is None:
+            continue  # a place known only as "Tokyo, Japan" has no knowable visit length
         assert r.duration_min is not None and 15 <= r.duration_min <= 600
         assert r.best_time in {"morning", "afternoon", "evening", "night", "any"}
         assert item.place.name_local or item.script == "latin"
 
 
 def test_eval_set_has_places_without_descriptions_and_a_few_chains(eval_items):
-    assert any(not i.place.descriptions for i in eval_items)
-    assert sum(1 for i in eval_items if i.place.descriptions) > 0.9 * len(eval_items)
+    assert any(not i.place.description for i in eval_items)
+    assert sum(1 for i in eval_items if i.place.description) > 0.8 * len(eval_items)
+
+
+def test_eval_set_has_the_formal_and_city_named_records_seen_in_the_bundle(eval_items):
+    generic = {i.place.place_id: i for i in eval_items if i.ref.generic}
+    assert len(generic) >= 10
+    assert generic["gn-001"].ref.display == "Tokyo National Museum"
+    assert generic["gn-001"].place.name == "Independent Administrative Institution National Museum"
+    assert generic["gn-002"].place.name == "Tokyo, Japan" and generic["gn-002"].ref.display is None
+    assert sum(1 for i in eval_items if not i.ref.generic) > 150  # ordinary names, chains included
+    assert all(i.ref.display for i in eval_items if i.ref.display is not None)
+
+
+def test_generic_name_and_display_name_metrics():
+    items = [
+        generic_item("a", "Tokyo, Japan", generic=True),
+        generic_item(
+            "b",
+            "Independent Administrative Institution National Museum",
+            generic=True,
+            display="Tokyo National Museum",
+        ),
+        generic_item("c", "Kinkaku-ji", generic=False),
+    ]
+    preds = {
+        "a": pred(["landmark"], is_generic=True),
+        "b": pred(["museum"], is_generic=True, display="tokyo  national museum"),
+        "c": pred(["landmark"], is_generic=True),  # a false alarm on a real name
+    }
+    m = score(items, preds)
+    assert m["generic_recall"] == 1.0 and m["generic_precision"] == pytest.approx(2 / 3)
+    assert m["display_name_match"] == 1.0
+    assert (
+        score(items, {**preds, "b": pred(["museum"], is_generic=True, display="Kyoto National Museum")})[
+            "display_name_match"
+        ]
+        == 0.0
+    )
 
 
 def test_eval_file_is_utf8_json_lines():
@@ -83,7 +122,16 @@ def item(pid, tags, dur=60, best="morning", indoor=None, name="Place", category=
     )
 
 
-def pred(tags, dur=60, best="morning", indoor=None, summary=""):
+def generic_item(pid, name, *, generic, display=None):
+    return EvalPlace(
+        make_place(pid, name, "museum"),
+        Reference(tags=["museum"], generic=generic, display=display),
+        "JP",
+        "latin",
+    )
+
+
+def pred(tags, dur=60, best="morning", indoor=None, summary="", is_generic=False, display=None):
     return {
         "tags": tags,
         "summary": summary,
@@ -92,6 +140,8 @@ def pred(tags, dur=60, best="morning", indoor=None, summary=""):
         "indoor": indoor,
         "price_level": None,
         "good_for": [],
+        "display_name": display,
+        "is_generic_name": is_generic,
     }
 
 

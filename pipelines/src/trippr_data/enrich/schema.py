@@ -19,6 +19,7 @@ PRICE_LEVELS: tuple[str, ...] = ("free", "$", "$$", "$$$")
 GOOD_FOR: tuple[str, ...] = ("rain", "families", "nightlife", "views")
 
 MAX_SUMMARY_CHARS = 140  # characters (code points), so CJK text gets the same room as English
+MAX_DISPLAY_NAME_CHARS = 80
 MAX_TAGS = 4
 MIN_DURATION_MIN = 5
 MAX_DURATION_MIN = 1440
@@ -48,6 +49,22 @@ class Enrichment(BaseModel):
     indoor: bool | None
     price_level: PriceLevel | None
     good_for: list[GoodFor]
+    # A suggestion for curation, never applied here: the name to show, and whether the record's own name
+    # is a formal or generic label ("Independent Administrative Institution National Museum", "Tokyo, Japan").
+    display_name: str | None
+    is_generic_name: bool
+
+    @field_validator("display_name")
+    @classmethod
+    def _display_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        text = " ".join(strip_urls(unicodedata.normalize("NFC", value)).split())
+        if "�" in text or any(unicodedata.category(ch) in ("Cc", "Cs") for ch in text):
+            raise ValueError("display_name contains garbled or control characters")
+        if len(text) > MAX_DISPLAY_NAME_CHARS:
+            raise ValueError(f"display_name is {len(text)} characters; the limit is {MAX_DISPLAY_NAME_CHARS}")
+        return text or None
 
     @field_validator("tags")
     @classmethod
@@ -105,6 +122,8 @@ def response_schema() -> dict[str, Any]:
             "indoor": _nullable({"type": "boolean"}),
             "price_level": _nullable({"type": "string", "enum": list(PRICE_LEVELS)}),
             "good_for": {"type": "array", "items": {"type": "string", "enum": list(GOOD_FOR)}},
+            "display_name": _nullable({"type": "string"}),
+            "is_generic_name": {"type": "boolean"},
         },
         "required": [
             "tags",
@@ -114,5 +133,7 @@ def response_schema() -> dict[str, Any]:
             "indoor",
             "price_level",
             "good_for",
+            "display_name",
+            "is_generic_name",
         ],
     }
