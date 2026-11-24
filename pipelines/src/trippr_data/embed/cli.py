@@ -12,7 +12,7 @@ from ..registry import Registry
 from ..settings import PIPELINE_ROOT, today
 from .embedders import available_models, make_embedder
 from .evaluate import render_markdown, run_eval_search
-from .inputs import bundle_places_path, latest_bundle_date
+from .inputs import bundle_places_path, latest_bundle_date, latest_enriched_path, read_summaries
 from .run import MANIFEST_FILE, embeddings_dir, latest_embeddings_date, run_embed
 
 log = logging.getLogger(__name__)
@@ -32,6 +32,10 @@ def cmd_embed(args: argparse.Namespace, registry: Registry, out: Path) -> int:
             f"No bundle under {out / 'bundles'}; run `bundle` first or pass --input (Parquet or CSV)"
         )
     date = bundle or today()
+    enriched = (
+        None if args.no_enriched else (Path(args.enriched) if args.enriched else latest_enriched_path(out))
+    )
+    summaries = read_summaries(enriched) if enriched else None
     embedder = make_embedder(args.model, threads=args.threads)
     result = run_embed(
         input_path,
@@ -42,6 +46,7 @@ def cmd_embed(args: argparse.Namespace, registry: Registry, out: Path) -> int:
         limit=args.limit,
         batch_size=args.batch_size,
         use_cache=not args.no_cache,
+        summaries=summaries,
     )
     print(json.dumps(result.manifest, ensure_ascii=False, indent=2))
     return 0
@@ -80,6 +85,10 @@ def register(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--threads", type=int, help="cap CPU threads (default: all)")
     p.add_argument("--city", help="only this city (code or name, whichever the input has)")
     p.add_argument("--limit", type=int, help="only the first N places by id (for trials)")
+    p.add_argument(
+        "--enriched", help="enrichment.parquet whose summary is added to the text (default: the newest)"
+    )
+    p.add_argument("--no-enriched", action="store_true", help="do not add AI summaries")
     p.add_argument("--no-cache", action="store_true", help="ignore and do not update the vector cache")
 
     p = sub.add_parser("eval-search", help="search relevance (recall@k, MRR, NDCG) on the labelled queries")

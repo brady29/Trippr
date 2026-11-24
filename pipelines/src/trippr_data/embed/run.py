@@ -16,7 +16,8 @@ import hashlib
 import logging
 import re
 import time
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -178,8 +179,13 @@ def run_embed(
     limit: int | None = None,
     batch_size: int = DEFAULT_BATCH_SIZE,
     use_cache: bool = True,
+    summaries: Mapping[str, str] | None = None,
 ) -> EmbedResult:
     places = read_places(input_path, city=city, limit=limit)
+    if summaries:
+        # The enrich stage's summary fills a place that has none of its own.
+        places = [replace(p, summary=p.summary or summaries.get(p.place_id, "")) for p in places]
+        log.info("summaries: %d of %d places have one", sum(1 for p in places if p.summary), len(places))
     if not places:
         raise ValueError(f"{input_path}: no places to embed")
     return embed_places(

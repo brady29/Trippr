@@ -60,6 +60,27 @@ def latest_bundle_date(out: Path) -> str | None:
     return dates[-1] if dates else None
 
 
+def latest_enriched_path(out: Path) -> Path | None:
+    """The newest `enriched/<date>/enrichment.parquet` (the enrich stage's output), if any."""
+    dates = [
+        d for d in dated_dirs(out / "enriched") if (out / "enriched" / d / "enrichment.parquet").is_file()
+    ]
+    return out / "enriched" / dates[-1] / "enrichment.parquet" if dates else None
+
+
+def read_summaries(path: str | Path) -> dict[str, str]:
+    """place_id -> the AI summary, from the enrich stage's Parquet. Places without one are left out."""
+    con = connect()
+    try:
+        rows = con.execute(
+            f"SELECT CAST(place_id AS VARCHAR), trim(summary) FROM read_parquet({sql_str(str(path).replace(chr(92), '/'))}) "
+            "WHERE summary IS NOT NULL AND trim(summary) <> ''"
+        ).fetchall()
+    finally:
+        con.close()
+    return dict(rows)
+
+
 def _scan(path: str) -> str:
     lowered = path.lower()
     quoted = sql_str(path)

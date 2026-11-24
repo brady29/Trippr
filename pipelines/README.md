@@ -292,6 +292,8 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
   `--min-recall10` thresholds. For the real bundle use `--corpus out/bundles/<date>/places.parquet
   --queries eval/search/queries_bundle.yaml` (89 queries with rule-based labels). `model_spike.py` is
   the spike's measuring script and `parity_check.py` checks that a hosted endpoint serves the same model.
+- The enrich stage's AI `summary` is added to a place's text from the newest
+  `out/enriched/<date>/enrichment.parquet` (`--enriched FILE` to choose, `--no-enriched` to skip).
 - Default model: `bge-m3-q8` (8-bit BGE-M3, 1024 dims, about 24 minutes for 8,000 places on 4 CPU
   threads; first use downloads 570 MB). The query side must use the same model (see the spike).
 - Tests use a fake hashing embedder; CI installs no model dependency and downloads nothing.

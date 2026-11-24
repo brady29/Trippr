@@ -214,6 +214,9 @@ How it fits the repo, without writing it:
    box, the long-tail Parquet index and its memory spike.
 4. A `trippr-data embed` run on the laptop against the real bundle, uploaded with the bundle, and the
    load job step that reads it.
-5. The enrich stage's `summary` flows into the embed text automatically (`FIELD_COLUMNS` already looks for a
-   `summary` column), but bump `TEXT_VERSION` if the template changes, and re-run `eval-search`.
+5. The enrich stage's `summary` is added to the embed text automatically (`embed` joins the newest
+   `enriched/<date>/enrichment.parquet` by `place_id`; `--no-enriched` turns it off). Re-run `eval-search`
+   on the bundle with and without it to see whether summaries help; bump `TEXT_VERSION` if the template
+   changes. The spike numbers above were measured on the bundle without summaries (enrichment had not been
+   run on it).
 6. Optionally measure option D with the owner's approval (under 5 cents).

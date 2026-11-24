@@ -34,6 +34,23 @@ def test_embed_defaults_to_the_newest_bundle(tmp_path: Path) -> None:
     assert manifest["input"].endswith("bundles/2026-03-05/places.parquet")
 
 
+def test_embed_adds_the_enriched_summary(tmp_path: Path) -> None:
+    write_bundle(tmp_path, "2026-03-05", 3)
+    folder = tmp_path / "enriched" / "2026-03-04"
+    folder.mkdir(parents=True)
+    con = duckdb.connect()
+    con.execute(
+        "COPY (SELECT * FROM (VALUES ('g:1', 'Quiet hillside shrine.'), ('g:2', NULL), ('zzz', 'Not a place.')) "
+        f"t(place_id, summary)) TO '{(folder / 'enrichment.parquet').as_posix()}' (FORMAT parquet)"
+    )
+    con.close()
+    assert main(["--out", str(tmp_path), "embed", "--model", "fake-32"]) == 0
+    with_summary = read_json(embeddings_dir(tmp_path, "2026-03-05") / "manifest.json")["vectors_sha256"]
+    assert main(["--out", str(tmp_path), "embed", "--model", "fake-32", "--no-enriched", "--no-cache"]) == 0
+    without = read_json(embeddings_dir(tmp_path, "2026-03-05") / "manifest.json")["vectors_sha256"]
+    assert with_summary != without
+
+
 def test_embed_without_a_bundle_says_so(tmp_path: Path) -> None:
     with pytest.raises(SystemExit, match="No bundle"):
         main(["--out", str(tmp_path), "embed", "--model", "fake-32"])
