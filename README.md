@@ -8,7 +8,18 @@ Trippr is a group trip planner built on a graph database, with a data platform b
 - **Live Data page:** https://trippr-chi.vercel.app/data (sources, licences, counts, freshness, quality checks)
 - **Case study:** [docs/case-study.md](docs/case-study.md): architecture, metrics, costs, and what went wrong
 
-<!-- screenshots -->
+## What it looks like
+
+Screenshots of the read-only public demo (https://trippr-chi.vercel.app, choose "Look around the demo").
+
+| | |
+|---|---|
+| ![Activities page: Kyoto's top ten catalogue places, each with an AI summary labelled as such, visit length, best time of day, and its sources and licences](docs/images/activities.png) | ![Map tab with the Stay prices layer on: hexagons coloured by median nightly price across Tokyo, from Inside Airbnb](docs/images/map-stay-prices.png) |
+| **Activities.** The curated catalogue with filters; every AI summary is labelled and every place shows its sources and licences. | **Stay prices.** Median nightly price per hexagon in Tokyo, built from Inside Airbnb listings (5 of the 108 cities have this data). |
+| ![Where to stay: the Asakusa area card with a 59 out of 100 stay score broken into value, centrality, walkability, quiet and reviews](docs/images/where-to-stay.png) | ![Suggested for this stop: a catalogue place with the reason Similar to Tsukiji outer market breakfast, which your group planned](docs/images/suggested-for-stop.png) |
+| **Where to stay.** A stay score with its parts, price range and a plain-language explanation. | **Suggested for this stop.** Recommendations from the group's votes and plans, each with a reason. |
+| ![Data page: the pipeline stages, the latest load and the sources with their licences](docs/images/data-page.png) | |
+| **Data.** Sources, licences, counts, freshness and quality checks, public. | |
 
 **Stack.** TypeScript (Next.js 15, Fastify 5, zod), FalkorDB or Neo4j (Cypher), Python 3.12 (uv, DuckDB, Parquet, pydantic, pytest), Claude Batch API, BGE-M3 embeddings with Cloudflare Workers AI for queries, GitHub Actions, Google Cloud Run and Cloud Storage, Vercel.
 

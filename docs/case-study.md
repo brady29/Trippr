@@ -326,6 +326,30 @@ The taste signal beats every baseline at every depth. The checks that must alway
 
 **Not proven.** No real group has used it, so there is no evidence that real groups like the suggestions or that the 0.45 closeness cutoff for naming a liked place is right on BGE-M3. Per-member taste vectors and day-trip candidates from nearby cities were not built. The Cypher and the end-to-end tests ran in CI, not against a hosted deployment's real data.
 
+## What it looks like
+
+These are screenshots of the read-only public demo, taken after the data platform was loaded.
+
+![Activities page: Kyoto's top ten catalogue places, each with an AI summary labelled as such, visit length, best time of day, and its sources and licences](images/activities.png)
+
+The Activities page, filtered to Kyoto's top ten. Every AI summary carries its label, and every place lists its sources and licences.
+
+![Map tab with the Stay prices layer on: hexagons coloured by median nightly price across Tokyo, from Inside Airbnb](images/map-stay-prices.png)
+
+The map's Stay prices layer for Tokyo: median nightly price per hexagon from Inside Airbnb, with a legend and the licence credit. It exists for 5 of the 108 cities, and the app says so.
+
+![Where to stay: the Asakusa area card with a 59 out of 100 stay score broken into value, centrality, walkability, quiet and reviews](images/where-to-stay.png)
+
+An area card in the Where to stay drawer: the score, its five parts, the price range and the explanation.
+
+![Suggested for this stop: a catalogue place with the reason Similar to Tsukiji outer market breakfast, which your group planned](images/suggested-for-stop.png)
+
+Suggested for this stop, with a rule-built reason.
+
+![Data page: the pipeline stages, the latest load and the sources with their licences](images/data-page.png)
+
+The public Data page.
+
 ## Costs
 
 | Item | Amount | Source |
