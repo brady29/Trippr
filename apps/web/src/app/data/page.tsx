@@ -29,12 +29,12 @@ const STATUS_STYLE: Record<CheckStatus, string> = {
 const STATUS_LABEL: Record<CheckStatus, string> = { pass: "pass", fail: "FAIL", warn: "warn", info: "info" };
 
 const STAGES = [
-  { name: "Extract", note: "Overture, Foursquare", built: true },
+  { name: "Extract", note: "five open datasets", built: true },
   { name: "Stage", note: "one schema, one taxonomy", built: true },
-  { name: "Match", note: "entity resolution", built: false },
+  { name: "Match", note: "entity resolution", built: true },
   { name: "Curate", note: "rank, budget, mix", built: true },
   { name: "Enrich", note: "AI summaries", built: true },
-  { name: "Embed", note: "search vectors", built: false },
+  { name: "Embed", note: "search vectors", built: true },
   { name: "Bundle", note: "checked seed bundle", built: true },
   { name: "Load", note: "idempotent job into the graph", built: true },
 ] as const;
@@ -231,23 +231,27 @@ export default function DataPage() {
               </p>
             ) : (
               <Panel title="Latest load">
-                <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-4" data-testid="latest-load">
+                <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-5" data-testid="latest-load">
                   <div>
                     <dt className="text-xs uppercase tracking-wide text-ink-faint">Bundle</dt>
                     <dd>{load.bundleDate}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-ink-faint">Places in the bundle</dt>
+                    <dd>{load.counts.places.toLocaleString("en-CA")}</dd>
                   </div>
                   <div>
                     <dt className="text-xs uppercase tracking-wide text-ink-faint">Matching</dt>
                     <dd>entity-matched records</dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-ink-faint">Added / updated</dt>
+                    <dt className="text-xs uppercase tracking-wide text-ink-faint">Last run: added / updated</dt>
                     <dd>
                       {load.counts.created} / {load.counts.updated}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-ink-faint">Matched to our ideas</dt>
+                    <dt className="text-xs uppercase tracking-wide text-ink-faint">Last run: matched to our ideas</dt>
                     <dd>{load.counts.adopted}</dd>
                   </div>
                 </dl>
