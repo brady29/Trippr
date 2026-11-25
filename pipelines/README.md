@@ -420,8 +420,9 @@ A bundle without these files, and no `stay` key in its manifest, loads exactly a
 
 ## Scheduled runs
 
-`.github/workflows/data-pipeline.yml` runs monthly (and on demand) once the `DATA_BUCKET` repository
-variable exists. It signs in to Google Cloud with workload identity federation (the same
+`.github/workflows/data-pipeline.yml` runs on demand once the `DATA_BUCKET` repository
+variable exists. Its monthly schedule is commented out until the full run (about 95 minutes for Wikidata and 110 for
+matching, so the 120-minute limit is too short for all five sources) has been proven on a hosted runner. It signs in to Google Cloud with workload identity federation (the same
 `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT` as `deploy.yml`), runs
 `run --cities all`, uploads to the bucket and puts the report in the run summary. A failed check
 fails the workflow; the data is still uploaded for inspection, but `reports/latest.json` (the next
