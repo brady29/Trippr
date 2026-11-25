@@ -192,7 +192,7 @@ export async function buildApp({
     }
     const status = (error as { statusCode?: number }).statusCode;
     if (status && status >= 400 && status < 500) {
-      return reply.status(status).send({ error: { code: "bad_request", message: error.message } });
+      return reply.status(status).send({ error: { code: "bad_request", message: error instanceof Error ? error.message : "Bad request" } });
     }
     req.log.error({ err: error }, "unhandled error");
     onError?.(error, { method: req.method, route: req.routeOptions.url ?? "unknown" });
