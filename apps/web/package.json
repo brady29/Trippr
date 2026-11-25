@@ -17,7 +17,7 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@sentry/browser": "10.78.0",
-    "@tanstack/react-query": "5.108.2",
+    "@tanstack/react-query": "5.108.3",
     "@trippr/contracts": "workspace:^",
     "@trippr/rules": "workspace:^",
     "cytoscape": "3.35.0",
