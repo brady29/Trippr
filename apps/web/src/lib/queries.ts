@@ -19,6 +19,8 @@ import type {
   PlanBody,
   SearchRequest,
   SearchResponse,
+  SuggestionsRequest,
+  SuggestionsResponse,
   RouteView,
   StopLibrary,
   StopView,
@@ -112,6 +114,21 @@ export const useSearch = (tripId: string, request: SearchRequest | null) => {
     queryFn: ({ signal }) => api<SearchResponse>(`/trips/${tripId}/search${queryString({ ...request! })}`, { signal }),
     enabled: ready && Boolean(tripId) && request !== null,
     staleTime: 60_000,
+    retry: false,
+  });
+};
+
+/**
+ * "Suggested for this stop" (GET /stops/:id/suggestions): free to call (no hosted model behind it), so it loads when the
+ * drawer opens. Under the activities prefix, so a vote, a plan or an edit refreshes it and a place just added leaves the list.
+ */
+export const useSuggestions = (tripId: string, stopId: string, request: SuggestionsRequest = {}) => {
+  const ready = useReady();
+  return useQuery({
+    queryKey: ["trip-activities", tripId, "suggestions", stopId, request] as const,
+    queryFn: ({ signal }) => api<SuggestionsResponse>(`/stops/${stopId}/suggestions${queryString({ ...request })}`, { signal }),
+    enabled: ready && Boolean(tripId) && Boolean(stopId),
+    staleTime: 30_000,
     retry: false,
   });
 };

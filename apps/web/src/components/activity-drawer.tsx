@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePlanToggle, useRouteLibrary } from "@/lib/queries";
 import { ActivityItem, NewActivityForm } from "./activity";
 import { BookingLinks } from "./booking-links";
+import { SuggestedForStop } from "./suggested-for-stop";
 import { XIcon } from "./icons";
 import { ErrorNote, Spinner } from "./ui";
 
@@ -95,6 +96,14 @@ export function ActivityDrawer({
               />
             ))}
           </ul>
+          <SuggestedForStop
+            tripId={tripId}
+            routeId={routeId}
+            stopId={stop.id}
+            cityName={stop.city.name}
+            canEdit={canEdit}
+            canVote={canVote}
+          />
           {canEdit ? <NewActivityForm tripId={tripId} cityCode={stop.city.code} cityName={stop.city.name} /> : null}
         </div>
       </div>
