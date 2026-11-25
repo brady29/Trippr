@@ -2,6 +2,28 @@
 
 [![CI](https://github.com/brady29/Trippr/actions/workflows/ci.yml/badge.svg)](https://github.com/brady29/Trippr/actions/workflows/ci.yml)
 
+Trippr is a group trip planner built on a graph database, with a data platform behind it: a Python pipeline that merges five open datasets into a catalogue of places, enriches them with an LLM, makes them searchable by meaning, scores where to stay, and loads the result into the live graph without touching anything the group has done.
+
+- **Live app:** https://trippr-chi.vercel.app (choose "Look around the demo" for a read-only tour)
+- **Live Data page:** https://trippr-chi.vercel.app/data (sources, licences, counts, freshness, quality checks)
+- **Case study:** [docs/case-study.md](docs/case-study.md): architecture, metrics, costs, and what went wrong
+
+<!-- screenshots -->
+
+**Stack.** TypeScript (Next.js 15, Fastify 5, zod), FalkorDB or Neo4j (Cypher), Python 3.12 (uv, DuckDB, Parquet, pydantic, pytest), Claude Batch API, BGE-M3 embeddings with Cloudflare Workers AI for queries, GitHub Actions, Google Cloud Run and Cloud Storage, Vercel.
+
+**Five engineering points, with the numbers** (details and caveats in the [case study](docs/case-study.md)):
+
+1. **Entity resolution at scale.** 6.1 million records from five sources resolved to 5.2 million places, 14.6% confirmed by more than one source; 95.1% precision and 85.0% recall on 383 labelled pairs. The labels were written by the pipeline's author and the threshold was tuned on the same pairs, so these are not independent figures.
+2. **Curated, checked and contract-tested.** 8,000 places chosen from 4.7 million eligible, with a per-city budget and a category mix (the raw pool is 76% food; the catalogue is 19%). The bundle carries SHA-256 checksums and fails its own checks before it can be loaded, and the Python and TypeScript schemas are tested against one committed bundle.
+3. **An LLM stage chosen by an eval, with a spend cap.** Haiku against Sonnet on 174 labelled places: the same tag F1 (0.86), 100% against 94.8% valid answers, $0.05 against $0.88 per 1,000 places. The full run enriched 7,531 of 8,000 places for about $0.65; 469 places were left without enrichment because answers exceeded the 140-character limit. Every AI summary is labelled in the app, and the bundle is rejected if one is not.
+4. **Hybrid semantic search.** BGE-M3 beat the next-cheapest multilingual model by 30% in MRR (0.68 against 0.52) on 89 labelled queries in six languages. Place vectors are computed on a laptop and only the question is embedded in the cloud, so the 512 MiB API never loads a model; a model mismatch is refused, and search falls back to words and to an exact scan when the vector path is unavailable.
+5. **An idempotent load job.** Re-running a bundle changes nothing, and it never touches votes, comments, plans, edited titles or hand-placed pins; places nobody used are removed when dropped, the rest are marked "no longer listed". The same integration tests run against FalkorDB and Neo4j in CI.
+
+Not everything is finished or proven: OpenStreetMap covers 2 of 108 cities, Inside Airbnb stay data covers 5, flight price coverage is sparse (cached fares only), and recommendations are still in progress. The case study says so.
+
+---
+
 A shared trip planner backed by a graph database. A group builds several tagged routes for one trip, and every activity they add belongs to a **place**, not a plan, so it shows up in every route that visits that place.
 
 Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 travellers.
