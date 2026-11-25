@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { LibraryActivity } from "./dto";
 import { cityCode } from "./schemas";
+import { bundleStaySchema, type DataStayView } from "./stay";
 
 /**
  * The activity catalogue (docs/data-platform-spec.md, Feature 2): the seed bundle the data pipeline writes
@@ -182,6 +183,8 @@ export const bundleManifestSchema = z
     evals: z.record(z.unknown()).default({}),
     /** Present when the bundle carries enrichment.jsonl.gz. */
     enrichment: nullable(bundleEnrichmentSummarySchema).optional(),
+    /** Stay analytics (stay_unit.jsonl.gz and hotels.jsonl.gz); absent from bundles written without them. */
+    stay: bundleStaySchema.optional(),
   })
   .strict();
 export type BundleManifest = z.infer<typeof bundleManifestSchema>;
@@ -311,6 +314,8 @@ export interface DataSourceView {
   stagedRows: number | null;
   /** Activities in the graph that cite this source. */
   activities: number;
+  /** Open-data hotels in the graph that cite this source (lodging sources only). */
+  hotels?: number;
 }
 
 export interface DataCheckView {
@@ -368,4 +373,6 @@ export interface DataSourcesResponse {
   totals: { catalogue: number; listed: number; unlisted: number; handWritten: number; enriched: number };
   /** How the catalogue is licensed and used, for the page's footer. */
   notes: string[];
+  /** Stay analytics from the last bundle that had them; null before the first one. */
+  stay?: DataStayView | null;
 }

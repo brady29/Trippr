@@ -12,7 +12,9 @@ import type { GeoJSONSource } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import { ICON_PATHS } from "@/lib/graph-palette";
 import { toFeatureCollections, type MapItem, type MapShape } from "@/lib/map-features";
+import type { StayFeatureProps } from "@/lib/stay-cells";
 import { addRouteLayers, createMap, EMPTY, fitTo, MAP_FONT, reducedMotion, stopMarker, webglAvailable } from "./base";
+import { addStayLayers, onStayClick, setStayData } from "./stay-layer";
 
 export type Bounds = [[number, number], [number, number]];
 
@@ -27,6 +29,9 @@ export interface TripMapProps {
   onSelect(id: string): void;
   onView(bounds: Bounds): void;
   onUnavailable(reason: string): void;
+  /** The "Stay prices" heat layer: hexagons to draw (null: nothing yet) and whether the layer is switched on. */
+  stay?: { data: GeoJSON.FeatureCollection | null; visible: boolean };
+  onStayPick?(cell: StayFeatureProps): void;
 }
 
 const CLUSTER_MAX_ZOOM = 9;
@@ -85,13 +90,15 @@ function drawIcon(shape: MapShape, color: string): ImageData | null {
 
 const iconExpr = ["concat", ["get", "shape"], "|", ["get", "color"]] as unknown as maplibregl.ExpressionSpecification;
 
-export default function TripMap({ items, segments, selected, fit, fly, onSelect, onView, onUnavailable }: TripMapProps) {
+export default function TripMap({ items, segments, selected, fit, fly, onSelect, onView, onUnavailable, stay, onStayPick }: TripMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const handlers = useRef({ onSelect, onView, onUnavailable });
-  handlers.current = { onSelect, onView, onUnavailable };
+  const handlers = useRef({ onSelect, onView, onUnavailable, onStayPick });
+  handlers.current = { onSelect, onView, onUnavailable, onStayPick };
+  const stayState = useRef(stay);
+  stayState.current = stay;
 
   useEffect(() => {
     if (!container.current) return;
@@ -152,6 +159,10 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
           "circle-stroke-opacity": 0.6,
         },
       });
+      // Stay prices: hexagons under the basemap's labels (hidden until the toggle is on).
+      addStayLayers(m);
+      onStayClick(m, (cell) => handlers.current.onStayPick?.(cell));
+      setStayData(m, stayState.current?.data ?? null, stayState.current?.visible ?? false);
       m.addLayer({
         id: "m-area-labels",
         type: "symbol",
@@ -296,6 +307,15 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
         ),
       );
   }, [items, segments, selected, loaded]);
+
+  // Stay prices: the hexagons and whether they show.
+  const stayData = stay?.data ?? null;
+  const stayVisible = stay?.visible ?? false;
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !loaded) return;
+    setStayData(m, stayData, stayVisible);
+  }, [stayData, stayVisible, loaded]);
 
   // Selection ring.
   useEffect(() => {

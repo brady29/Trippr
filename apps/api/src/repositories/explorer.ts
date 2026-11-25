@@ -19,6 +19,9 @@ function setFlags<T extends Record<string, unknown>>(input: T, fields: Record<st
 
 const sign = (n: unknown) => Math.sign(num(n)) as -1 | 0 | 1;
 
+/** How far an Area reaches from its centre unless someone edits it (docs/data-platform-spec.md, Feature 5). */
+export const DEFAULT_AREA_RADIUS_KM = 1.5;
+
 /** Stations, airports, areas to stay and hotels. Legs and stays live with routes. */
 export function explorerRepository(db: GraphClient) {
   const q = (name: string) => cypher(name, db.dialect);
@@ -42,6 +45,7 @@ export function explorerRepository(db: GraphClient) {
       lon: optNum(r.area.lon),
       vibes: (Array.isArray(r.area.vibes) ? r.area.vibes : []) as AreaVibe[],
       note: str(r.area.note),
+      radiusKm: optNum(r.area.radiusKm) ?? DEFAULT_AREA_RADIUS_KM,
       cityCode: r.cityCode,
       cityName: r.cityName,
       votes: num(r.votes),
@@ -114,7 +118,7 @@ export function explorerRepository(db: GraphClient) {
 
     async createArea(
       userId: string,
-      input: { tripId: string; cityCode: string; name: string; vibes: string[]; lat?: number | null; lon?: number | null; note?: string | null },
+      input: { tripId: string; cityCode: string; name: string; vibes: string[]; lat?: number | null; lon?: number | null; note?: string | null; radiusKm?: number | null },
     ) {
       const id = newId("area");
       await db.query(q("areas/create"), {
@@ -127,6 +131,7 @@ export function explorerRepository(db: GraphClient) {
         lat: input.lat ?? null,
         lon: input.lon ?? null,
         note: input.note ?? null,
+        radiusKm: input.radiusKm ?? DEFAULT_AREA_RADIUS_KM,
         now: nowIso(),
       });
       return id;
@@ -134,17 +139,19 @@ export function explorerRepository(db: GraphClient) {
 
     async patchArea(
       areaId: string,
-      input: { name?: string; vibes?: string[]; lat?: number | null; lon?: number | null; note?: string | null },
+      input: { name?: string; vibes?: string[]; lat?: number | null; lon?: number | null; note?: string | null; radiusKm?: number | null },
     ) {
       await db.query(q("areas/patch"), {
         areaId,
         name: input.name ?? null,
         vibes: input.vibes ?? null,
-        ...setFlags(input, { setLat: "lat", setLon: "lon", setNote: "note" }),
+        ...setFlags(input, { setLat: "lat", setLon: "lon", setNote: "note", setRadiusKm: "radiusKm" }),
       });
     },
 
     async deleteArea(areaId: string) {
+      // Open-data hotel suggestions hang off the Area and go with it; the group's own hotels block the delete earlier.
+      await db.query(q("hotels/delete-catalogue-in-area"), { areaId });
       await db.query(q("areas/delete"), { areaId });
     },
 

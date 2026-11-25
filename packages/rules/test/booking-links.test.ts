@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activityLinks, hotelLinks, travelLinks } from "../src/booking-links";
+import { activityLinks, hotelLinks, stayLinks, travelLinks } from "../src/booking-links";
 
 const YTO = { code: "YTO", name: "Toronto", countryIso: "CA" };
 const TYO = { code: "TYO", name: "Tokyo", countryIso: "JP" };
@@ -41,5 +41,28 @@ describe("booking links", () => {
 
   it("searches activities by name and city", () => {
     expect(activityLinks(TYO, "Shibuya Sky")[0]!.url).toBe("https://www.klook.com/en-CA/search/result/?query=Shibuya%20Sky%20Tokyo");
+  });
+
+  it("searches Airbnb and hotels for an area with the stop's dates and group size", () => {
+    const [airbnb, hotels] = stayLinks({ area: "Shibuya", city: TYO }, "2027-05-10", "2027-05-14", 5);
+    expect(airbnb).toMatchObject({ provider: "airbnb", label: "Search Airbnb" });
+    expect(airbnb!.url).toBe("https://www.airbnb.com/s/Shibuya--Tokyo/homes?checkin=2027-05-10&checkout=2027-05-14&adults=5&currency=CAD");
+    expect(hotels).toMatchObject({ provider: "booking", label: "Search hotels" });
+    expect(decodeURIComponent(hotels!.url)).toContain("ss=Shibuya, Tokyo&checkin=2027-05-10&checkout=2027-05-14&group_adults=5&no_rooms=3");
+  });
+
+  it("falls back to the city, leaves dates out when unknown, and escapes names", () => {
+    const [airbnb, hotels] = stayLinks({ city: SIA }, null, null, 1);
+    expect(airbnb!.url).toBe("https://www.airbnb.com/s/Xi'an/homes?adults=1&currency=CAD");
+    expect(hotels!.url).not.toContain("checkin");
+    const [odd] = stayLinks({ area: "Dongcheng hutongs & Gulou / Bell", city: BJS }, "2027-05-10", "2027-05-12", 2);
+    expect(odd!.url).not.toMatch(/[ &]hutongs/);
+    expect(odd!.url.startsWith("https://www.airbnb.com/s/Dongcheng%20hutongs%20%26%20Gulou%20%2F%20Bell--Beijing/homes?")).toBe(true);
+  });
+
+  it("carries no affiliate or tracking parameters and never points at a listing", () => {
+    for (const l of stayLinks({ area: "Shibuya", city: TYO }, "2027-05-10", "2027-05-14", 2)) {
+      expect(l.url).not.toMatch(/aid=|affiliate|utm_|ref=|rooms\//i);
+    }
   });
 });

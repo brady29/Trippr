@@ -58,6 +58,9 @@ for (const l of hubs.links ?? []) {
   if (!hubIds.has(l.from) || !hubIds.has(l.to)) fail(`hub link ${l.from}-${l.to}: unknown hub`);
 }
 for (const a of areas) if (!codes.has(a.city)) fail(`area ${a.id}: unknown city ${a.city}`);
+for (const a of areas) {
+  if (a.radiusKm !== undefined && !(typeof a.radiusKm === "number" && a.radiusKm >= 0.2 && a.radiusKm <= 10)) fail(`area ${a.id}: radiusKm must be a number from 0.2 to 10 (default 1.5)`);
+}
 
 const routeIds = new Set();
 const summary = [];

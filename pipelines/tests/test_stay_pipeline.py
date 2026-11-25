@@ -19,6 +19,7 @@ from trippr_data.stay.geo import geometry_area_km2, neighbourhood_areas
 from trippr_data.stay.hotels import cluster_pairs, osm_pre_rows, osm_stars
 from trippr_data.stay.layout import stay_stats_file, stay_table
 from trippr_data.stay.report import stay_section
+from trippr_data.stay.scoring import centrality_score
 
 from .conftest import FIXTURE_DATE, STAY_FIXTURES
 
@@ -267,6 +268,16 @@ def test_host_concentration_and_availability(stay_out):
     assert city["unavailable_share"] == pytest.approx(blocked / days, abs=1e-4)
 
 
+def test_coordinates_and_distances_are_rounded_so_platforms_agree(stay_out):
+    """H3 cell centres differ in the last digits between h3 builds; the published tables carry 6 decimals."""
+    for u in table(stay_out, "stay_unit"):
+        for key, digits in (("lat", 6), ("lon", 6), ("centre_km", 3), ("station_km", 3), ("area_km2", 3)):
+            if u[key] is not None:
+                assert u[key] == round(u[key], digits), (u["unit_id"], key, u[key])
+    cells = table(stay_out, "stay_unit", "unit_kind = 'h3'")
+    assert cells and all(len(repr(c["lat"]).split(".")[1]) <= 6 for c in cells)
+
+
 def test_privacy_minimum_empties_small_units(stay_out):
     island = unit(stay_out, "neighbourhood", "TYO/Ogasawara Mura")
     assert island["n_listings"] == 2
@@ -282,11 +293,16 @@ def test_privacy_minimum_empties_small_units(stay_out):
 def test_scores_follow_the_formula(stay_out):
     asakusa, shibuya = unit(stay_out, "area", "area-tyo-asakusa"), unit(stay_out, "area", "area-tyo-shibuya")
     for u in (asakusa, shibuya):
-        assert u["score_parts"] == ["value", "reviews", "walkability", "quiet"]
+        assert u["score_parts"] == ["value", "reviews", "centrality", "walkability", "quiet"]
         expected = sum(w * u[f"score_{k}"] for k, w in CFG.weights.model_dump().items())
         assert u["stay_score"] == pytest.approx(expected, abs=0.15)  # parts are rounded to 0.1
         assert u["weight_coverage"] == 1.0
         assert u["explanation"].startswith("Cheaper than")
+    for u in (asakusa, shibuya):  # the centrality part is the documented formula of the unit's distances
+        assert u["score_centrality"] == pytest.approx(
+            centrality_score(u["centre_km"], u["station_km"], CFG.centrality), abs=0.06
+        )
+        assert f"{u['centre_km']:.1f} km from the city centre" in u["explanation"]
     # Shibuya is busier (more places, more bars) and dearer; Asakusa is quieter and cheaper.
     assert shibuya["score_walkability"] > asakusa["score_walkability"]
     assert asakusa["score_quiet"] > shibuya["score_quiet"] and asakusa["score_quiet"] == 100.0
@@ -302,8 +318,9 @@ def test_a_city_with_no_places_gets_only_listing_parts(stay_out):
     assert kallang["score_value"] is None  # 7 priced listings, under the minimum of 10
     assert kallang["score_reviews"] is not None
     assert kallang["stay_score"] is None and kallang["score_parts"] == [
-        "reviews"
-    ]  # 10% of the weight is not enough
+        "centrality",
+        "reviews",
+    ]  # 40% of the weight is not enough
 
 
 def test_areas_without_data_are_listed_unscored(stay_out):

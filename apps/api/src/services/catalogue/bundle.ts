@@ -5,13 +5,19 @@ import { gunzipSync } from "node:zlib";
 import {
   BUNDLE_FILES,
   bundleEnrichmentSchema,
+  bundleHotelSchema,
   bundleManifestSchema,
   bundlePlaceSchema,
   bundleSourceInfoSchema,
+  bundleStayUnitSchema,
+  STAY_BUNDLE_FILES,
   type BundleEnrichment,
+  type BundleHotel,
   type BundleManifest,
   type BundlePlace,
   type BundleSourceInfo,
+  type BundleStay,
+  type BundleStayUnit,
 } from "@trippr/contracts";
 
 /** Where bundles live: a folder of bundles/<date>/ directories, on disk or in a Cloud Storage bucket. */
@@ -81,6 +87,13 @@ export async function openStore(location: string): Promise<BundleStore> {
   return location.startsWith("gs://") ? gcsStore(location) : localStore(location);
 }
 
+/** The optional stay tables of a bundle (stay_unit and hotels), checked against the manifest's stay section. */
+export interface LoadedStay {
+  section: BundleStay;
+  units: BundleStayUnit[];
+  hotels: BundleHotel[];
+}
+
 export interface LoadedBundle {
   date: string;
   manifest: BundleManifest;
@@ -88,6 +101,39 @@ export interface LoadedBundle {
   sources: BundleSourceInfo[];
   /** LLM enrichment by place id; empty when the bundle has none. */
   enrichment: Map<string, BundleEnrichment>;
+  /** Null for bundles written without stay data; they load exactly as before. */
+  stay: LoadedStay | null;
+}
+
+const jsonLines = (file: Buffer): unknown[] =>
+  gunzipSync(file)
+    .toString("utf8")
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line) as unknown);
+
+function readStay(manifest: BundleManifest, files: Map<string, Buffer>, known: Set<string>): LoadedStay | null {
+  const unitsFile = files.get(STAY_BUNDLE_FILES.units);
+  const hotelsFile = files.get(STAY_BUNDLE_FILES.hotels);
+  const section = manifest.stay;
+  if (!section) {
+    if (unitsFile || hotelsFile) throw new Error("the manifest lists stay files but has no stay section");
+    return null;
+  }
+  if (!unitsFile || !hotelsFile) throw new Error("the manifest has a stay section but does not list the stay files");
+  const units = jsonLines(unitsFile).map((row) => bundleStayUnitSchema.parse(row));
+  const hotels = jsonLines(hotelsFile).map((row) => bundleHotelSchema.parse(row));
+  for (const [kind, n] of Object.entries(section.units)) {
+    const actual = units.filter((u) => u.unit_kind === kind).length;
+    if (actual !== n) throw new Error(`${actual} ${kind} stay units, but the manifest says ${n}`);
+  }
+  if (units.length !== Object.values(section.units).reduce((a, b) => a + b, 0)) throw new Error("stay units of a kind the manifest does not count");
+  if (hotels.length !== section.hotels) throw new Error(`${hotels.length} hotels, but the manifest says ${section.hotels}`);
+  if (new Set(units.map((u) => `${u.unit_kind}:${u.unit_id}`)).size !== units.length) throw new Error("stay unit ids are not unique");
+  if (new Set(hotels.map((h) => h.id)).size !== hotels.length) throw new Error("hotel ids are not unique");
+  const unknown = hotels.flatMap((h) => h.sources.map((s) => s.source)).filter((s) => !known.has(s));
+  if (unknown.length) throw new Error(`hotels cite sources missing from sources.json: ${[...new Set(unknown)].join(", ")}`);
+  return { section, units, hotels };
 }
 
 const sha256 = (data: Buffer) => createHash("sha256").update(data).digest("hex");
@@ -119,7 +165,7 @@ export async function readBundle(store: BundleStore, date: string): Promise<Load
   const known = new Set(sources.map((s) => s.id));
   const unknown = places.flatMap((p) => p.sources.map((s) => s.source)).filter((s) => !known.has(s));
   if (unknown.length) throw new Error(`places cite sources missing from sources.json: ${[...new Set(unknown)].join(", ")}`);
-  return { date, manifest, places, sources, enrichment: readEnrichment(files.get(BUNDLE_FILES.enrichment), manifest, places) };
+  return { date, manifest, places, sources, enrichment: readEnrichment(files.get(BUNDLE_FILES.enrichment), manifest, places), stay: readStay(manifest, files, known) };
 }
 
 /** The optional enrichment file, checked against the places and the manifest. Nothing here may be an unlabelled AI summary. */

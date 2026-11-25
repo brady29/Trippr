@@ -5,6 +5,7 @@ import { nowIso } from "../../ids";
 import type { Repositories } from "../../repositories";
 import type { ExistingActivity, PlaceRow, SourceLink } from "../../repositories/catalogue";
 import type { LoadedBundle } from "./bundle";
+import { loadStay, type StaySummary } from "./stay";
 
 export interface LoadSummary {
   bundleDate: string;
@@ -24,6 +25,8 @@ export interface LoadSummary {
   removed: number;
   /** Places the group deleted, which stay deleted. */
   skippedHidden: number;
+  /** Stay analytics (Area cards, map cells, open-data hotels); null when the bundle has none. */
+  stay: StaySummary | null;
 }
 
 export interface LoadOptions {
@@ -211,8 +214,12 @@ export async function loadBundle(repos: Repositories, bundle: LoadedBundle, opti
     unlisted: plan.unlist.length,
     removed: plan.remove.length,
     skippedHidden: plan.skippedHidden,
+    stay: null,
   };
-  if (options.dryRun) return summary;
+  if (options.dryRun) {
+    summary.stay = await loadStay(repos, bundle, { dryRun: true });
+    return summary;
+  }
 
   await repos.catalogue.upsertSources(
     bundle.sources.map((s) => ({
@@ -276,5 +283,6 @@ export async function loadBundle(repos: Repositories, bundle: LoadedBundle, opti
     checks: JSON.stringify(manifest.checks),
     evals: JSON.stringify(manifest.evals),
   });
+  summary.stay = await loadStay(repos, bundle, { now: () => now });
   return summary;
 }

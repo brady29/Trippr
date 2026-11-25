@@ -16,13 +16,14 @@ class _Strict(BaseModel):
 
 class Weights(_Strict):
     value: float = Field(ge=0)
+    centrality: float = Field(ge=0)
     walkability: float = Field(ge=0)
     quiet: float = Field(ge=0)
     reviews: float = Field(ge=0)
 
     @model_validator(mode="after")
     def _sums_to_one(self) -> Weights:
-        total = self.value + self.walkability + self.quiet + self.reviews
+        total = self.value + self.centrality + self.walkability + self.quiet + self.reviews
         if abs(total - 1.0) > 1e-9:
             raise ValueError(f"stay_score.yaml: weights sum to {total}, not 1")
         return self
@@ -44,6 +45,12 @@ class ReviewRules(_Strict):
         if not self.floor < self.ceiling:
             raise ValueError("stay_score.yaml: reviews.floor must be below reviews.ceiling")
         return self
+
+
+class CentralityRules(_Strict):
+    centre_far_km: float = Field(gt=0)
+    station_far_km: float = Field(gt=0)
+    centre_share: float = Field(ge=0, le=1)
 
 
 class WalkRules(_Strict):
@@ -81,6 +88,7 @@ class MergeRules(_Strict):
 class HotelRules(_Strict):
     merge: MergeRules
     source_precedence: list[str] = Field(min_length=1)
+    bundle_per_area: int = Field(ge=1)
 
 
 class StayConfig(_Strict):
@@ -90,6 +98,7 @@ class StayConfig(_Strict):
     price: PriceRules
     min_priced_listings: int = Field(ge=1)
     reviews: ReviewRules
+    centrality: CentralityRules
     walkability: WalkRules
     quiet: QuietRules
     hosts: HostRules

@@ -241,19 +241,19 @@
         "top_hosts_share": 0.1304,
         "top_neighbourhoods": [
           {
-            "median_price_cad": 139.66,
-            "name": "Shinjuku Ku",
-            "stay_score": 62.0
-          },
-          {
             "median_price_cad": 112.63,
             "name": "Taito Ku",
-            "stay_score": 61.5
+            "stay_score": 62.2
+          },
+          {
+            "median_price_cad": 139.66,
+            "name": "Shinjuku Ku",
+            "stay_score": 58.2
           },
           {
             "median_price_cad": 197.32,
             "name": "Shibuya Ku",
-            "stay_score": 51.2
+            "stay_score": 49.6
           }
         ],
         "unavailable_share": 0.4165
@@ -277,10 +277,11 @@
       "neighbourhood": 7
     },
     "weights": {
-      "quiet": 0.2,
+      "centrality": 0.3,
+      "quiet": 0.15,
       "reviews": 0.1,
-      "value": 0.4,
-      "walkability": 0.3
+      "value": 0.25,
+      "walkability": 0.2
     }
   }
 }

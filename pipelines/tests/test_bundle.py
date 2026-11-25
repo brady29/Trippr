@@ -44,11 +44,22 @@ from trippr_data.bundle_enrichment import (
     check_enrichment,
     read_enrichment,
 )
+from trippr_data.bundle_stay import (
+    HOTELS_FILE,
+    STAY_UNIT_FILE,
+    BundleHotel,
+    BundleStayUnit,
+    check_stay_bundle,
+    read_jsonl_gz,
+)
 from trippr_data.checks import check
 from trippr_data.cities import load_cities, load_countries
 from trippr_data.curation import curate, load_curation_config
 from trippr_data.layout import bundle_dir
 from trippr_data.match import match
+from trippr_data.stay import checks as stay_checks
+from trippr_data.stay.config import load_stay_config
+from trippr_data.stay.layout import curated_stay_dir, stay_staging_dir
 from trippr_data.taxonomy import load_taxonomy
 
 from .conftest import FIXTURE_DATE, FIXTURES
@@ -72,27 +83,60 @@ def matched_copy(staged_out: Path, tmp_path: Path, registry) -> Path:
     return out
 
 
+def with_stay_tables(out: Path, stay_out: Path, registry) -> None:
+    """Add the stay stages' output (hotels, Inside Airbnb units, scores) and their check results to `out`."""
+    shutil.copytree(curated_stay_dir(stay_out, FIXTURE_DATE), curated_stay_dir(out, FIXTURE_DATE))
+    shutil.copytree(stay_staging_dir(stay_out, FIXTURE_DATE), stay_staging_dir(out, FIXTURE_DATE))
+    for source in (stay_out / "raw").iterdir():  # the stay checks read the raw files' _meta.json
+        if not (out / "raw" / source.name).exists():
+            shutil.copytree(source, out / "raw" / source.name)
+    passed, _ = stay_checks.check(out, FIXTURE_DATE, registry=registry, baseline=None, verify_raw=False)
+    assert passed
+
+
 @pytest.fixture()
-def built(staged_out: Path, tmp_path: Path, registry):
+def built(staged_out: Path, stay_out: Path, tmp_path: Path, registry):
     out = matched_copy(staged_out, tmp_path, registry)
     check(out, FIXTURE_DATE, registry=registry, baseline=None)
     cfg = golden_config()
     curate(out, FIXTURE_DATE, config=cfg)
     write_fixture_enrichment(out, FIXTURE_DATE)
     write_fixture_eval(out)
+    with_stay_tables(out, stay_out, registry)
     path, manifest = build_bundle(
         out, FIXTURE_DATE, registry=registry, config=cfg, created_at=CREATED_AT, parquet=False
     )
     return out, path, manifest
 
 
+@pytest.fixture()
+def built_without_stay(staged_out: Path, tmp_path: Path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
+    cfg = golden_config()
+    curate(out, FIXTURE_DATE, config=cfg)
+    path, manifest = build_bundle(
+        out, FIXTURE_DATE, registry=registry, config=cfg, created_at=CREATED_AT, parquet=False
+    )
+    return path, manifest
+
+
+def test_a_bundle_without_stay_data_is_unchanged(built_without_stay):
+    path, manifest = built_without_stay
+    assert sorted(p.name for p in path.iterdir()) == [MANIFEST_FILE, PLACES_FILE, SOURCES_FILE]
+    assert manifest.stay is None and manifest.checks.passed
+    assert "stay" not in json.loads((path / MANIFEST_FILE).read_text(encoding="utf-8"))
+    assert not any(r.name.startswith("stay.") for r in manifest.checks.results)
+
+
 def test_bundle_files_and_manifest(built):
     _, path, manifest = built
     assert sorted(p.name for p in path.iterdir()) == [
         ENRICHMENT_FILE,
+        HOTELS_FILE,
         MANIFEST_FILE,
         PLACES_FILE,
         SOURCES_FILE,
+        STAY_UNIT_FILE,
     ]
     assert manifest.checks.passed, [r for r in manifest.checks.results if r.status == "fail"]
     assert manifest.input == "golden" and manifest.format == 1
@@ -100,7 +144,13 @@ def test_bundle_files_and_manifest(built):
         manifest.counts.places == sum(manifest.counts.by_city.values()) == 80 or manifest.counts.places <= 80
     )
     assert manifest.counts.with_licence == manifest.counts.places == manifest.counts.with_sources
-    assert {f.name for f in manifest.files} == {ENRICHMENT_FILE, PLACES_FILE, SOURCES_FILE}
+    assert {f.name for f in manifest.files} == {
+        ENRICHMENT_FILE,
+        PLACES_FILE,
+        SOURCES_FILE,
+        STAY_UNIT_FILE,
+        HOTELS_FILE,
+    }
     assert verify_bundle(path).counts == manifest.counts
     # The manifest on disk is the one that was returned.
     assert (
@@ -193,6 +243,120 @@ def test_enrichment_from_an_earlier_date_and_eval_scores(staged_out, tmp_path, r
         "metrics": {"n": 174, "valid_rate": 1.0, "tag_f1": 0.81},
         "targets": {"tag_f1": True},
     }
+
+
+def test_stay_tables_in_the_bundle(built):
+    _, path, manifest = built
+    units = read_jsonl_gz(path / STAY_UNIT_FILE, BundleStayUnit)
+    hotels = read_jsonl_gz(path / HOTELS_FILE, BundleHotel)
+    stay = manifest.stay
+    assert stay is not None
+    assert stay.units == {k: sum(1 for u in units if u.unit_kind == k) for k in stay.units}
+    assert stay.hotels == len(hotels) > 0 and stay.hotels_in_areas >= stay.hotels
+    assert {c.city_code for c in stay.cities} == {"TYO", "SIN"}
+    assert all(c.snapshot_date and c.n_listings > 0 for c in stay.cities)
+    assert stay.coverage.inside_airbnb_cities == 2 and stay.coverage.trippr_cities >= 100
+    assert stay.checks is not None and stay.checks.passed
+    assert abs(sum(stay.weights.values()) - 1.0) < 1e-9 and "centrality" in stay.weights
+    assert {r.name for r in manifest.checks.results if r.name.startswith("stay.")} >= {
+        "stay.units.unique_ids",
+        "stay.hotels.provenance",
+    }
+    assert manifest.checks.passed
+    # Provenance travels with every hotel: licence and fetch time per source record.
+    assert all(s.licence and s.fetched_at.endswith("Z") for h in hotels for s in h.sources)
+    assert {s.source for h in hotels for s in h.sources} >= {"overture"}
+    # Aggregates only: the schema has no field that could carry a listing, a host or a name.
+    for field in BundleStayUnit.model_fields:
+        assert not any(w in field for w in ("listing_id", "host_id", "host_name", "url", "picture"))
+    by_id = {(u.unit_kind, u.unit_id): u for u in units}
+    shibuya = by_id[("area", "area-tyo-shibuya")]
+    assert shibuya.stay_score is not None and shibuya.score_centrality is not None and shibuya.explanation
+    assert {h.area_id for h in hotels} <= {u.unit_id for u in units if u.unit_kind == "area"}
+    assert all(u.n_listings >= 3 or u.median_price_cad is None for u in units)
+
+
+def test_hotels_are_capped_per_area(staged_out, stay_out, tmp_path, registry, monkeypatch):
+    out = matched_copy(staged_out, tmp_path, registry)
+    curate(out, FIXTURE_DATE, config=golden_config())
+    with_stay_tables(out, stay_out, registry)
+    from trippr_data.bundle_stay import load_hotels
+
+    everything, in_areas = load_hotels(out, FIXTURE_DATE, 1000)
+    capped, total = load_hotels(out, FIXTURE_DATE, 1)
+    assert total == in_areas == len(everything)
+    assert len(capped) == len({h.area_id for h in everything}) < len(everything)
+    # The one kept per Area is the best: most sources first.
+    for h in capped:
+        best = max(e.n_sources for e in everything if e.area_id == h.area_id)
+        assert h.n_sources == best
+
+
+def test_stay_bundle_checks_catch_problems(built, registry):
+    _, path, _ = built
+    units = read_jsonl_gz(path / STAY_UNIT_FILE, BundleStayUnit)
+    hotels = read_jsonl_gz(path / HOTELS_FILE, BundleHotel)
+    cfg = load_stay_config()
+
+    def status(u, h):
+        return {r.name: r.status for r in check_stay_bundle(u, h, registry=registry, cfg=cfg)}
+
+    assert set(status(units, hotels).values()) == {"pass"}
+    assert status(units + units[:1], hotels)["stay.units.unique_ids"] == "fail"
+    unknown_area = units[0].model_copy(update={"unit_kind": "area", "unit_id": "area-nowhere"})
+    assert status([*units, unknown_area], hotels)["stay.units.areas_known"] == "fail"
+    bad_cell = next(u for u in units if u.unit_kind == "h3").model_copy(update={"unit_id": "not-a-cell"})
+    assert status([*units, bad_cell], hotels)["stay.units.h3_cells"] == "fail"
+    leaky = next(u for u in units if u.unit_kind == "h3").model_copy(
+        update={"unit_id": "x", "n_listings": 1, "median_price_cad": 99.0}
+    )
+    assert status([*units, leaky], hotels)["stay.units.privacy_minimum"] == "fail"
+    no_licence = hotels[0].model_copy(
+        update={"sources": [hotels[0].sources[0].model_copy(update={"licence": " "})]}
+    )
+    assert status(units, [no_licence, *hotels[1:]])["stay.hotels.provenance"] == "fail"
+    assert (
+        status(units, [hotels[0].model_copy(update={"area_id": "area-nowhere"})])["stay.hotels.areas"]
+        == "fail"
+    )
+    assert status(units, [hotels[0], hotels[0]])["stay.hotels.unique_ids"] == "fail"
+
+
+def test_failed_stay_checks_fail_the_bundle(staged_out, stay_out, tmp_path, registry):
+    out = matched_copy(staged_out, tmp_path, registry)
+    curate(out, FIXTURE_DATE, config=golden_config())
+    with_stay_tables(out, stay_out, registry)
+    checks_json = out / "reports" / f"{FIXTURE_DATE}.stay.checks.json"
+    data = json.loads(checks_json.read_text(encoding="utf-8"))
+    data["passed"] = False
+    data["results"][0]["status"] = "fail"
+    checks_json.write_text(json.dumps(data), encoding="utf-8")
+    _, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=golden_config(), parquet=False)
+    assert not manifest.checks.passed
+    assert {r.name for r in manifest.checks.results if r.status == "fail"} == {"stay.checks"}
+
+
+def test_parquet_copies_of_the_stay_tables(staged_out, stay_out, tmp_path, registry):
+    import duckdb
+
+    out = matched_copy(staged_out, tmp_path, registry)
+    curate(out, FIXTURE_DATE, config=golden_config())
+    with_stay_tables(out, stay_out, registry)
+    path, manifest = build_bundle(out, FIXTURE_DATE, registry=registry, config=golden_config(), parquet=True)
+    names = {f.name for f in manifest.files}
+    assert {"stay_unit.parquet", "hotels.parquet"} <= names
+    assert verify_bundle(path).checks.passed
+    con = duckdb.connect()
+    n = con.execute(
+        f"SELECT count(*) FROM read_parquet('{(path / 'hotels.parquet').as_posix()}')"
+    ).fetchone()[0]
+    assert n == manifest.stay.hotels
+
+
+def test_stay_coordinates_in_the_bundle_have_six_decimals(built):
+    _, path, _ = built
+    for u in read_jsonl_gz(path / STAY_UNIT_FILE, BundleStayUnit):
+        assert u.lat == round(u.lat, 6) and u.lon == round(u.lon, 6)
 
 
 def test_sources_json_has_licences_and_attribution(built):
@@ -387,10 +551,12 @@ def test_golden_bundle(built):
     assert (path / SOURCES_FILE).read_text(encoding="utf-8") == (EXPECTED_BUNDLE / SOURCES_FILE).read_text(
         encoding="utf-8"
     )
-    with (
-        gzip.open(path / PLACES_FILE, "rt", encoding="utf-8") as a,
-        gzip.open(EXPECTED_BUNDLE / PLACES_FILE, "rt", encoding="utf-8") as b,
-    ):
-        assert a.read() == b.read()
+    for name in (PLACES_FILE, ENRICHMENT_FILE, STAY_UNIT_FILE, HOTELS_FILE):
+        with (
+            gzip.open(path / name, "rt", encoding="utf-8") as a,
+            gzip.open(EXPECTED_BUNDLE / name, "rt", encoding="utf-8") as b,
+        ):
+            assert a.read() == b.read(), name + " differs from the golden bundle"
+
     # The committed bundle is itself valid: the API tests load it.
     assert verify_bundle(EXPECTED_BUNDLE).checks.passed

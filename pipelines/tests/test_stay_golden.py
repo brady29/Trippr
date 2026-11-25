@@ -46,7 +46,7 @@ UNIT_SELECT = (
     "unit_kind, unit_id, n_listings, n_priced, n_rated, median_price_cad, median_price_entire_cad, median_price_pp_cad, "
     "entire_home_share, median_rating, reviews_ltm, unavailable_share, multi_host_share, top_hosts_share, "
     "listing_density_km2, n_hotels, n_places, n_nightlife, cheaper_than_share, score_value, score_reviews, "
-    "score_walkability, score_quiet, stay_score, array_to_string(score_parts, ';') AS score_parts, weight_coverage, "
+    "score_centrality, score_walkability, score_quiet, stay_score, centre_km, station_km, array_to_string(score_parts, ';') AS score_parts, weight_coverage, "
     "low_sample, explanation"
 )
 

@@ -132,6 +132,14 @@ export async function runLoadJob(args: JobArgs, deps: JobDeps = {}, env: NodeJS.
         (summary.skippedHidden ? `, left ${summary.skippedHidden} deleted places alone` : "") +
         ` (trip ${tripId})`,
     );
+    if (summary.stay) {
+      const s = summary.stay;
+      log(
+        `${summary.dryRun ? "would have " : ""}stay: ${s.areas} areas, ${s.markets} cities (${s.cells} map cells), hotels created ${s.hotels.created}, ` +
+          `refreshed ${s.hotels.refreshed}, unchanged ${s.hotels.unchanged}, removed ${s.hotels.removed}` +
+          (s.hotels.skippedNoArea ? `, ${s.hotels.skippedNoArea} skipped (their Area is not in the graph)` : ""),
+      );
+    }
     for (const a of summary.adopted) log(`  matched "${a.title}" (${a.activityId}) to ${a.placeId}`);
     let embeddings: EmbeddingsSummary | undefined;
     if (run) {

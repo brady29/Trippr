@@ -2,7 +2,7 @@
 
 Stay checks: **passed**
 
-Inside Airbnb has data for 2 of Trippr's 108 cities (SIN, TYO); the other 106 cities have no market layer. 15 of 39 units have a stay score (units: city 2, area 19, neighbourhood 7, h3 11). Score weights: value 40%, walkability 30%, quiet 20%, reviews 10%.
+Inside Airbnb has data for 2 of Trippr's 108 cities (SIN, TYO); the other 106 cities have no market layer. 15 of 39 units have a stay score (units: city 2, area 19, neighbourhood 7, h3 11). Score weights: value 25%, centrality 30%, walkability 20%, quiet 15%, reviews 10%.
 
 ### Inside Airbnb
 
@@ -20,7 +20,7 @@ Prices are in each city's local currency and converted at the Bank of Canada rat
 | SIN Singapore | 129 | 119 | 129 | 47 | 54% | 4.61 | 41% | 0% | 0 | 0 | 3 | 2 |
 | TYO Tokyo | 137 | 144 | 119 | 38 | 63% | 4.415 | 42% | 10% | 13 | 3 | 4 | 9 |
 
-- **TYO** best-scoring neighbourhoods: Shinjuku Ku (62.0, CAD 140), Taito Ku (61.5, CAD 113), Shibuya Ku (51.2, CAD 197)
+- **TYO** best-scoring neighbourhoods: Taito Ku (62.2, CAD 113), Shinjuku Ku (58.2, CAD 140), Shibuya Ku (49.6, CAD 197)
 
 ### Hotels from open data
 
@@ -62,7 +62,7 @@ Prices are in each city's local currency and converted at the Bank of Canada rat
 | stay.airbnb.reviews_consistency | pass | the reviews summary matches reviews_ltm in the listings within 10% |
 | stay.airbnb.licence | pass | licence and attribution recorded in _meta.json match sources.yaml |
 | stay.airbnb.checksums | pass | 10 raw files match their recorded checksums |
-| stay.unit.schema | pass | 47 columns match |
+| stay.unit.schema | pass | 48 columns match |
 | stay.unit.unique_ids | pass | unit ids are unique per kind |
 | stay.unit.scores_in_range | pass | all scores are within 0..100 |
 | stay.unit.shares_in_range | pass | all shares are within 0..1 |

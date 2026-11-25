@@ -117,6 +117,8 @@ export const createAreaBody = z.object({
   lon: lon.nullish(),
   vibes: z.array(z.enum(AREA_VIBES)).max(8).default([]),
   note: text(500).nullish(),
+  /** How far from the centre point the Area reaches, in km (default 1.5). Stay numbers use the radius of the data run. */
+  radiusKm: z.number().min(0.2).max(10).nullish(),
 });
 export const patchAreaBody = createAreaBody.omit({ tripId: true, cityCode: true }).partial();
 
@@ -127,6 +129,8 @@ export interface Area {
   lon?: number | null;
   vibes: AreaVibe[];
   note?: string | null;
+  /** Always set by the API (1.5 unless edited). */
+  radiusKm?: number | null;
   cityCode: string;
   cityName: string;
   votes: number;

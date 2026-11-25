@@ -16,6 +16,7 @@ report  ─► reports/<date>.md + <date>.json   (+ $GITHUB_STEP_SUMMARY, + late
 curate  ─► curated/<date>/curated_place.parquet + curate.stats.json   (from matched/<date>/golden.parquet)
 bundle  ─► bundles/<date>/{places.jsonl.gz, places.parquet, sources.json, manifest.json}   (exit 1 if a check fails)
            + enrichment.jsonl.gz and enrichment.parquet when enriched/<date>/enrichment.parquet exists (see LLM enrichment)
+           + stay_unit.jsonl.gz and hotels.jsonl.gz when the stay stages ran for the date (see Stay analytics)
 upload  ─► gs://$DATA_BUCKET/...             (same layout)
 ```
 
@@ -307,9 +308,9 @@ uv run python -m trippr_data eval-search    # recall@k, MRR, NDCG@10 on the labe
 
 ## Stay analytics
 
-PR 7 of the spec (Feature 5): open-data hotels, Inside Airbnb market data and per-area stay scores. This is
-the pipeline half; the graph (Area aggregates), the map heat layer, Area cards and the API come after the
-bundle carries these tables.
+PR 7 of the spec (Feature 5): open-data hotels, Inside Airbnb market data and per-area stay scores. The bundle
+step writes these tables into `bundles/<date>/` (below); the load job, the Area cards, the "Stay prices" map
+layer and the Data page are described in [docs/data-platform.md](../docs/data-platform.md).
 
 ```sh
 uv run python -m trippr_data stay-extract --cities all         # Inside Airbnb + Bank of Canada rates (covered cities only)
@@ -358,19 +359,29 @@ host share (hosts with 3 or more listings) and the share held by the top 5 hosts
 places nearby.
 
 **The stay score** (`config/stay_score.yaml`, `src/trippr_data/stay/scoring.py`, pinned by
-`tests/test_stay_scoring.py`). Four parts, each 0 to 100, higher is better, weighted 40/30/20/10:
+`tests/test_stay_scoring.py`). Five parts, each 0 to 100, higher is better, weighted 25/30/20/15/10:
 
 | Part | Formula |
 |---|---|
-| `value` (40%) | Share of the city's bookable listings whose price per person-night is higher than the unit's median (ties count half): 70 means "cheaper than 70% of Tokyo's listings". Needs 10 priced listings |
-| `walkability` (30%) | A proxy: places within 600 m of the unit centre (matched golden places by default; `--places` takes a bundle's `places.parquet`), `100 x min(1, ln(1+n) / ln(1+120))` |
-| `quiet` (20%) | A proxy: `100 - 100 x min(1, ln(1+n) / ln(1+12))` for bars and nightlife venues within 300 m |
+| `value` (25%) | Share of the city's bookable listings whose price per person-night is higher than the unit's median (ties count half): 70 means "cheaper than 70% of Tokyo's listings". Needs 10 priced listings |
+| `centrality` (30%) | How central the unit is: `100 x (1 - km / 15)` from the city centre, clamped to 0..100, blended 60/40 with `100 x (1 - km / 10)` to the nearest hub station of `seed/hubs.json` (the centre alone when the city has no station). The distances are `centre_km` and `station_km` on the row |
+| `walkability` (20%) | A proxy: places within 600 m of the unit centre (matched golden places by default; `--places` takes a bundle's `places.parquet`), `100 x min(1, ln(1+n) / ln(1+120))` |
+| `quiet` (15%) | A proxy: `100 - 100 x min(1, ln(1+n) / ln(1+12))` for bars and nightlife venues within 300 m |
 | `reviews` (10%) | The unit's median rating shrunk toward the city's by 10 extra rated listings, mapped from 4.0..5.0 to 0..100. Needs 10 rated listings |
 
 The score is the weighted mean of the parts a unit has, weights rescaled to them, and only when they carry at
-least half the weight (so a city with no Inside Airbnb data still gets walkability and quiet). The row keeps
-every part, `score_parts`, `weight_coverage` and an `explanation` sentence for the Area card. Units centred
-outside their city's radius have no place data and are not scored on places.
+least half the weight (so a city with no Inside Airbnb data still gets centrality, walkability and quiet). The
+row keeps every part, `score_parts`, `weight_coverage` and an `explanation` sentence for the Area card. Units
+centred outside their city's radius have no place data and are not scored on places.
+
+**Change (PR 7 app half): the centrality part.** The first score had four parts (value 40%, walkability 30%,
+quiet 20%, reviews 10%) and nothing for location, so the cheap, quiet edge of a big city ranked highest: on
+the 2026-11-23 Tokyo data the top neighbourhoods were Machida, Fussa, Hino and Higashimurayama, 26 to 40 km
+out. With `centrality` in (and the other weights rescaled) the best Tokyo neighbourhoods are Koto, Chiyoda,
+Edogawa, Arakawa and Chuo, and Bangkok's are Bangkok Yai, Bang Phlat, Thon Buri and Bangkok Noi. The
+distances come from the same row, so the explanation sentence now reads "2.3 km from the city centre, 0.4 km
+to the nearest hub station". The settings are in `config/stay_score.yaml` (`weights`, `centrality`); the
+scores of units from earlier runs are not comparable, so re-run `stay-analyse` before bundling.
 
 **Hotels.** Overture and Foursquare lodging come from the raw files the places extract already writes
 (nothing extra to download). Closed places, camping sites and unnamed rows are dropped; the same hotel in
@@ -392,8 +403,20 @@ report section with `tests/fixtures/expected/stay/` (`UPDATE_GOLDEN=1` regenerat
 
 Limits worth knowing: the Inside Airbnb calendar has no prices (nightly price is the listing's own), prices are
 asking prices, "unavailable" is booked or blocked by the host, the places proxies count source records inside a
-radius, and no centrality part is in the score yet (the card shows distance to the city centre and to the
-nearest hub station from `seed/hubs.json`).
+radius, and `seed/hubs.json` has one or two stations per city, so the station half of `centrality` mostly
+repeats the city-centre half.
+
+**In the bundle.** `bundle` adds two optional files when the stay stages have run for the same date
+(`stay`, `stay-check`; `--no-stay` leaves them out): `stay_unit.jsonl.gz` (every unit row, including the score
+parts, the explanation and `snapshot_date`) and `hotels.jsonl.gz` (open-data hotels that fall inside an Area's
+radius, at most `hotels.bundle_per_area` = 150 per Area, best first: more sources, a website, stars), with
+Parquet copies when `--no-parquet` is not given. Each hotel carries its source records with licence and fetch
+time. The manifest lists them with checksums and gets a `stay` section: unit counts, the covered cities with
+snapshot dates, "Inside Airbnb covers N of 108 cities", the score weights and the stay check results. Extra
+bundle checks (`stay.units.*`, `stay.hotels.*`: unique ids, Areas known to `seed/areas.json`, valid H3 cells,
+the privacy minimum, licences and registered sources) and a failed stay check fail the bundle like any other.
+A bundle without these files, and no `stay` key in its manifest, loads exactly as before. The schemas are in
+`bundle_stay.py` (pydantic) and `packages/contracts/src/stay.ts` (zod).
 
 ## Scheduled runs
 

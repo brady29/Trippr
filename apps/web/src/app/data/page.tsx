@@ -3,6 +3,7 @@
 import type { CheckStatus, DataCheckView, DataLoadView, DataSourceView } from "@trippr/contracts";
 import Link from "next/link";
 import { EnrichmentStats } from "@/components/data-enrichment";
+import { DataStay } from "@/components/data-stay";
 import { BoardHeader, BoardStat, NavLink, TopBar } from "@/components/shell";
 import { ErrorNote, Panel, Spinner, Tag } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
@@ -74,7 +75,10 @@ function SourceCard({ source }: { source: DataSourceView }) {
       <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink-faint">In the graph</dt>
-          <dd data-testid="source-activities">{source.activities.toLocaleString("en-CA")} activities</dd>
+          <dd data-testid="source-activities">
+            {source.activities.toLocaleString("en-CA")} activities
+            {source.hotels ? <span data-testid="source-hotels"> · {source.hotels.toLocaleString("en-CA")} hotels</span> : null}
+          </dd>
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink-faint">Rows after staging</dt>
@@ -277,6 +281,7 @@ export default function DataPage() {
             {load ? <EnrichmentStats load={load} /> : null}
             {load ? <Checks load={load} /> : null}
             {load ? <Evals load={load} /> : null}
+            <DataStay stay={data.data.stay} />
 
             <Panel title="Licences and attribution">
               <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-soft" data-testid="licence-notes">

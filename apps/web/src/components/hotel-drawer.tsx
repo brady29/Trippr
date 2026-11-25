@@ -9,6 +9,7 @@ import { keys } from "@/lib/queries";
 import { BookingLinks } from "./booking-links";
 import { ThumbDownIcon, ThumbUpIcon, XIcon } from "./icons";
 import { MapsLink } from "./maps-link";
+import { StayCard } from "./stay-card";
 import { Button, ErrorNote, Input, Label, Select, Spinner, Tag } from "./ui";
 
 const STATUS_LABEL: Record<StayStatus, string> = { shortlist: "Shortlisted", chosen: "Chosen", booked: "Booked" };
@@ -213,6 +214,16 @@ export function HotelDrawer({
                       <span className="text-xs text-ink-faint">{a.hotelCount} hotel{a.hotelCount === 1 ? "" : "s"}</span>
                     </div>
                     {a.note ? <p className="mt-1 text-xs text-ink-soft">{a.note}</p> : null}
+                    <StayCard
+                      areaId={a.id}
+                      areaName={a.name}
+                      city={stop.city}
+                      checkIn={stop.arrive}
+                      checkOut={stop.depart}
+                      travellers={travellers}
+                      tripId={tripId}
+                      canEdit={canEdit}
+                    />
                   </div>
                   <Votes id={a.id} votes={a.votes} myVote={a.myVote} kind="areas" canVote={canVote} label={a.name} />
                 </li>

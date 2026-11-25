@@ -3,6 +3,9 @@
     places.jsonl.gz   one curated place per line (BundlePlace), ordered by city and rank: what the load job reads
     places.parquet    the same places as the curated layer wrote them, for DuckDB and BigQuery
     sources.json      the source registry entries behind the places (licence, attribution, counts, freshness)
+    stay_unit.jsonl.gz, hotels.jsonl.gz (+ Parquet copies)
+                      optional: stay analytics units and open-data hotels (bundle_stay.py), written when the
+                      stay stages have run for the same date; a bundle without them loads as before
     manifest.json     counts, file checksums and the check results; the load job only takes a bundle whose
                       checks passed
 
@@ -38,6 +41,14 @@ from .bundle_enrichment import (
     summarise,
     write_enrichment_jsonl,
     write_enrichment_parquet,
+)
+from .bundle_stay import (
+    HOTELS_FILE,
+    STAY_UNIT_FILE,
+    BundleStay,
+    build_stay,
+    write_jsonl_gz,
+    write_parquet_copies,
 )
 from .cities import load_cities, load_countries
 from .curation import CurationConfig, load_curation_config
@@ -180,6 +191,8 @@ class BundleManifest(BaseModel):
     evals: dict[str, Any] = Field(default_factory=dict)
     # Present when the enrich stage has run: counts, model and date of enrichment.jsonl.gz.
     enrichment: BundleEnrichmentSummary | None = None
+    # Present only when the stay stages ran for this date.
+    stay: BundleStay | None = None
 
 
 # --- writing ------------------------------------------------------------------------------------
@@ -323,6 +336,7 @@ def build_bundle(
     config_dir: Path = CONFIG_DIR,
     created_at: datetime | None = None,
     parquet: bool = True,
+    stay: bool = True,
 ) -> tuple[Path, BundleManifest]:
     """Write bundles/<date>/ from curated/<date>/. The bundle is written even when a check fails (so it can
     be inspected), but then its manifest says `passed: false` and the load job skips it."""
@@ -351,6 +365,9 @@ def build_bundle(
         enrichment=enrichment,
     )
     results: list[CheckResult] = run_bundle_checks(places, ctx)
+    stay_data = build_stay(out, date, registry=registry, config_dir=config_dir) if stay else None
+    if stay_data:
+        results += stay_data.results
     passed = not any(r.status == "fail" for r in results)
 
     target = bundle_dir(out, date)
@@ -371,6 +388,17 @@ def build_bundle(
     if parquet:
         shutil.copyfile(curated, target / PARQUET_FILE)
         files.append(BundleFile(name=PARQUET_FILE, sha256="", bytes=0, rows=n_places))
+    if stay_data:
+        n_units = write_jsonl_gz(target / STAY_UNIT_FILE, stay_data.units)
+        n_hotels = write_jsonl_gz(target / HOTELS_FILE, stay_data.hotels)
+        files += [
+            BundleFile(name=STAY_UNIT_FILE, sha256="", bytes=0, rows=n_units),
+            BundleFile(name=HOTELS_FILE, sha256="", bytes=0, rows=n_hotels),
+        ]
+        if parquet:
+            copies = write_parquet_copies(out, date, target, stay_data.hotels)
+            for name, n in zip(copies, (n_units, n_hotels), strict=True):
+                files.append(BundleFile(name=name, sha256="", bytes=0, rows=n))
     for f in files:
         path = target / f.name
         f.sha256, f.bytes = _sha256(path), path.stat().st_size
@@ -404,10 +432,14 @@ def build_bundle(
         counts=counts,
         checks=BundleChecks(passed=passed, results=[BundleCheck(**asdict(r)) for r in results]),
         enrichment=summarise(enrichment) if enrichment is not None else None,
+        stay=stay_data.section if stay_data else None,
     )
     if enrichment is not None and (scores := eval_scores(out, models_by_use(enrichment))):
         manifest.evals["enrich"] = scores
-    write_json(target / MANIFEST_FILE, manifest.model_dump(mode="json"))
+    document = manifest.model_dump(mode="json")
+    if document["stay"] is None:
+        del document["stay"]  # bundles without stay data keep the format they always had
+    write_json(target / MANIFEST_FILE, document)
     for r in results:
         log.log(
             logging.ERROR if r.status == "fail" else logging.INFO, "[%s] %s: %s", r.status, r.name, r.detail

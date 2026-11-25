@@ -29,6 +29,7 @@ import { createClaudeLookup, type PlaceLookup } from "./services/inbox/lookup";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
 import { searchRoutes } from "./routes/search";
+import { stayRoutes } from "./routes/stay";
 import { tripRoutes } from "./routes/trips";
 import { createGuards, type Guards } from "./services/guards";
 import { createFlightPrices, type FlightPrices, type FlightPricesOptions } from "./services/flights/service";
@@ -213,6 +214,7 @@ export async function buildApp({
     bookingsRoutes(scope, ctx);
     inboxRoutes(scope, ctx);
     explorerRoutes(scope, ctx);
+    stayRoutes(scope, ctx);
     calendarRoutes(scope, ctx);
     flightRoutes(scope, ctx);
     assistantRoutes(scope, ctx, { model: assistantModel });

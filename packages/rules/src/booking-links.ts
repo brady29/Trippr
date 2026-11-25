@@ -4,7 +4,7 @@
  * it only builds URLs whose query formats were checked by hand.
  */
 
-export type BookingProvider = "tripcom" | "google-flights" | "booking" | "12go" | "klook" | "tripcom-trains" | "smartex" | "korail";
+export type BookingProvider = "tripcom" | "google-flights" | "booking" | "airbnb" | "12go" | "klook" | "tripcom-trains" | "smartex" | "korail";
 
 export interface BookingLink {
   provider: BookingProvider;
@@ -128,6 +128,34 @@ export function hotelLinks(
         selected_currency: "CAD",
       })}`,
     },
+  ];
+}
+
+/**
+ * "Search Airbnb" and "Search hotels" for an Area (or a whole city), with the stop's dates and group size.
+ * Plain keyword searches on the sites' own search pages: no scraping, no affiliate or tracking parameters, and nothing
+ * about individual listings is read or shown by Trippr.
+ */
+export function stayLinks(
+  place: { area?: string | null; city: LinkCity },
+  checkIn: string | null | undefined,
+  checkOut: string | null | undefined,
+  travellers: number,
+  rooms?: number | null,
+): BookingLink[] {
+  const n = people(travellers);
+  const where = place.area ? `${place.area}, ${place.city.name}` : place.city.name;
+  const what = place.area ? place.area : place.city.name;
+  const airbnb = `https://www.airbnb.com/s/${encodeURIComponent(where.replace(/,\s*/g, "--"))}/homes?${qs({
+    checkin: day(checkIn),
+    checkout: day(checkOut),
+    adults: n,
+    currency: "CAD",
+  })}`;
+  const hotels = hotelLinks({ ...place.city, name: where }, checkIn, checkOut, n, rooms)[0]!;
+  return [
+    { provider: "airbnb", label: `Search Airbnb`, url: airbnb, hint: `Opens Airbnb's own search for ${what}.` },
+    { ...hotels, label: "Search hotels" },
   ];
 }
 

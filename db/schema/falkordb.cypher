@@ -53,3 +53,9 @@ CREATE INDEX FOR (n:Activity) ON (n.category);
 
 // LLM enrichment (data pipeline): the Activities page filters on these; summary, duration and the rest are plain properties.
 CREATE INDEX FOR (n:Activity) ON (n.bestTime);
+
+// Stay analytics (data pipeline, Feature 5): per-city Inside Airbnb aggregates for the map layer (one StayMarket per
+// covered city: city summary, neighbourhoods and H3 cells as compact JSON), the latest stay load, and open-data hotels
+// as catalogue Hotel nodes ((:Hotel {catalogue: true})-[:IN]->(:Area), -[:FROM_SOURCE]->(:DataSource)).
+GRAPH.CONSTRAINT CREATE UNIQUE NODE StayMarket PROPERTIES 1 id;
+GRAPH.CONSTRAINT CREATE UNIQUE NODE StayLoad PROPERTIES 1 id;

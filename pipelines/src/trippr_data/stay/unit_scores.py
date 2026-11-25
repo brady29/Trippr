@@ -59,6 +59,7 @@ UNIT_COLUMNS: dict[str, str] = {
     "cheaper_than_share": "DOUBLE",
     "score_value": "DOUBLE",
     "score_reviews": "DOUBLE",
+    "score_centrality": "DOUBLE",
     "score_walkability": "DOUBLE",
     "score_quiet": "DOUBLE",
     "stay_score": "DOUBLE",
@@ -114,6 +115,9 @@ SHARE_COLUMNS = (
 )
 
 
+COORD_DIGITS = 6
+
+
 def _round(x: float | None, digits: int) -> float | None:
     return None if x is None else round(x, digits)
 
@@ -163,6 +167,7 @@ def score_units(
         unit["n_nightlife"] = (r.get("n_nightlife") or 0) if has_places else None
         unit["n_hotels"] = r.get("n_hotels") if r["unit_kind"] in ("area", "city") else None
         code = r["city_code"]
+        centre_km, station_km = _round(r["centre_km"], 3), _round(r["station_km"], 3)
         if r["unit_kind"] != "city":
             parts = parts_for(
                 price_pp=unit["median_price_pp_cad"],
@@ -174,6 +179,8 @@ def score_units(
                 n_places=unit["n_places"],
                 n_nightlife=unit["n_nightlife"],
                 cfg=cfg,
+                centre_km=centre_km,
+                station_km=station_km,
             )
             mix = blend(parts, cfg.weights, cfg.min_weight_coverage)
             unit["cheaper_than_share"] = (
@@ -184,6 +191,7 @@ def score_units(
             unit.update(
                 score_value=_round(parts["value"], 1),
                 score_reviews=_round(parts["reviews"], 1),
+                score_centrality=_round(parts["centrality"], 1),
                 score_walkability=_round(parts["walkability"], 1),
                 score_quiet=_round(parts["quiet"], 1),
                 stay_score=mix.score,
@@ -199,6 +207,8 @@ def score_units(
                     median_rating=unit["median_rating"] if parts["reviews"] is not None else None,
                     n_rated=unit["n_rated"],
                     n_priced=unit["n_priced"],
+                    centre_km=centre_km,
+                    station_km=station_km,
                     n_places=unit["n_places"],
                     n_nightlife=unit["n_nightlife"],
                     walk_m=round(cfg.walkability.radius_km * 1000),
@@ -213,6 +223,10 @@ def score_units(
             unit[col] = _round(unit[col], 4)
         for col in ("centre_km", "station_km", "area_km2"):
             unit[col] = _round(unit[col], 3)
+        # H3 cell centres and trigonometry differ in the last digits between platforms and builds of h3;
+        # 6 decimals (about 0.1 m) is far finer than anything shown and keeps the published tables identical everywhere.
+        for col in ("lat", "lon"):
+            unit[col] = _round(unit[col], COORD_DIGITS)
         unit["median_rating"] = _round(unit["median_rating"], 3)
         out_rows.append(unit)
     return out_rows

@@ -22,6 +22,7 @@
     "@trippr/rules": "workspace:^",
     "cytoscape": "3.34.4",
     "cytoscape-fcose": "2.2.0",
+    "h3-js": "4.1.0",
     "maplibre-gl": "5.9.0",
     "next": "15.5.29",
     "react": "19.2.9",

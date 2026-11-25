@@ -11,6 +11,7 @@ import { inboxRepository } from "./inbox";
 import { placesRepository } from "./places";
 import { routesRepository } from "./routes";
 import { searchRepository } from "./search";
+import { stayRepository } from "./stay";
 import { tripsRepository } from "./trips";
 import { accessRepository, usersRepository } from "./users";
 
@@ -32,6 +33,7 @@ export function createRepositories(db: GraphClient) {
     catalogue: catalogueRepository(db),
     data: dataRepository(db),
     search: searchRepository(db),
+    stay: stayRepository(db),
   };
 }
 

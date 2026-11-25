@@ -10,6 +10,10 @@ value        how cheap the unit is for what you get. The share of the city's boo
 reviews      the unit's median review rating, shrunk toward the city's median by `prior_weight` extra rated
              listings (so 3 listings with a 5.0 do not beat 200 with a 4.8), then mapped linearly from
              [floor, ceiling] (4.0..5.0) to 0..100.
+centrality   how central the unit is: 100 at the city centre falling linearly to 0 at `centre_far_km` (15 km),
+             and the same for the distance to the nearest hub station (0 at `station_far_km`, 10 km), blended
+             `centre_share` (60%) to the centre and the rest to the station (all centre when the city has no
+             station). Without it the cheap, quiet edge of a big city outranks its middle.
 walkability  a proxy: how many staged places (restaurants, sights, cafés, ...) lie within `radius_km`
              (600 m) of the centre, on a log scale that reaches 100 at `saturation_places`.
 quiet        a proxy: 100 minus the same log scale for bars and nightlife venues within `radius_km` (300 m).
@@ -26,9 +30,9 @@ from bisect import bisect_left, bisect_right
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from .config import QuietRules, ReviewRules, StayConfig, WalkRules, Weights
+from .config import CentralityRules, QuietRules, ReviewRules, StayConfig, WalkRules, Weights
 
-PART_NAMES = ("value", "reviews", "walkability", "quiet")
+PART_NAMES = ("value", "reviews", "centrality", "walkability", "quiet")
 
 
 def clamp(x: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -76,6 +80,26 @@ def reviews_score(
     return clamp(100.0 * (adjusted - rules.floor) / (rules.ceiling - rules.floor))
 
 
+def proximity(distance_km: float | None, far_km: float) -> float | None:
+    """100 at distance 0, falling linearly to 0 at `far_km` and beyond. None without a distance."""
+    if distance_km is None:
+        return None
+    return clamp(100.0 * (1.0 - max(0.0, distance_km) / far_km))
+
+
+def centrality_score(
+    centre_km: float | None, station_km: float | None, rules: CentralityRules
+) -> float | None:
+    """How central a unit is, from its distance to the city centre and to the nearest hub station."""
+    centre = proximity(centre_km, rules.centre_far_km)
+    station = proximity(station_km, rules.station_far_km)
+    if centre is None:
+        return None
+    if station is None:
+        return centre
+    return rules.centre_share * centre + (1.0 - rules.centre_share) * station
+
+
 def walkability_score(n_places: float | None, rules: WalkRules) -> float | None:
     if n_places is None:
         return None
@@ -116,6 +140,8 @@ class UnitFacts:
     median_rating: float | None = None
     n_rated: int = 0
     n_priced: int = 0
+    centre_km: float | None = None
+    station_km: float | None = None
     n_places: int | None = None
     n_nightlife: int | None = None
     walk_m: int = 600
@@ -133,6 +159,11 @@ def explain(f: UnitFacts) -> str:
         )
     if f.median_rating is not None:
         bits.append(f"reviews {f.median_rating:.2f} median across {f.n_rated} rated listings")
+    if f.centre_km is not None:
+        where = f"{f.centre_km:.1f} km from the city centre"
+        if f.station_km is not None:
+            where += f", {f.station_km:.1f} km to the nearest hub station"
+        bits.append(where)
     if f.n_places is not None:
         bits.append(f"{f.n_places} places within {f.walk_m} m")
     if f.n_nightlife is not None:
@@ -156,13 +187,16 @@ def parts_for(
     n_places: float | None,
     n_nightlife: float | None,
     cfg: StayConfig,
+    centre_km: float | None = None,
+    station_km: float | None = None,
 ) -> dict[str, float | None]:
-    """All four parts for one unit. Value and reviews need `min_priced_listings` priced / rated listings."""
+    """All five parts for one unit. Value and reviews need `min_priced_listings` priced / rated listings."""
     enough_price = n_priced >= cfg.min_priced_listings
     enough_rated = n_rated >= cfg.min_priced_listings
     return {
         "value": value_score(price_pp, city_prices_sorted) if enough_price else None,
         "reviews": reviews_score(rating, n_rated, city_rating, cfg.reviews) if enough_rated else None,
+        "centrality": centrality_score(centre_km, station_km, cfg.centrality),
         "walkability": walkability_score(n_places, cfg.walkability),
         "quiet": quiet_score(n_nightlife, cfg.quiet),
     }

@@ -10,6 +10,7 @@ import { ShapeGlyph } from "@/components/map/glyph";
 import type { Bounds } from "@/components/map/trip-map";
 import { PlaceEditor } from "@/components/place-editor";
 import { PlaceLinks } from "@/components/place-links";
+import { StayCellCard, StayLegend, StayToggle, useStayHeat } from "@/components/stay-heat";
 import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
 import { TripNav } from "@/components/trip-nav";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
@@ -33,6 +34,7 @@ import {
   type MapShape,
 } from "@/lib/map-features";
 import { useRoute, useTrip } from "@/lib/queries";
+import type { StayFeatureProps } from "@/lib/stay-cells";
 
 const TripMap = dynamic(() => import("@/components/map/trip-map"), {
   ssr: false,
@@ -194,6 +196,8 @@ function MapTab({ tripId }: { tripId: string }) {
   const [view, setView] = useState<Bounds | null>(null);
   const [inViewOnly, setInViewOnly] = useState(true);
   const [unavailable, setUnavailable] = useState<string | null>(null);
+  const [stayOn, setStayOn] = useState(false);
+  const [stayCell, setStayCell] = useState<StayFeatureProps | null>(null);
   const card = useRef<HTMLDivElement>(null);
 
   const setParams = (patch: Record<string, string | null>) => {
@@ -250,6 +254,17 @@ function MapTab({ tripId }: { tripId: string }) {
     });
 
   const pointCount = items.filter((i) => i.type !== "stop").length;
+  // Stay prices follow the map's viewport; before the map reports one (or when it cannot draw), the box around the route's stops.
+  const stopView = useMemo<Bounds | null>(() => {
+    if (!stops.length) return null;
+    const lons = stops.map((s) => s.city.lon);
+    const lats = stops.map((s) => s.city.lat);
+    return [
+      [Math.min(...lons) - 0.5, Math.min(...lats) - 0.5],
+      [Math.max(...lons) + 0.5, Math.max(...lats) + 0.5],
+    ];
+  }, [stops]);
+  const heat = useStayHeat(tripId, stayOn, view ?? stopView);
 
   return (
     <>
@@ -311,7 +326,15 @@ function MapTab({ tripId }: { tripId: string }) {
               <span>{MAP_LAYER_LABEL[layer]}</span>
             </label>
           ))}
+          <StayToggle
+            checked={stayOn}
+            onChange={(on) => {
+              setStayOn(on);
+              if (!on) setStayCell(null);
+            }}
+          />
         </fieldset>
+        <StayLegend heat={heat} enabled={stayOn} />
         <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-soft">
           <span>Colour is the first tag:</span>
           {[...ACTIVITY_TAGS, "other" as const].map((t) => (
@@ -376,6 +399,8 @@ function MapTab({ tripId }: { tripId: string }) {
                 onSelect={setSelected}
                 onView={setView}
                 onUnavailable={setUnavailable}
+                stay={{ data: heat.features, visible: stayOn }}
+                onStayPick={setStayCell}
               />
             )}
             {!ready && !unavailable ? (
@@ -386,6 +411,9 @@ function MapTab({ tripId }: { tripId: string }) {
           </div>
 
           <aside className="min-w-0 space-y-3 lg:max-h-[calc(100vh-14rem)] lg:min-h-[30rem] lg:overflow-y-auto">
+            {stayOn && stayCell ? (
+              <StayCellCard cell={stayCell} cityName={heat.data?.cities.find((c) => c.cityCode === stayCell.city)?.cityName} onClose={() => setStayCell(null)} />
+            ) : null}
             <div ref={card}>
               {selectedItem ? (
                 <DetailCard

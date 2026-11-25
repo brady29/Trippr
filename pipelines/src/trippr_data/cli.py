@@ -133,7 +133,9 @@ def cmd_bundle(args: argparse.Namespace, registry: Registry, out: Path) -> int:
     date = args.date or latest_curated_date(out)
     if not date:
         raise SystemExit(f"No curated data under {out}; run curate first or pass --date")
-    path, manifest = build_bundle(out, date, registry=registry, parquet=not args.no_parquet)
+    path, manifest = build_bundle(
+        out, date, registry=registry, parquet=not args.no_parquet, stay=not args.no_stay
+    )
     append_bundle_report(out, date, manifest)
     print(path)
     return 0 if manifest.checks.passed else 1
@@ -217,7 +219,10 @@ def build_parser() -> argparse.ArgumentParser:
     add("report", cmd_report, "write the Markdown run report (and to $GITHUB_STEP_SUMMARY)")
     add("curate", cmd_curate, "rank golden records and choose the places for the graph (curated/)")
     p = add("bundle", cmd_bundle, "write bundles/<date>/ from the curated places; exits 1 if a check fails")
-    p.add_argument("--no-parquet", action="store_true", help="leave places.parquet out of the bundle")
+    p.add_argument("--no-parquet", action="store_true", help="leave the Parquet copies out of the bundle")
+    p.add_argument(
+        "--no-stay", action="store_true", help="leave the stay tables (stay_unit, hotels) out of the bundle"
+    )
     add("upload", cmd_upload, "copy the run to gs://$DATA_BUCKET")
 
     p = add("run", cmd_run, "extract, stage, check, report and upload")

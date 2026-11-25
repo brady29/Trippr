@@ -47,6 +47,18 @@
       "sha256": "228506d1dbceb735c046868581cc9e000125c328c05b5af179c37cf4f4067031",
       "bytes": 8041,
       "rows": 8
+    },
+    {
+      "name": "stay_unit.jsonl.gz",
+      "sha256": "d49bb00689391e464c43bc30ccbfc6fce712cc87a858f3b152c1fe93824a2e99",
+      "bytes": 5030,
+      "rows": 39
+    },
+    {
+      "name": "hotels.jsonl.gz",
+      "sha256": "bc855fe53b0276201ed1ff49e94ff1411e6b7ae7131f8af483e2c589426c4b41",
+      "bytes": 1082,
+      "rows": 7
     }
   ],
   "counts": {
@@ -277,6 +289,60 @@
         "status": "info",
         "detail": "no entity-resolution eval for this run",
         "data": {}
+      },
+      {
+        "name": "stay.units.unique_ids",
+        "status": "pass",
+        "detail": "39 stay units, ids unique per kind",
+        "data": {}
+      },
+      {
+        "name": "stay.units.areas_known",
+        "status": "pass",
+        "detail": "19 area units, all in seed/areas.json",
+        "data": {}
+      },
+      {
+        "name": "stay.units.cities_known",
+        "status": "pass",
+        "detail": "every unit is in a Trippr city",
+        "data": {}
+      },
+      {
+        "name": "stay.units.h3_cells",
+        "status": "pass",
+        "detail": "H3 cells are valid at resolution 8",
+        "data": {}
+      },
+      {
+        "name": "stay.units.privacy_minimum",
+        "status": "pass",
+        "detail": "no statistics for units under 3 listings",
+        "data": {}
+      },
+      {
+        "name": "stay.units.explained",
+        "status": "pass",
+        "detail": "every scored unit has an explanation",
+        "data": {}
+      },
+      {
+        "name": "stay.hotels.unique_ids",
+        "status": "pass",
+        "detail": "7 hotels, ids unique",
+        "data": {}
+      },
+      {
+        "name": "stay.hotels.areas",
+        "status": "pass",
+        "detail": "every hotel's Area has a stay unit",
+        "data": {}
+      },
+      {
+        "name": "stay.hotels.provenance",
+        "status": "pass",
+        "detail": "every hotel source record has a licence and a registered source",
+        "data": {}
       }
     ]
   },
@@ -313,5 +379,209 @@
     ],
     "enriched_at": "2026-11-18T09:30:00Z",
     "source_date": "2026-11-18"
+  },
+  "stay": {
+    "run_date": "2026-11-18",
+    "units": {
+      "city": 2,
+      "area": 19,
+      "neighbourhood": 7,
+      "h3": 11
+    },
+    "hotels": 7,
+    "hotels_in_areas": 7,
+    "hotels_per_area_cap": 150,
+    "cities": [
+      {
+        "city_code": "SIN",
+        "name": "Singapore",
+        "snapshot_date": "2026-09-23",
+        "n_listings": 28,
+        "n_priced": 19,
+        "median_price_cad": 129.33,
+        "median_price_pp_cad": 46.59
+      },
+      {
+        "city_code": "TYO",
+        "name": "Tokyo",
+        "snapshot_date": "2026-09-25",
+        "n_listings": 115,
+        "n_priced": 106,
+        "median_price_cad": 137.41,
+        "median_price_pp_cad": 38.29
+      }
+    ],
+    "coverage": {
+      "trippr_cities": 108,
+      "inside_airbnb_cities": 2,
+      "cities_with_places": 2
+    },
+    "weights": {
+      "value": 0.25,
+      "centrality": 0.3,
+      "walkability": 0.2,
+      "quiet": 0.15,
+      "reviews": 0.1
+    },
+    "checks": {
+      "passed": true,
+      "results": [
+        {
+          "name": "stay.hotel.schema",
+          "status": "pass",
+          "detail": "20 columns match"
+        },
+        {
+          "name": "stay.hotel.required",
+          "status": "pass",
+          "detail": "no nulls in hotel_id, name, kind, lat, lon, city_code, sources, licences"
+        },
+        {
+          "name": "stay.hotel.unique_id",
+          "status": "pass",
+          "detail": "hotel ids are unique"
+        },
+        {
+          "name": "stay.hotel.city_radius",
+          "status": "pass",
+          "detail": "all hotels are inside their city's radius"
+        },
+        {
+          "name": "stay.hotel.country_bbox",
+          "status": "pass",
+          "detail": "0 hotels (0.00%) outside their country's bounding box"
+        },
+        {
+          "name": "stay.hotel.licence",
+          "status": "pass",
+          "detail": "every record has a licence listed in sources.yaml"
+        },
+        {
+          "name": "stay.hotel.duplicates",
+          "status": "pass",
+          "detail": "no same-name hotels within 50 m"
+        },
+        {
+          "name": "stay.hotel.kinds",
+          "status": "pass",
+          "detail": "0 unknown kinds; 4.8% of hotels are kind 'other'"
+        },
+        {
+          "name": "stay.airbnb.schema",
+          "status": "pass",
+          "detail": "37 columns match"
+        },
+        {
+          "name": "stay.airbnb.required",
+          "status": "pass",
+          "detail": "no nulls in city_code, listing_id, snapshot_date, room_type, currency, price_status, stats_ok"
+        },
+        {
+          "name": "stay.airbnb.unique_ids",
+          "status": "pass",
+          "detail": "listing ids are unique per city"
+        },
+        {
+          "name": "stay.airbnb.coordinates",
+          "status": "pass",
+          "detail": "at least 99.5% of listings have valid coordinates in every city"
+        },
+        {
+          "name": "stay.airbnb.in_city_radius",
+          "status": "pass",
+          "detail": "at least 90% of listings are inside the city radius"
+        },
+        {
+          "name": "stay.airbnb.country_bbox",
+          "status": "pass",
+          "detail": "0 listings outside their country's bounding box"
+        },
+        {
+          "name": "stay.airbnb.price_coverage",
+          "status": "pass",
+          "detail": "at least 80% of listings have a price in every city"
+        },
+        {
+          "name": "stay.airbnb.price_sanity",
+          "status": "pass",
+          "detail": "every city's median price is within CAD 15..1000 a night"
+        },
+        {
+          "name": "stay.airbnb.room_types",
+          "status": "warn",
+          "detail": "unrecognised room types: {'SIN': 1}"
+        },
+        {
+          "name": "stay.airbnb.fx",
+          "status": "pass",
+          "detail": "every city has a Bank of Canada rate on or before its snapshot date"
+        },
+        {
+          "name": "stay.airbnb.snapshot_age",
+          "status": "pass",
+          "detail": "all snapshots are within 200 days of the run"
+        },
+        {
+          "name": "stay.airbnb.neighbourhoods",
+          "status": "pass",
+          "detail": "every listing's neighbourhood is in the city's neighbourhood list"
+        },
+        {
+          "name": "stay.airbnb.calendar",
+          "status": "pass",
+          "detail": "calendars cover nearly every listing"
+        },
+        {
+          "name": "stay.airbnb.reviews_consistency",
+          "status": "pass",
+          "detail": "the reviews summary matches reviews_ltm in the listings within 10%"
+        },
+        {
+          "name": "stay.airbnb.licence",
+          "status": "pass",
+          "detail": "licence and attribution recorded in _meta.json match sources.yaml"
+        },
+        {
+          "name": "stay.unit.schema",
+          "status": "pass",
+          "detail": "48 columns match"
+        },
+        {
+          "name": "stay.unit.unique_ids",
+          "status": "pass",
+          "detail": "unit ids are unique per kind"
+        },
+        {
+          "name": "stay.unit.scores_in_range",
+          "status": "pass",
+          "detail": "all scores are within 0..100"
+        },
+        {
+          "name": "stay.unit.shares_in_range",
+          "status": "pass",
+          "detail": "all shares are within 0..1"
+        },
+        {
+          "name": "stay.unit.privacy",
+          "status": "pass",
+          "detail": "no unit under 3 listings shows listing statistics"
+        },
+        {
+          "name": "stay.unit.explained",
+          "status": "pass",
+          "detail": "every scored unit lists its parts and an explanation"
+        },
+        {
+          "name": "stay.unit.coverage",
+          "status": "info",
+          "detail": "15 of 37 units have a stay score"
+        },
+        {
+          "name": "stay.counts.vs_previous",
+          "status": "info",
+          "detail": "no previous stay run; counts recorded as the baseline"
+        }
+      ]
+    }
   }
 }

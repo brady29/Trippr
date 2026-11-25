@@ -26,8 +26,9 @@ staged ─► (match) ─► curate ─► bundle ──► bundles/<date>/ ─�
 | `places.jsonl.gz` | One curated place per line, ordered by city and rank. What the load job reads |
 | `places.parquet` | The same places for DuckDB and BigQuery |
 | `sources.json` | The registry entries behind the places: licence, attribution, terms date, counts, freshness |
-| `manifest.json` | Counts, file checksums (SHA-256) and the check results; `enrichment` and `evals.enrich` when the bundle is enriched |
+| `manifest.json` | Counts, file checksums (SHA-256) and the check results; `enrichment` and `evals.enrich` when the bundle is enriched, a `stay` section when the stay files are there |
 | `enrichment.jsonl.gz`, `enrichment.parquet` | Optional. The LLM enrichment (see below), one line per enriched place, joined to the places by id |
+| `stay_unit.jsonl.gz`, `hotels.jsonl.gz` | Optional: stay analytics units and open-data hotels (see [Stay analytics](#stay-analytics-pr-7)). Parquet copies sit beside them |
 
 The JSON shapes are defined twice, in `pipelines/src/trippr_data/bundle.py` (pydantic) and `packages/contracts/src/catalogue.ts` (zod). The pipeline's golden test writes a bundle from the fixtures and commits it (`pipelines/tests/fixtures/expected/bundle/`); the contract tests, the API integration tests and the e2e tests all read that same bundle, so the two sides cannot drift.
 
@@ -241,3 +242,39 @@ Then add the repository variable `CATALOGUE_LOAD_JOB=trippr-load-bundle`. Run it
 | `EMBEDDINGS_LOCATION` | job | Where the `embeddings/<date>/` runs are; default: `embeddings` next to the bundles folder |
 | `CATALOGUE_TRIP_ID` | job | The trip that gets the places when there is more than one |
 | `CURATE_BUDGET` | pipeline | Total places in the graph (default 8000) |
+
+## Stay analytics (PR 7)
+
+Feature 5 of the [spec](data-platform-spec.md): where to stay, backed by data. The pipeline half is in [pipelines/README.md](../pipelines/README.md#stay-analytics) (Inside Airbnb aggregates, open-data hotels, the stay score). This is the rest of the path.
+
+```
+stay stages ─► bundle (stay_unit, hotels) ─► load job ─► Area stay cards, StayMarket cells, catalogue Hotels ─► API ─► Where to stay drawer, Map tab, Data page
+```
+
+**Bundle.** `bundle` writes `stay_unit.jsonl.gz` (one row per city, Area, neighbourhood and H3 cell: aggregates, score parts, `explanation`, `snapshot_date`) and `hotels.jsonl.gz` (hotels inside an Area's radius, at most 150 per Area, with each source record's licence), checksummed in the manifest, whose `stay` section holds the unit counts, covered cities with snapshot dates, coverage ("Inside Airbnb covers 5 of 108 cities"), the score weights and the pipeline's stay check results. Bundle checks add `stay.units.*` and `stay.hotels.*` (unique ids, Areas known to `seed/areas.json`, valid H3 cells, the privacy minimum of 3 listings, licences and registered sources); a failed stay check fails the bundle. Without the stay stages the bundle is what it was and loads as before. Schemas: `pipelines/src/trippr_data/bundle_stay.py` (pydantic), `packages/contracts/src/stay.ts` (zod); the golden bundle carries stay tables from the stay fixtures, and both sides parse it.
+
+**Load job.** After the places, the job puts the stay tables in the graph (`services/catalogue/stay.ts`), all Cypher in `repositories/cypher/stay-data/`, schema statements for both databases in `db/schema/`:
+
+| What | Where |
+|---|---|
+| Area stay card (parts and weights, explanation, price range, market numbers, distances, snapshot) | `stay` (JSON) plus `stayScore`, `stayMedianPriceCad`, `staySnapshotDate`, `stayBundleDate`, `stayHotelCount`, `stayHash` on the seeded `Area` nodes. Only Areas that exist are touched; an Area missing from the new bundle loses them |
+| City summary, H3 cells and neighbourhoods for the map layer | One `(:StayMarket {id: cityCode})-[:FOR_CITY]->(:City)` per Inside Airbnb city, with compact JSON rows `[id, lat, lon, price, pricePerPerson, listings, score, name?]` and a bounding box. About 700 cells for Tokyo, so a few dozen kB per city, not thousands of nodes |
+| Open-data hotels | `(:Hotel {catalogue: true})-[:IN]->(:Area)`, `-[:IN_CITY]->(:City)`, `-[:FROM_SOURCE {sourceId, fetchedAt, licence}]->(:DataSource)`, with `areaId`, `kind`, `stars`, `sources`. They have no price, no trip and are never booked |
+| Latest stay load (Data page, coverage note) | `(:StayLoad {id: 'latest'})`, only replaced by a bundle that has stay data |
+
+It is idempotent (content hashes; the second run creates nothing). It never reads or changes the group's own hotels (`Hotel` nodes without `catalogue`), stays, bookings, votes or Area text: catalogue hotels have no `FOR` trip, so the hotel list, votes and `STAYS_AT` never reach them, the Areas' `hotelCount` leaves them out, and deleting an Area removes only its suggestions. A hotel the new bundle drops, or whose Area is gone, is removed. A bundle without stay data changes nothing about stay. Area `radiusKm` (default 1.5, editable with `POST`/`PATCH /areas`) is stored on the Area; the stay numbers use the radius the data run used, shown on the card.
+
+**API** (same conventions as the other trip routes: sign-in and at least the viewer role on the trip that owns the Area, 404 for non-members):
+
+| Route | |
+|---|---|
+| `GET /areas/:id/stay` | The Area's stay card: `availability` (`market`, `places` or `none`), score with its five parts and weights, the explanation, price range (quartiles, median, per person, city median), market numbers, distances, snapshot and bundle dates, `coverage` ("Inside Airbnb covers 5 of 108 cities"), the attribution when listing numbers are used, and one honest `note` |
+| `GET /trips/:id/stay/cells` | H3 cells for the map layer: `city` and/or `bbox=minLon,minLat,maxLon,maxLat`, `limit` (default 1500, max 3000), `layer=h3\|neighbourhood`. Returns each city's colour scale (10th to 90th percentile of its cell prices, so colours stay put while panning), `truncated` and the attribution |
+| `GET /areas/:id/hotel-suggestions` | Open-data hotels in the Area, best first (more sources, stars, a website, closer), `limit` (30, max 100), each with its sources and licences, plus the attribution lines |
+| `GET /data/sources` | Also carries `stay` (coverage, snapshot dates, units, hotel counts, weights, stay checks, attribution) and a `hotels` count on lodging sources |
+
+**Web.** Each Area in a stop's "Where to stay" drawer has a stay card: the score with its parts as labelled bars, the price range, the explanation, snapshot date, coverage note and the CC BY 4.0 credit, or "No stay data for this city" with the coverage note. "Search Airbnb" and "Search hotels" are plain keyword searches built from the Area, the stop's dates and the group size (`stayLinks` in `packages/rules`): no scraping, no affiliate or tracking parameters, nothing about individual listings. "Hotels from open data" lists the suggestions with an "Add" button that copies a name, link and pin into the group's own hotel list. The Map tab has a "Stay prices" toggle: H3 hexagons on a light-to-dark sequential scale per city, a legend with each city's price range and snapshot, a click card for a hexagon, and the attribution. The Data page has a "Stay analytics" section: coverage, snapshot dates by city, unit and hotel counts, the weights, the attribution text and the stay check results.
+
+**Privacy and licences.** Inside Airbnb is CC BY 4.0: aggregates only. Units under 3 listings carry no statistics and are not published as cells; neither the bundle schema (`strict`) nor the graph has a field for a listing id, host id, name or link. Open-data hotels keep their source licences (OpenStreetMap lodging is ODbL, shown with attribution).
+
+**Not run where this was written.** The Cypher in `stay-data/` and the integration tests (`apps/api/test/stay.test.ts`, both databases) were checked by reading and by the unit tests; CI is the first real run against FalkorDB and Neo4j. The Playwright specs (`apps/web/e2e/stays.spec.ts`) load the golden bundle with the real load job, so they exercise the same path.

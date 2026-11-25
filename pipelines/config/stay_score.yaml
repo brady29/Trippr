@@ -4,9 +4,10 @@ version: 1
 
 # Weights of the stay score parts. A part a unit has no data for is left out and the rest are rescaled.
 weights:
-  value: 0.40
-  walkability: 0.30
-  quiet: 0.20
+  value: 0.25
+  centrality: 0.30
+  walkability: 0.20
+  quiet: 0.15
   reviews: 0.10
 
 # A score needs parts worth at least this much of the total weight (0.5: for a city with no Inside Airbnb
@@ -26,6 +27,14 @@ reviews:
   floor: 4.0                # median rating that maps to 0
   ceiling: 5.0              # median rating that maps to 100
   prior_weight: 10          # shrinks a unit's rating toward the city's, like this many extra rated listings
+
+# How central a unit is: its distance to the city centre and to the nearest hub station (seed/hubs.json).
+# Each is 100 at the point itself and falls linearly to 0 at the "far" distance. Without this part, cheap and
+# quiet outskirt neighbourhoods outrank the middle of a big city.
+centrality:
+  centre_far_km: 15         # this far from the city centre (or more) scores 0
+  station_far_km: 10        # this far from the nearest hub station (or more) scores 0
+  centre_share: 0.6         # share of the part from the city centre; the rest from the station (all of it when the city has no station)
 
 walkability:
   radius_km: 0.6
@@ -61,3 +70,6 @@ hotels:
     same_source_name_similarity: 0.95
     max_cluster_km: 0.20
   source_precedence: [osm_lodging, overture, foursquare]
+  # The bundle (and so the graph) carries at most this many open-data hotels per Area, best first (more sources,
+  # a website, stars); the rest stay in the data lake. Only hotels inside an Area's radius are bundled.
+  bundle_per_area: 150

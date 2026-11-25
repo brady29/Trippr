@@ -54,6 +54,8 @@ interface AreaSeed {
   lat: number | null;
   lon: number | null;
   note?: string;
+  /** How far the Area reaches from its centre (default 1.5 km); the stay analytics use it too. */
+  radiusKm?: number;
 }
 
 const readJson = <T>(dir: string, file: string): T => JSON.parse(readFileSync(join(dir, file), "utf8")) as T;
@@ -220,6 +222,7 @@ export async function migrateGraphExplorer(
         lat: a.lat,
         lon: a.lon,
         note: a.note ?? null,
+        radiusKm: a.radiusKm ?? 1.5,
         source: areas.source,
       })),
     });

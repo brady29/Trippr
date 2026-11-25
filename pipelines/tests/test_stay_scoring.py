@@ -11,9 +11,11 @@ from trippr_data.stay.config import Weights, load_stay_config
 from trippr_data.stay.scoring import (
     UnitFacts,
     blend,
+    centrality_score,
     cheaper_than_share,
     explain,
     parts_for,
+    proximity,
     quiet_score,
     reviews_score,
     saturate,
@@ -29,7 +31,7 @@ PRICES = [10.0, 20.0, 20.0, 30.0, 40.0]  # sorted
 def test_config_weights_sum_to_one_and_are_validated():
     assert sum(CFG.weights.model_dump().values()) == pytest.approx(1.0)
     with pytest.raises(ValidationError):
-        Weights(value=0.5, walkability=0.5, quiet=0.5, reviews=0.5)
+        Weights(value=0.5, centrality=0.5, walkability=0.5, quiet=0.5, reviews=0.5)
 
 
 def test_saturate_is_zero_one_and_monotonic():
@@ -89,16 +91,47 @@ def test_walkability_and_quiet_proxies():
     assert quiet_score(None, CFG.quiet) is None
 
 
+def test_proximity_is_linear_and_clamped():
+    assert proximity(0, 15) == 100.0
+    assert proximity(7.5, 15) == pytest.approx(50.0)
+    assert proximity(15, 15) == 0.0
+    assert proximity(40, 15) == 0.0
+    assert proximity(-1, 15) == 100.0
+    assert proximity(None, 15) is None
+
+
+def test_centrality_blends_the_centre_and_the_nearest_station():
+    rules = CFG.centrality  # 15 km, 10 km, 60% centre
+    assert centrality_score(0, 0, rules) == pytest.approx(100.0)
+    assert centrality_score(15, 10, rules) == 0.0
+    # 3 km from the centre (80), 1 km from a station (90): 0.6 * 80 + 0.4 * 90
+    assert centrality_score(3, 1, rules) == pytest.approx(84.0)
+    # no station in the city: the centre alone
+    assert centrality_score(3, None, rules) == pytest.approx(80.0)
+    assert centrality_score(None, 1, rules) is None
+
+
+def test_centrality_ranks_the_middle_above_the_edge():
+    middle = centrality_score(2.0, 0.5, CFG.centrality)
+    edge = centrality_score(14.0, 9.0, CFG.centrality)
+    assert middle is not None and edge is not None and middle > 80 > 20 > edge
+
+
 def test_blend_rescales_to_the_parts_present():
     w = CFG.weights
-    full = blend({"value": 80, "reviews": 60, "walkability": 40, "quiet": 20}, w, 0.5)
-    assert full.score == pytest.approx(0.4 * 80 + 0.1 * 60 + 0.3 * 40 + 0.2 * 20)
-    assert full.used == ("value", "reviews", "walkability", "quiet")
+    full = blend({"value": 80, "reviews": 60, "centrality": 90, "walkability": 40, "quiet": 20}, w, 0.5)
+    assert full.score == pytest.approx(0.25 * 80 + 0.1 * 60 + 0.3 * 90 + 0.2 * 40 + 0.15 * 20)
+    assert full.used == ("value", "reviews", "centrality", "walkability", "quiet")
     assert full.weight_coverage == 1.0
-    places_only = blend({"value": None, "reviews": None, "walkability": 40, "quiet": 100}, w, 0.5)
-    assert places_only.score == pytest.approx((0.3 * 40 + 0.2 * 100) / 0.5)
+    places_only = blend(
+        {"value": None, "reviews": None, "centrality": None, "walkability": 40, "quiet": 100}, w, 0.3
+    )
+    assert places_only.score == pytest.approx((0.2 * 40 + 0.15 * 100) / 0.35, abs=0.05)  # rounded to 0.1
     assert places_only.used == ("walkability", "quiet")
-    assert places_only.weight_coverage == pytest.approx(0.5)
+    assert places_only.weight_coverage == pytest.approx(0.35)
+    with_centre = blend({"centrality": 80, "walkability": 40, "quiet": 100}, w, 0.5)
+    assert with_centre.score == pytest.approx((0.3 * 80 + 0.2 * 40 + 0.15 * 100) / 0.65, abs=0.05)
+    assert with_centre.weight_coverage == pytest.approx(0.65)
 
 
 def test_blend_refuses_a_score_from_too_little_weight():
@@ -106,12 +139,31 @@ def test_blend_refuses_a_score_from_too_little_weight():
     assert thin.score is None
     assert thin.used == ("reviews",)
     assert blend({}, CFG.weights, 0.5).score is None
+    assert blend({"centrality": 100, "reviews": 100}, CFG.weights, 0.5).score is None  # 40% of the weight
 
 
 def test_blend_stays_within_0_100():
-    top = blend({"value": 100, "reviews": 100, "walkability": 100, "quiet": 100}, CFG.weights, 0.5)
-    bottom = blend({"value": 0, "reviews": 0, "walkability": 0, "quiet": 0}, CFG.weights, 0.5)
+    top = blend(
+        {"value": 100, "reviews": 100, "centrality": 100, "walkability": 100, "quiet": 100}, CFG.weights, 0.5
+    )
+    bottom = blend(
+        {"value": 0, "reviews": 0, "centrality": 0, "walkability": 0, "quiet": 0}, CFG.weights, 0.5
+    )
     assert (top.score, bottom.score) == (100.0, 0.0)
+
+
+def test_the_middle_of_a_big_city_can_beat_a_cheaper_quieter_edge():
+    """The weakness the centrality part fixes: a cheap, quiet outskirt used to outrank a central area."""
+    w = CFG.weights
+    central = blend(
+        {"value": 40, "reviews": 60, "centrality": 90, "walkability": 90, "quiet": 30}, w, 0.5
+    ).score
+    edge = blend({"value": 80, "reviews": 60, "centrality": 5, "walkability": 40, "quiet": 100}, w, 0.5).score
+    assert central is not None and edge is not None and central > edge
+    old = {"value": 0.4, "walkability": 0.3, "quiet": 0.2, "reviews": 0.1}  # before: no centrality part
+    old_central = 0.4 * 40 + 0.1 * 60 + 0.3 * 90 + 0.2 * 30
+    old_edge = 0.4 * 80 + 0.1 * 60 + 0.3 * 40 + 0.2 * 100
+    assert sum(old.values()) == pytest.approx(1.0) and old_edge > old_central
 
 
 def test_parts_need_enough_listings_for_value_and_reviews():
@@ -123,10 +175,13 @@ def test_parts_need_enough_listings_for_value_and_reviews():
         n_places=60,
         n_nightlife=2,
         cfg=CFG,
+        centre_km=3.0,
+        station_km=1.0,
     )
     few = parts_for(n_priced=CFG.min_priced_listings - 1, n_rated=CFG.min_priced_listings - 1, **kwargs)
     assert few["value"] is None and few["reviews"] is None
     assert few["walkability"] is not None and few["quiet"] is not None
+    assert few["centrality"] == pytest.approx(84.0)
     enough = parts_for(n_priced=CFG.min_priced_listings, n_rated=CFG.min_priced_listings, **kwargs)
     assert enough["value"] == pytest.approx(60.0)
     assert enough["reviews"] is not None
@@ -142,13 +197,16 @@ def test_explain_writes_facts_not_a_bare_number():
             median_rating=4.8,
             n_rated=35,
             n_priced=40,
+            centre_km=2.34,
+            station_km=0.4,
             n_places=85,
             n_nightlife=1,
         )
     )
     assert text == (
         "Cheaper than 70% of Tokyo listings: median CAD 120 a night (CAD 45 a person), from 40 listings; "
-        "reviews 4.80 median across 35 rated listings; 85 places within 600 m; "
+        "reviews 4.80 median across 35 rated listings; "
+        "2.3 km from the city centre, 0.4 km to the nearest hub station; 85 places within 600 m; "
         "1 bar or nightlife venue within 300 m."
     )
     assert explain(UnitFacts(city_name="Osaka")) == "Not enough data for this unit."

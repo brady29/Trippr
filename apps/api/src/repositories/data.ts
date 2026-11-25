@@ -1,4 +1,4 @@
-import type { DataLoadView, DataSourcesResponse, DataSourceView } from "@trippr/contracts";
+import type { DataLoadView, DataSourcesResponse, DataSourceView, DataStayView } from "@trippr/contracts";
 import type { GraphClient } from "../db/graph";
 import { cypher } from "./queries";
 import { num, optNum, parseJson } from "./util";
@@ -41,11 +41,14 @@ export function dataRepository(db: GraphClient) {
 
   return {
     async sources(): Promise<Omit<DataSourcesResponse, "notes">> {
-      const [sources, loads, totals] = await Promise.all([
+      const [sources, loads, totals, stayLoads, hotelCounts] = await Promise.all([
         db.query<SourceRow>(q("data/sources"), {}, read),
         db.query<LoadRow>(q("data/latest-load"), {}, read),
         db.query<{ catalogue: unknown; listed: unknown; unlisted: unknown; handWritten: unknown; enriched: unknown }>(q("data/totals"), {}, read),
+        db.query<{ load: { stay?: unknown } }>(cypher("stay-data/load-get", db.dialect), {}, read),
+        db.query<{ source: string; hotels: unknown }>(cypher("stay-data/hotels-sources-count", db.dialect), {}, read),
       ]);
+      const hotelsBySource = new Map(hotelCounts.map((r) => [r.source, num(r.hotels)]));
       const views: DataSourceView[] = sources.map(({ source: s, activities }) => ({
         id: s.id,
         name: s.name,
@@ -61,6 +64,7 @@ export function dataRepository(db: GraphClient) {
         fetchedAt: s.fetchedAt ?? null,
         stagedRows: optNum(s.stagedRows),
         activities: num(activities),
+        ...(hotelsBySource.has(s.id) ? { hotels: hotelsBySource.get(s.id)! } : {}),
       }));
       const row = loads[0]?.load;
       // The enrichment section travels inside the stored counts JSON (older loads have none).
@@ -85,6 +89,7 @@ export function dataRepository(db: GraphClient) {
         sources: views,
         latestLoad,
         totals: { catalogue: num(t?.catalogue), listed: num(t?.listed), unlisted: num(t?.unlisted), handWritten: num(t?.handWritten), enriched: num(t?.enriched) },
+        stay: parseJson<DataStayView>(stayLoads[0]?.load?.stay) ?? null,
       };
     },
   };

@@ -425,6 +425,7 @@ def check_units(con: duckdb.DuckDBPyConnection, ctx: StayCheckContext) -> list[C
         con,
         """SELECT count(*) FROM stay_unit WHERE
              score_value NOT BETWEEN 0 AND 100 OR score_reviews NOT BETWEEN 0 AND 100
+             OR score_centrality NOT BETWEEN 0 AND 100
              OR score_walkability NOT BETWEEN 0 AND 100 OR score_quiet NOT BETWEEN 0 AND 100
              OR stay_score NOT BETWEEN 0 AND 100""",
     )
