@@ -17,6 +17,7 @@ import {
   type Scored,
 } from "../src/services/recommend/core";
 import { closenessWord, explain, rankPhrase, whatTheGroupDid } from "../src/services/recommend/explain";
+import { DEFAULT_EVAL, mulberry32, profilesFor, renderEval, runEval, type EvalPlace } from "../src/services/recommend/eval";
 import { noticeFor } from "../src/services/recommend/service";
 
 // No database in this file: the scoring, diversification and explanations are pure functions.
@@ -390,5 +391,75 @@ describe("the request", () => {
     expect(suggestionsQuery.safeParse({ limit: "21" }).success).toBe(false);
     expect(suggestionsQuery.safeParse({ bestTime: "dawn" }).success).toBe(false);
     expect(suggestionsQuery.parse({ bestTime: "", indoor: "" })).toMatchObject({ limit: 6 });
+  });
+});
+
+describe("the offline evaluation", () => {
+  /** Two cities of 48 places in 6 categories; a place's vector is its category's direction plus noise. */
+  function catalogue(): EvalPlace[] {
+    const random = mulberry32(7);
+    const dims = 24;
+    const categories = ["museum", "temple_shrine", "park", "restaurant", "market", "viewpoint"];
+    const centres = categories.map(() => unit(Array.from({ length: dims }, () => random() - 0.5)));
+    const places: EvalPlace[] = [];
+    for (const city of ["AAA", "BBB"]) {
+      for (let i = 0; i < 48; i++) {
+        const c = i % categories.length;
+        places.push({
+          id: `${city}-${i}`,
+          title: `${city} place ${i}`,
+          city,
+          category: categories[c]!,
+          tag: ["culture", "culture", "nature", "food", "food", "nature"][c]!,
+          rank: i + 1,
+          sitelinks: Math.floor(random() * 20),
+          nSources: 1 + Math.floor(random() * 3),
+          bestTime: null,
+          indoor: null,
+          vector: unit(Array.from(centres[c]!, (x) => x + (random() - 0.5) * 0.5)),
+        });
+      }
+    }
+    return places;
+  }
+
+  it("holds every invariant, finds the hidden place more often than the baselines, and gives the same report twice", () => {
+    const a = runEval(catalogue());
+    const b = runEval(catalogue());
+    expect(b).toEqual(a);
+    expect(a.cities).toBe(2);
+    expect(a.cases).toBeGreaterThan(50);
+    const failed = a.checks.filter((c) => !c.ok).map((c) => `${c.name}: ${c.detail}`);
+    expect(failed).toEqual([]);
+    const [shipped, , , , rank, notability, random] = a.rows;
+    expect(shipped!.method).toContain("shipped");
+    expect(shipped!.hit10).toBeGreaterThan(random!.hit10);
+    expect(shipped!.hit10).toBeGreaterThan(rank!.hit10);
+    expect(shipped!.hit10).toBeGreaterThan(notability!.hit10);
+    expect(renderEval(a, "# t")).toContain("| group taste + MMR (shipped) |");
+  });
+
+  it("diversity buys categories and costs concentration, and the report says so", () => {
+    const { rows } = runEval(catalogue());
+    const withMmr = rows.find((r) => r.method.includes("shipped"))!;
+    const without = rows.find((r) => r.method.includes("no diversity"))!;
+    expect(withMmr.categories).toBeGreaterThanOrEqual(without.categories);
+    expect(withMmr.redundancy).toBeLessThanOrEqual(without.redundancy);
+  });
+
+  it("builds profiles from the biggest categories, one kind or two, with simulated voters", () => {
+    const places = catalogue().filter((p) => p.city === "AAA");
+    const profiles = profilesFor("AAA", places, DEFAULT_EVAL, mulberry32(1));
+    expect(profiles.length).toBe(DEFAULT_EVAL.profilesPerCity * DEFAULT_EVAL.repeats);
+    for (const p of profiles) {
+      expect(p.liked.length).toBe(DEFAULT_EVAL.likedPerProfile);
+      expect(p.categories.length).toBeGreaterThanOrEqual(1);
+      for (const l of p.liked) {
+        expect(p.categories).toContain(l.place.category);
+        expect(l.voters.length).toBeGreaterThanOrEqual(1);
+        expect(l.voters.length).toBeLessThanOrEqual(DEFAULT_EVAL.members);
+      }
+    }
+    expect(profiles.some((p) => p.categories.length === 2)).toBe(true);
   });
 });

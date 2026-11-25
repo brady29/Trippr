@@ -219,6 +219,15 @@ export function scoreByTaste(c: Candidate, taste: Taste, tuning: Tuning = TUNING
   return { candidate: c, relevance, anchor: named.signal, anchorSim: named.sim, tag: null };
 }
 
+/**
+ * The city's ranking as a 0..1 score for cold start: 1 for the best place, 0.5 at rank 11, 0.25 at rank 31. Steeper than the
+ * prior used next to a similarity (which only breaks ties), because here the ranking is all there is and diversity must not
+ * pull a rank-45 place above a rank-6 one.
+ */
+export function coldRankScore(rank: number | null): number {
+  return rank == null || rank < 1 ? 0 : 1 / (1 + (rank - 1) / 10);
+}
+
 /** Cold start: the city's own ranking, leaning toward places that carry a tag the group likes. */
 export function scoreCold(c: Candidate, tags: TagWeight[], tuning: Tuning = TUNING): Scored {
   const top = tags[0]?.weight ?? 0;
@@ -233,7 +242,7 @@ export function scoreCold(c: Candidate, tags: TagWeight[], tuning: Tuning = TUNI
       }
     }
   }
-  return { candidate: c, relevance: prior(c.row.rank) + tuning.coldTagBoost * share, anchor: null, anchorSim: null, tag };
+  return { candidate: c, relevance: coldRankScore(c.row.rank) + tuning.coldTagBoost * share, anchor: null, anchorSim: null, tag };
 }
 
 /**
