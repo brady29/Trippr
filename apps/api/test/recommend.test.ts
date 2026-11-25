@@ -22,6 +22,7 @@ const DATE = "2026-11-24";
 
 const T = { lat: 35.68, lon: 139.76 };
 const S = { lat: 10.77, lon: 106.7 };
+const N = { lat: 35.18, lon: 136.9 };
 const P = {
   shrine: place({ name: "Hanazono Shrine", city_code: "TYO", category: "temple_shrine", tag: "culture", rank: 1, ...T }),
   shrineTwin: place({ name: "Zenkoku Shrine", city_code: "TYO", category: "temple_shrine", tag: "culture", rank: 2, ...T }),
@@ -33,6 +34,10 @@ const P = {
   post: place({ name: "Saigon Central Post Office", city_code: "SGN", category: "landmark", tag: "culture", rank: 2, ...S }),
   skydeck: place({ name: "Bitexco Skydeck", city_code: "SGN", category: "viewpoint", tag: "nature", rank: 3, ...S }),
   palace: place({ name: "Reunification Palace", city_code: "SGN", category: "castle_palace", tag: "culture", rank: 4, ...S }),
+  // Nagoya: none of the seed's ideas there is planned in any route, so a stop there starts with no signals at all.
+  tokugawa: place({ name: "Tokugawa Garden Pavilion", city_code: "NGO", category: "park_garden", tag: "nature", rank: 1, ...N }),
+  science: place({ name: "Chubu Science Hall", city_code: "NGO", category: "museum", tag: "culture", rank: 2, ...N }),
+  noodles: place({ name: "Miso Noodle Alley", city_code: "NGO", category: "restaurant", tag: "food", rank: 3, ...N }),
 };
 const PLACES = Object.values(P);
 
@@ -46,6 +51,7 @@ let viewer: Awaited<ReturnType<typeof signIn>>;
 let stranger: Awaited<ReturnType<typeof signIn>>;
 let tokyoStop = "";
 let saigonStop = "";
+let nagoyaStop = "";
 const embedder = createFakeEmbedder(DIMS);
 const bundles = tempBundleRoot();
 const embeddings = tempBundleRoot();
@@ -67,6 +73,10 @@ beforeAll(async () => {
   const route = await owner.api.get<RouteView>(`/routes/${MAIN}`);
   tokyoStop = route.body.stops.find((s) => s.city.code === "TYO")!.id;
   saigonStop = route.body.stops.find((s) => s.city.code === "SGN")!.id;
+  // A stop in a city nobody has planned anything in, for the cold start.
+  const added = await owner.api.post<RouteView>(`/routes/${MAIN}/stops`, { cityCode: "NGO", nights: 2, version: route.body.route.version });
+  expect(added.status).toBe(201);
+  nagoyaStop = added.body.stops.find((s) => s.city.code === "NGO")!.id;
   writeBundle(bundles, {
     date: DATE,
     places: PLACES,
@@ -109,23 +119,32 @@ describe("GET /stops/:id/suggestions", () => {
   });
 
   it("cold start: the city's catalogue ranking, leaning toward the tags liked in other cities, with a notice that says so", async () => {
-    // Saigon has no votes and nothing planned; the seeded plans in other cities carry the group's tags.
-    const r = await suggest(saigonStop);
+    // Nagoya has no votes and nothing planned in any route; the seeded plans in other cities carry the group's tags.
+    const r = await suggest(nagoyaStop);
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ stopId: saigonStop, cityCode: "SGN", basis: "tag_preferences", signals: { liked: 0, disliked: 0, members: 0 } });
+    expect(r.body).toMatchObject({ stopId: nagoyaStop, cityCode: "NGO", basis: "tag_preferences", signals: { liked: 0, disliked: 0, members: 0 } });
     expect(r.body.likedTags.length).toBeGreaterThan(0);
     expect(r.body.notice).toMatchObject({ code: "cold_start" });
-    expect(r.body.notice!.message).toContain("Ho Chi Minh City");
-    // Only Saigon's catalogue places, none the group has touched, each with a reason built from rank and tags.
-    const got = ids(r);
-    expect(got.length).toBeGreaterThan(0);
-    for (const id of got) expect(PLACES.filter((p) => p.city_code === "SGN").map((p) => p.id)).toContain(id);
+    expect(r.body.notice!.message).toContain("Nagoya");
+    // Only Nagoya's catalogue places, none the group has touched, each with a reason built from rank and tags.
+    expect([...ids(r)].sort()).toEqual(PLACES.filter((p) => p.city_code === "NGO").map((p) => p.id).sort());
     for (const s of r.body.suggestions) {
       expect(s.activity).toMatchObject({ catalogue: true, plannedIn: [] });
       expect(s.reason, JSON.stringify(s.reason)).toMatch(/Top-ranked|#\d|Ranked #/);
       expect(s.because).not.toBe("similar");
     }
     expect(JSON.stringify(r.body)).not.toMatch(/embedding/i);
+  });
+
+  it("plans in any route of the trip count as liked even with no votes, and without a vector for them it says so", async () => {
+    // The seed plans two hand-written Saigon ideas in other routes (Cu Chi tunnels, War Remnants Museum): liked by plan alone, so
+    // liked is 2 and members (people who voted) is 0. They have no place vector, so similarity cannot be used: tag preferences.
+    const r = await suggest(saigonStop);
+    expect(r.body).toMatchObject({ cityCode: "SGN", basis: "tag_preferences", signals: { liked: 2, disliked: 0, members: 0 } });
+    expect(r.body.notice).toMatchObject({ code: "no_taste" });
+    expect(r.body.likedTags.length).toBeGreaterThan(0);
+    expect([...ids(r)].sort()).toEqual(PLACES.filter((p) => p.city_code === "SGN").map((p) => p.id).sort());
+    for (const s of r.body.suggestions) expect(s.because).not.toBe("similar");
   });
 
   it("follows the group's votes: names the liked place and who voted for it, from the caller's point of view", async () => {

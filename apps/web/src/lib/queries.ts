@@ -385,6 +385,9 @@ export function usePlanToggle(routeId: string) {
       qc.setQueryData(keys.route(routeId), view);
       invalidateTrip(qc, view);
       void qc.invalidateQueries({ queryKey: keys.tripActivities(view.route.tripId) });
+      // A catalogue place only shows in the stop's library once the group has engaged with it, so planning one (from the
+      // suggestions, say) adds a row that the cached library does not have yet; unplanning one can remove it.
+      void qc.invalidateQueries({ queryKey: keys.library(routeId) });
     },
   });
 }

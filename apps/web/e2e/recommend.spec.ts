@@ -109,7 +109,8 @@ test("Plan here plans the place at this stop and removes it from the suggestions
   await expect(page.locator('[data-testid="stop-card"][data-city="TYO"]')).toContainText(name);
   // Leave the plan as it was.
   await box.click();
-  await expect(box).not.toBeChecked();
+  // Nobody voted or commented on it, so once it is unplanned it is an ordinary catalogue place again: not in the list.
+  await expect(box).toHaveCount(0);
 });
 
 test("the time-of-day and indoor filters narrow the suggestions to places the enrichment knows", async ({ page }) => {
