@@ -217,6 +217,109 @@ Numbers on record (the spike's: brute-force cosine on the 8,000-place bundle, 89
 
 The web app has a "Search by meaning" box on the Activities page (press Search; the page's city, tag and category filters narrow it). A search box on the map tab is not built.
 
+## Suggested for this stop (PR 6)
+
+[Spec](data-platform-spec.md#recommendations). The stop drawer on the route editor has a "Suggested for this stop" panel: a handful of catalogue places in the stop's city that the group is likely to like next, each with the reason. It is built from the group's own votes, plans and comments and from the place vectors already stored on the Activity nodes. **Nothing on the request path embeds text or calls a model**, so it costs nothing, does not depend on Cloudflare, has no allowance, and works for the demo account.
+
+```
+GET /stops/:id/suggestions  ─►  the stop's city ─► the trip's activities there with their votes, plans, comments (one read)
+                                                    + tags liked in other cities (two small reads)
+                                                    + the stored vectors (the search service's in-memory matrix, shared)
+                              ─► taste ─► score ─► diversify (MMR) ─► reasons ─► cards
+```
+
+### The endpoint
+
+`GET /stops/:id/suggestions?limit=6&bestTime=&indoor=` (`limit` 1 to 20, default 6; `bestTime` is `morning`, `afternoon`, `evening` or `night`; `indoor` is `true` or `false`). Viewers can read it, a non-member gets 404 and a signed-out caller 401, like the other trip routes. The answer has the stop and city, `basis`, a `notice` (or null), counts of what the group liked and disliked here, the tags that shaped it, and `suggestions[]`: the same card the Activities page shows (votes, tags, AI label and badges, sources with licences), `reason`, `because` (`similar`, `tag` or `rank`), the liked place it resembles (`anchor`: title, how many voted, whether it is planned) and `closeness` (a word: "very close", "close" or "loosely related", never a number). The vector is never in the answer.
+
+`basis` says what the list rests on:
+
+| basis | when | what it does |
+|---|---|---|
+| `group_taste` | someone liked a place in this city that has a vector | similarity to the group's taste, diversified |
+| `tag_preferences` | nothing liked here has a vector (or no vectors are loaded) but the group liked some tags (here or in other cities) | the city's catalogue ranking, leaning toward those tags |
+| `catalogue_rank` | no signals anywhere | the city's catalogue ranking alone |
+
+The `notice` is plain words for the panel: `cold_start` ("Nobody has voted on, planned or commented on places in Osaka yet, so these are the city's top-ranked places, leaning toward what your group liked elsewhere (culture). Vote on a few and they will follow your taste."), `no_taste` (the places liked here have no vector), `no_vectors` (none are loaded, so similarity was not used) and `none_left` (everything in the city is planned, voted on, or filtered out).
+
+### How it ranks
+
+All of it is in `apps/api/src/services/recommend/core.ts`, pure functions, with every constant in one `TUNING` object.
+
+1. **Signals.** For each activity of the trip in the stop's city: an up-vote counts `1 / sqrt(n)` for a member who voted on `n` places here (so one person voting on everything does not outweigh three people voting on a few), a down-vote counts the same, minus. A plan in **any** route of the trip counts 1.5. A comment counts 0.25, at most two of them, and only on a place that is not net voted down. A place whose signals cancel out is dropped. A place the group planned and one member voted down is still net liked.
+2. **Taste.** The weighted average of the liked places' vectors, minus half the weighted average of the disliked ones, normalised. (A place that is a near-copy of one the group voted down, cosine 0.85 or more, is never suggested.) Only places with a vector count here. The group's own hand-written ideas get a vector only when the load job adopted them into a catalogue place; the seeded trip has none (see the eval).
+3. **Candidates.** Catalogue places in the stop's city, still listed, hidden by nobody, and **not planned in any route, not voted on, not commented on**; the group's own ideas are not candidates (they are in the drawer already). The `bestTime` and `indoor` filters use the enrichment fields as on the Activities page: a place the model could not tell is left out of a filter, never guessed.
+4. **Relevance.** Half the similarity to the taste, half the similarity to the nearest liked place (a group that likes both temples and ramen is not served by their average, which sits between them), plus 0.05 of the city's own ranking as a tie-breaker.
+5. **Diversity.** Maximal marginal relevance (lambda 0.7): repeatedly take the candidate with the best `0.7 * relevance - 0.3 * (its highest similarity to what is already picked)`, minus 0.04 for each pick already in its category. Near-duplicates and ten-of-one-category lists lose to the next different place.
+6. **Cold start** (nothing liked here has a vector): the city's catalogue rank as a score (1 at rank 1, 0.5 at rank 11, 0.25 at rank 31), plus 0.5 for a place with a tag the group likes (net votes and plans in the trip's other cities count half, this city's liked places count fully), diversified the same way. The panel says so.
+7. **Nearby cities.** Not built. The repo has no day-trip rule; a nearby city is its own stop, and a stop's suggestions are its own city's places.
+
+Per-member taste vectors (the spec's "each member also gets their own") are not built: the endpoint answers for the group.
+
+### The reason
+
+Assembled by rules from facts the program holds, in `explain.ts`; never by a model, and the panel does not say it was. In order:
+
+1. The nearest liked place, **when it is at least "close"** (cosine 0.45, as in search): "Similar to Fushimi Inari, which 3 of you voted for". Who: "N of you voted for", "one of you voted for", "you voted for" (when the member asking is the only voter), "... and planned", "your group planned", "your group commented on". A liked place the group voted for or planned is preferred over one it only commented on.
+2. Else, if it carries a tag the group likes: "Top-ranked museum in Osaka; your group likes culture" (or "#2 museum in Osaka", "Ranked #14 in Osaka"). The rank is the place's rank inside its category in the city, then its rank overall; the tag is one of the group's two strongest.
+3. Else the fact alone: "Top-ranked museum in Osaka", "Ranked #14 in Osaka", "Park in Osaka".
+
+No similarity number is ever shown or sent as a percentage. A test over thousands of simulated suggestions checks that every "similar to" names a place the group really liked and the right number of voters.
+
+### The panel
+
+`components/suggested-for-stop.tsx`, placed in the stop drawer under the city's list. It reuses `ActivityItem` (AI label, badges, votes) and the catalogue footer (source and licence), adds the reason line with the closeness word, and two actions: **Add to ideas** (an up-vote: the place joins the city's list and leaves the suggestions) and **Plan here** (editors; the drawer's own planning). Two small filters (time of day, indoor or outdoor) pass `bestTime` and `indoor`. It shows a spinner while it loads, the notice for cold start and "nothing left", "Nothing to suggest in Tokyo yet" when it is empty and there is nothing to say, and an error with "Try again" that leaves the rest of the drawer working. It is in the stop drawer only; the stop card and the Map tab do not show it.
+
+### Is it any good? (`eval:recommend`)
+
+```sh
+pnpm eval:recommend                      # golden bundle, FAKE vectors: a plumbing run (what CI-sized checks use)
+pnpm eval:recommend --sweep              # plus rows for other diversity settings
+pnpm eval:recommend --bundle pipelines/out/bundles --embeddings pipelines/out/embeddings    # the real catalogue and BGE-M3 vectors
+# options: --k 10 --max-rank 20 --seed N --profiles-per-city 4 --repeats 2 --liked 6 --max-cities N --json --min-hit10 0.5
+```
+
+No database, network or key: it reads a bundle and a vector run from disk and calls the API's own scoring (`suggestForCity`). It exits 1 when an invariant fails.
+
+**The seeded trip cannot be left out one at a time.** It has 274 hand-written ideas, **0 votes**, and 163 planned ideas, none of which is a catalogue place with a vector (a hand-written idea gets a vector only if the load job adopts it; the golden bundle adopts none). So the groups are **synthetic**:
+
+- Real: the places, their categories, ranks, tags, enrichment and vectors.
+- Made up: the groups. A profile is "this group likes one category (or two) in this city". Its liked places (six) are sampled from the catalogue's places of those categories; three members vote them up at random (one member half the time, two 30%, all three 20%) and about a third are planned.
+- **Leave-one-out:** for every liked place, hide it (its votes and plan are removed, it is an ordinary catalogue place again), build the suggestions from the other five and check where the hidden one lands among the city's candidates. hit@k is the share of cases with it in the top k; MRR is cut at 20.
+- **Baselines**, on the same candidates: the catalogue's own rank; notability (Wikidata sitelinks, then number of agreeing sources); random.
+- **Also measured**, on the same lists: distinct categories in the top 10, the share of the top 10 in the profile's categories, for two-category profiles how often both appear, and redundancy (mean pairwise similarity of the top 10).
+- **Invariants** (must hold whatever the vectors): no suggestion is planned, voted, commented on or the group's own (must be 0); every suggestion has a reason (100%); every "similar to" names a liked place with the right voters and plan; no reason shows a number or credits a model; the same input gives the same list in any row order; a list is full when there are enough candidates; with no signal the basis is the catalogue ranking. Quality checks (cold start stays near the top of the ranking, a liked tag shifts the list toward it, the shipped method beats the baselines at hit@10) are printed but only `--min-hit10` fails the run.
+
+**Caveat that matters.** A place's category is part of the text its vector is made from, so this protocol favours the vector methods by construction, and it rewards a list that concentrates on the profile's category (which is what a hidden place of that category is). It shows the taste signal is picked up and the diversity and exclusion rules work; it does not show real groups would like the suggestions. Only live votes can.
+
+**Numbers recorded so far** (golden bundle: 80 places in Tokyo and Osaka; **fake hashing vectors, 64 dimensions**; 60 cases from 10 profiles in 2 cities; seed 20261125; `pnpm eval:recommend --sweep`):
+
+| method | hit@1 | hit@5 | hit@10 | MRR@20 | categories in top 10 | redundancy |
+|---|---|---|---|---|---|---|
+| **group taste + MMR (shipped)** | 0.183 | 0.400 | 0.600 | 0.300 | 8.25 | 0.394 |
+| group taste, no diversity | 0.183 | 0.417 | 0.667 | 0.293 | 5.45 | 0.525 |
+| average taste only (+MMR) | 0.150 | 0.350 | 0.500 | 0.258 | 8.13 | 0.398 |
+| nearest liked place only (+MMR) | 0.167 | 0.400 | 0.600 | 0.295 | 8.47 | 0.368 |
+| baseline: catalogue rank | 0.033 | 0.200 | 0.517 | 0.156 | 4.63 | 0.411 |
+| baseline: notability | 0.033 | 0.217 | 0.450 | 0.146 | 4.50 | 0.433 |
+| baseline: random | 0.033 | 0.150 | 0.300 | 0.106 | 8.20 | 0.233 |
+| sweep: MMR lambda 0.5 / 0.6 / 0.85 | | | 0.483 / 0.533 / 0.633 | 0.268 / 0.270 / 0.303 | 9.68 / 9.05 / 7.30 | 0.228 / 0.319 / 0.465 |
+| sweep: no category charge / charge 0.08 | | | 0.700 / 0.533 | 0.322 / 0.288 | 6.85 / 9.12 | 0.431 / 0.363 |
+
+Invariants: 0 of 1,200 suggestions already planned or voted (must be 0); 1,200 of 1,200 have a reason (cold start 100%); 620 of 620 "similar to" reasons name a liked place with the right voters and plan; no reason shows a number; the 8 sampled cases are repeatable. Cold start: all 2 cities use `catalogue_rank`, 100% of picks are inside the catalogue's top 30 and 80% of its top 10 are kept; with a liked tag 75% of the top 10 carry it (25% without).
+
+What to read from it: the taste signal beats the three baselines at every depth (hit@10 0.60 against 0.52 for the catalogue's own rank, 0.45 for notability and 0.30 for random; hit@1 0.18 against 0.03), averaging the liked places alone is weaker than keeping each one (0.50 against 0.60), and diversity is a trade: it costs about 7 points of hit@10 and buys 2.8 more categories in the top 10 and 0.13 less redundancy. The "no category charge" row shows how much of the hit rate is the protocol rewarding concentration; the defaults were chosen before this run and were not tuned on it.
+
+**Not yet measured, and why.** The real numbers (BGE-M3 vectors, the 8,000-place bundle) need `pipelines/out/` from the owner's laptop, which this change did not have; the fake vectors are character n-grams, so the figures above test the code and not the model. Run the real-bundle command above after the next `embed` and add the table here. The tuning constants (0.5 blend, 0.7 lambda, 0.04 category charge, the 0.45 "close" cutoff, which are BGE-M3 and search-scale choices) are untested on real vectors.
+
+### Tests and what was not run
+
+- `apps/api/test/recommend-unit.test.ts` (no database): signals and member balancing, taste and dislikes, scoring, MMR, cold start, the reason text for each case, the request schema, the eval engine's invariants and determinism.
+- `apps/api/test/recommend.test.ts` (both databases in CI): a real bundle loaded with fake vectors; cold start in a stop with no votes; a vote drives the top suggestion and the reason is worded for the member asking ("you voted for", "one of you voted for", "2 of you voted for"); planned (in any route), voted, commented-on places are never suggested; the enrichment filters; limits; viewers 200, strangers 404, signed-out 401, the demo account 200 with **no embedder call**; the same suggestions for another route's stop in the same city; before any vectors are loaded.
+- `apps/web/e2e/recommend.spec.ts`: the drawer panel with the golden bundle and the fake vectors the e2e already loads: the voted temple's neighbours come first with "Similar to ..., which you voted for", every card has a reason and its source and licence, "Add to ideas" and "Plan here" move the place out of the suggestions, the filters, and the loading, error, empty and cold-start states.
+- **Status: not run against a database.** Docker would not start on the machine this was written on, so the Cypher (`apps/api/src/repositories/cypher/recommend/`), the integration test and the Playwright spec were written from the existing queries' patterns and typechecked, not executed. CI is the first run. What only CI can settle: that both databases accept `collect({userId: u.id, value: v.value})` over an `OPTIONAL MATCH` (the repository drops the one empty entry an unvoted place gets), the grouped `sum` and `count(DISTINCT a)` in the tag reads, and the order of the e2e's fake-vector neighbours.
+- Memory and time: a request reads one city (a few hundred rows) and compares at most a few hundred 1,024-dimension vectors with each other: milliseconds. The vectors are the search service's matrix (33 MB for 8,000), loaded on first use and shared, not a second copy.
+
 ## Running it in Cloud Run (nothing here is created by the code)
 
 The job is the API image run with another command. After the one-time setup below, `deploy.yml` keeps its image current and `load-catalogue.yml` runs it, both only when the repository variable `CATALOGUE_LOAD_JOB` is set.

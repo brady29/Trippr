@@ -194,6 +194,8 @@ The same place appears in several sources under different names, scripts and coo
 - **Offline eval:** leave out 20% of the group's upvotes; report hit rate at 10 and NDCG at 10, with a "most popular" baseline to beat.
 - **Web:** "Suggested for this stop" on each stop card and in the Activities drawer.
 
+- **As built (PR 6):** `GET /stops/:id/suggestions` and a "Suggested for this stop" panel in the stop drawer. The taste is built from the group's votes (each member's influence shared out, so one person voting on everything does not outweigh the rest), plans in any route and a few comments, using the vectors already stored on the Activity nodes: no query embedding and no model call on the request path, so it is free, has no allowance and works for the demo account. Relevance blends the similarity to the average taste with the similarity to the nearest liked place, diversified with maximal marginal relevance (lambda 0.7, plus a small charge per pick in a category). Places already planned in any route, voted on or commented on are never suggested. Cold start (nothing liked in the city yet): the city's catalogue ranking leaning toward the tags the group liked in other cities, with a notice that says so. Each suggestion has a reason built by rules from real inputs ("Similar to Fushimi Inari, which 3 of you voted for", "Top-ranked museum in Osaka; your group likes culture"), never a similarity number and never credited to a model. Differences from the plan above: no per-member taste vectors; no nearby-city (day-trip) candidates, since the repo has no such rule; the panel is in the stop drawer only, not on the stop card; the offline eval is leave-one-out over synthetic groups (the seeded trip has no votes), reporting hit@k, MRR, diversity and the exclusion and explanation checks against catalogue-rank, notability and random baselines, not NDCG on 20% of real upvotes. Numbers, the protocol and what it cannot show are in [data-platform.md](data-platform.md#suggested-for-this-stop-pr-6); the first numbers are from fake vectors on the golden bundle, and the real-bundle run (`pnpm eval:recommend --bundle ... --embeddings ...`) still has to be recorded.
+
 ## Feature 5: Stay analytics
 
 ### Hotel listings
@@ -291,8 +293,10 @@ New secrets go in Secret Manager, as today.
 - **Golden dataset:** a tiny fixed "two cities" set runs the whole pipeline offline in CI in under a minute and is compared to an expected bundle.
 - **Loader integration** (existing harness, both databases): loading a bundle is idempotent; existing activities keep votes, plans and ids; "no longer listed" works; the vector index answers a nearest-neighbour query.
 - **API integration:** search (filters, distance, hybrid order with fixed vectors), recommendations with a fixed taste vector, flight price endpoints and the hotel rates adapter (fakes).
+  - As built: recommendations are tested on both databases with a real loaded bundle and fake vectors (`apps/api/test/recommend.test.ts`), with unit tests for the scoring, diversity and reasons (`recommend-unit.test.ts`).
 - **Evals** run by hand or monthly, never on pull requests: entity resolution, enrichment and search relevance (50 queries with judged results, reporting NDCG at 10).
 - **e2e:** search on the Activities tab returns catalogue results and "Add idea" works.
+  - As built: the stop drawer's "Suggested for this stop" shows the voted place's neighbours with their reasons, and "Add to ideas" and "Plan here" work (`apps/web/e2e/recommend.spec.ts`).
 
 ## Cost
 
