@@ -28,6 +28,7 @@ import { basicReader, createClaudeReader, type InboxReader } from "./services/in
 import { createClaudeLookup, type PlaceLookup } from "./services/inbox/lookup";
 import { metaRoutes } from "./routes/meta";
 import { routeRoutes } from "./routes/routes";
+import { recommendRoutes } from "./routes/recommend";
 import { searchRoutes } from "./routes/search";
 import { stayRoutes } from "./routes/stay";
 import { tripRoutes } from "./routes/trips";
@@ -218,7 +219,8 @@ export async function buildApp({
     calendarRoutes(scope, ctx);
     flightRoutes(scope, ctx);
     assistantRoutes(scope, ctx, { model: assistantModel });
-    searchRoutes(scope, ctx, { embedder: queryEmbedder });
+    const search = searchRoutes(scope, ctx, { embedder: queryEmbedder });
+    recommendRoutes(scope, ctx, { search });
   });
 
   return app;

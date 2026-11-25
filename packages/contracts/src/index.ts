@@ -9,3 +9,4 @@ export * from "./flights";
 export * from "./catalogue";
 export * from "./search";
 export * from "./stay";
+export * from "./recommend";

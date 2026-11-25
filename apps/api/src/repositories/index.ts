@@ -9,6 +9,7 @@ import { flightsRepository } from "./flights";
 import { graphRepository } from "./graph";
 import { inboxRepository } from "./inbox";
 import { placesRepository } from "./places";
+import { recommendRepository } from "./recommend";
 import { routesRepository } from "./routes";
 import { searchRepository } from "./search";
 import { stayRepository } from "./stay";
@@ -33,6 +34,7 @@ export function createRepositories(db: GraphClient) {
     catalogue: catalogueRepository(db),
     data: dataRepository(db),
     search: searchRepository(db),
+    recommend: recommendRepository(db),
     stay: stayRepository(db),
   };
 }

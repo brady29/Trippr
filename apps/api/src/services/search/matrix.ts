@@ -55,6 +55,16 @@ export class VectorMatrix {
     return this.dot(query, row) * this.inverseNorms[row]! * inverseNorm(query);
   }
 
+  /** A unit-length copy of one place's stored vector (recommendations compare places with each other); null when it has none. */
+  unitVector(id: string): Float32Array | null {
+    const row = this.byId().get(id);
+    if (row === undefined) return null;
+    const out = this.data.slice(row * this.dims, (row + 1) * this.dims);
+    const scale = this.inverseNorms[row]!;
+    for (let j = 0; j < out.length; j++) out[j] = out[j]! * scale;
+    return out;
+  }
+
   private dot(query: Float32Array, row: number): number {
     const { dims, data } = this;
     const base = row * dims;

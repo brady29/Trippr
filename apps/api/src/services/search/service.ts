@@ -237,6 +237,19 @@ export function createSearch(deps: SearchDeps) {
     governor,
     /** What the loaded vectors are; null before the first load. */
     info: indexState,
+    /**
+     * The in-memory vectors the exact path scans, loaded on first use and shared with other readers (recommendations compare
+     * stored place vectors with each other and never embed anything). Null when none are loaded or they cannot be read.
+     */
+    async vectorMatrix() {
+      try {
+        const state = await indexState();
+        return state && state.count > 0 ? await matrices.get(state) : null;
+      } catch (error) {
+        log.warn({ error: error instanceof Error ? error.message : String(error) }, "the place vectors could not be read");
+        return null;
+      }
+    },
     run,
     /** Forget the cached state (tests; and the load job calls the repository directly). */
     reset() {
