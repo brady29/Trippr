@@ -9,7 +9,7 @@ This is the write-up of how Trippr's data platform was built, what it measured, 
 - **The problem.** Five or six friends plan a 40-night trip through Asia. They want several candidate routes that share the same places, and thousands of real things to do in 108 cities, not a few hundred typed-in ideas. Trip data is graph-shaped (routes, stops, cities, activities, votes). Place data is a mess: the same temple appears in five datasets under different names, scripts and coordinates.
 - **What was built.** A graph-backed trip planner (Next.js, a Fastify API, FalkorDB or Neo4j) and, beside it, a Python data pipeline that extracts five open datasets, merges them into one place catalogue, ranks and picks 8,000 places, enriches them with an LLM, embeds them for search by meaning, adds stay analytics from Inside Airbnb, and ships the result as a checked bundle that a load job merges into the graph without touching anything the group has done.
 - **What was measured.** 6.1 million source records resolved to 5.2 million places; entity-matching precision 95.1% and recall 85.0% on 383 labelled pairs; a Haiku against Sonnet comparison before spending money; a search model chosen by a labelled query set (MRR 0.68 against 0.52 for the cheaper model); and a real run that enriched 7,531 of 8,000 places for about $0.65.
-- **What is not finished or not proven.** The matching labels were not reviewed by a second person and the threshold was tuned on them. OpenStreetMap covers 2 of 108 cities. Inside Airbnb covers 5 of 108. 469 places have no enrichment. Flight prices are sparse. The search eval against the loaded graph has not been run. Recommendations are still being built (see "Recommendations").
+- **What is not finished or not proven.** The matching labels were not reviewed by a second person and the threshold was tuned on them. OpenStreetMap covers 2 of 108 cities. Inside Airbnb covers 5 of 108. 469 places have no enrichment. Flight prices are sparse. The search eval against the loaded graph has not been run. Recommendations shipped, but they were only evaluated offline on simulated groups, and the diversity settings look too strong on real vectors (see "Recommendations").
 
 ## The problem
 
@@ -297,11 +297,34 @@ The bundle carries 1,797 stay units (5 city, 19 Area, 173 neighbourhood, 1,600 H
 
 ## Recommendations
 
-Group-taste recommendations ("Suggested for this stop", with an explanation naming the nearest liked activity, an offline hit-rate evaluation with a most-popular baseline) are specified in the [data platform spec](data-platform-spec.md) and are being built on a separate branch. They are not part of what this document describes as built.
+**What shipped.** The stop drawer has a "Suggested for this stop" panel: a handful of catalogue places in the stop's city that the group is likely to like next, each with a one-line reason and the same source, licence and AI labels as everywhere else, plus "Add to ideas" (an up-vote) and "Plan here". It comes from `GET /stops/:id/suggestions`, which makes no model call and no embedding call: it reads the group's votes, plans and comments for that city and compares the place vectors already stored in the graph, in memory, so it is free, fast, and works for the demo account.
 
-<!-- TODO(PR 6): replace this section with what shipped: how the group taste vector is built, the diversification step, the offline eval numbers (hit rate at 10, NDCG at 10 against the most-popular baseline) and the screenshots. -->
+**How it works.**
 
-*TODO: to be filled when PR 6 lands.*
+- **Signals.** A vote counts `1 / sqrt(n)` for a member who voted on `n` places in the city, so one person voting on everything does not outweigh three people voting on a few. A plan in any route counts 1.5, a comment a little. A place planned in another route counts as liked even with no vote.
+- **Taste.** The weighted mean of the liked places' vectors minus half the mean of the voted-down ones. Relevance blends similarity to that taste with similarity to the nearest liked place, so a group that likes both temples and ramen is not served by an average that sits between them.
+- **Diversity.** Maximal marginal relevance (lambda 0.7) plus a small charge for each earlier pick in the same category, so ten near-duplicates do not fill the list.
+- **Never suggested:** anything planned in any route, voted on, commented on, hidden, no longer listed, or the group's own idea.
+- **Cold start.** With nothing liked in the city the list is the catalogue's own ranking, leaning toward the tags the group liked in other cities, and the panel says so in plain words.
+- **The reason** is built by rules from facts the program holds: "Similar to Fushimi Inari, which 3 of you voted for" (only when the nearest liked place is close enough to name), else "Top-ranked museum in Osaka; your group likes culture", else the rank alone. It never shows a similarity number and never claims a language model wrote it.
+
+**Decision: an offline protocol, because there is no live group.** The seeded trip has no votes, so there is nothing to leave out. The evaluation (`pnpm eval:recommend`) therefore runs the API's own scoring over **synthetic groups**: a profile is "this group likes one or two categories in this city", six liked places are sampled from the real catalogue, three simulated members vote them up at random, one liked place is hidden, and the question is where it lands among the city's candidates. The places, categories, ranks and BGE-M3 vectors are real; **every vote is simulated**.
+
+**What it measured.** On the real catalogue (the 20 cities with the most places, 160 profiles, 960 cases, fixed seed):
+
+| | hit@1 | hit@10 | MRR@20 | categories in the top 10 |
+|---|---:|---:|---:|---:|
+| Shipped (taste plus diversity) | 0.072 | 0.168 | 0.100 | 9.0 |
+| Taste, no diversity | 0.072 | 0.523 | 0.197 | 3.2 |
+| Baseline: catalogue rank | 0.010 | 0.113 | 0.039 | 4.6 |
+| Baseline: notability | 0.007 | 0.064 | 0.024 | 6.3 |
+| Baseline: random | 0.016 | 0.077 | 0.034 | 7.6 |
+
+The taste signal beats every baseline at every depth. The checks that must always hold held across all 19,200 suggestions: none already planned, voted or commented on, every one has a reason, and every "similar to" names a place the group really liked with the right number of voters.
+
+**What the numbers say about the settings, honestly.** The diversity constants I shipped (lambda 0.7, a 0.04 charge per earlier pick in a category) were chosen before real vectors existed, and on real vectors they look too strong: with no category charge hit@10 rises from 0.168 to 0.488, and a group that voted only for temples gets about two temples in ten suggestions. The protocol cannot settle this, because the hidden place is always in the profile's categories, so it rewards concentration by construction, while the diversity columns reward the opposite; only real groups reacting to real lists can say how much variety they want. The sweep shows the trade rather than a clearly better setting (a charge of 0.01 gives hit@10 0.315 with 6.7 categories, 0.02 gives 0.231 with 7.9). I did not retune; a charge between 0.01 and 0.02 is the change to consider first.
+
+**Not proven.** No real group has used it, so there is no evidence that real groups like the suggestions or that the 0.45 closeness cutoff for naming a liked place is right on BGE-M3. Per-member taste vectors and day-trip candidates from nearby cities were not built. The Cypher and the end-to-end tests ran in CI, not against a hosted deployment's real data.
 
 ## Costs
 
@@ -346,7 +369,7 @@ The enrichment figures are what the pipeline's own state files recorded at batch
 - The pipeline runs by hand on a laptop; the monthly scheduled workflow is paused until the full pipeline is proven on a hosted runner.
 - The in-process search limits and cache are per API instance.
 
-**Next steps, roughly in order of value.** Have someone else review the match labels, then add a held-out set and consider a learned scorer. Finish OSM extraction (or switch to Geofabrik). Shorten the summary prompt and re-run the 469; enlarge the enrichment eval to 200 or more. Run `eval:search` against the loaded graph with and without AI summaries and record the numbers. Measure the Cloud Run instance's memory after the first vector load. Add recommendations (PR 6). Fill the cost table's Google Cloud line.
+**Next steps, roughly in order of value.** Have someone else review the match labels, then add a held-out set and consider a learned scorer. Finish OSM extraction (or switch to Geofabrik). Shorten the summary prompt and re-run the 469; enlarge the enrichment eval to 200 or more. Run `eval:search` against the loaded graph with and without AI summaries and record the numbers. Measure the Cloud Run instance's memory after the first vector load. Look at what real groups do with the suggestions, then revisit the category charge (0.01 to 0.02 is the candidate range). Fill the cost table's Google Cloud line.
 
 ## Where to look in the repository
 

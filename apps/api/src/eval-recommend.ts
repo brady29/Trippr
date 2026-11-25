@@ -6,7 +6,8 @@
  *   pnpm eval:recommend                                    # the golden bundle with FAKE hashing vectors: a plumbing run
  *   pnpm eval:recommend --bundle pipelines/out/bundles --embeddings pipelines/out/embeddings   # the real catalogue and BGE-M3 vectors
  *
- * Options: --date, --k 10, --max-rank 20, --seed N, --profiles-per-city 4, --repeats 2, --liked 6, --max-cities N,
+ * Options: --date, --k 10, --max-rank 20, --seed N, --profiles-per-city 4, --repeats 2, --liked 6, --max-cities N (the N cities with
+ * the most places; all 108 take a long while, 20 take minutes; progress goes to stderr),
  * --fake-dims 64 (vectors made in memory when --embeddings is not given), --sweep (rows for other diversity settings), --json,
  * --min-hit10 0.5 (exit 1 below it).
  * It exits 1 when an invariant check fails (a planned place suggested, a missing reason, ...), whatever the vectors.
@@ -112,14 +113,18 @@ function seededTrip() {
 // --sweep adds rows for other diversity settings, to see what the shipped ones cost and buy.
 const sweep = process.argv.includes("--sweep")
   ? [
-      ...[0.5, 0.6, 0.85].map((l) => viaCore(`sweep: MMR lambda ${l}`, { ...TUNING, mmrLambda: l }, options.maxRank)),
+      ...[0.5, 0.6, 0.85, 0.95].map((l) => viaCore(`sweep: MMR lambda ${l}`, { ...TUNING, mmrLambda: l }, options.maxRank)),
       viaCore("sweep: no category charge", { ...TUNING, categoryPenalty: 0 }, options.maxRank),
+      viaCore("sweep: category charge 0.01", { ...TUNING, categoryPenalty: 0.01 }, options.maxRank),
+      viaCore("sweep: category charge 0.02", { ...TUNING, categoryPenalty: 0.02 }, options.maxRank),
       viaCore("sweep: category charge 0.08", { ...TUNING, categoryPenalty: 0.08 }, options.maxRank),
+      viaCore("sweep: lambda 0.85, no category charge", { ...TUNING, mmrLambda: 0.85, categoryPenalty: 0 }, options.maxRank),
+      viaCore("sweep: lambda 0.85, charge 0.02", { ...TUNING, mmrLambda: 0.85, categoryPenalty: 0.02 }, options.maxRank),
       viaCore("sweep: average-taste share 0.25", { ...TUNING, centroidShare: 0.25 }, options.maxRank),
       viaCore("sweep: average-taste share 0.75", { ...TUNING, centroidShare: 0.75 }, options.maxRank),
     ]
   : [];
-const report = runEval(places, options, sweep);
+const report = runEval(places, options, sweep, (m) => console.error(m));
 const seeded = seededTrip();
 const title = `# Recommendation eval: ${bundle.date} bundle (${bundle.places.length} places), ${vectorsFrom}`;
 const note = [

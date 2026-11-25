@@ -20,7 +20,7 @@ Trippr is a group trip planner built on a graph database, with a data platform b
 4. **Hybrid semantic search.** BGE-M3 beat the next-cheapest multilingual model by 30% in MRR (0.68 against 0.52) on 89 labelled queries in six languages. Place vectors are computed on a laptop and only the question is embedded in the cloud, so the 512 MiB API never loads a model; a model mismatch is refused, and search falls back to words and to an exact scan when the vector path is unavailable.
 5. **An idempotent load job.** Re-running a bundle changes nothing, and it never touches votes, comments, plans, edited titles or hand-placed pins; places nobody used are removed when dropped, the rest are marked "no longer listed". The same integration tests run against FalkorDB and Neo4j in CI.
 
-Not everything is finished or proven: OpenStreetMap covers 2 of 108 cities, Inside Airbnb stay data covers 5, flight price coverage is sparse (cached fares only), and recommendations are still in progress. The case study says so.
+Not everything is finished or proven: OpenStreetMap covers 2 of 108 cities, Inside Airbnb stay data covers 5, flight price coverage is sparse (cached fares only), and recommendations ("Suggested for this stop") are shipped but were only evaluated offline on simulated groups, where the diversity settings look too strong on real vectors. The case study says so.
 
 ---
 

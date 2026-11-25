@@ -275,13 +275,13 @@ No similarity number is ever shown or sent as a percentage. A test over thousand
 ```sh
 pnpm eval:recommend                      # golden bundle, FAKE vectors: a plumbing run (what CI-sized checks use)
 pnpm eval:recommend --sweep              # plus rows for other diversity settings
-pnpm eval:recommend --bundle pipelines/out/bundles --embeddings pipelines/out/embeddings    # the real catalogue and BGE-M3 vectors
-# options: --k 10 --max-rank 20 --seed N --profiles-per-city 4 --repeats 2 --liked 6 --max-cities N --json --min-hit10 0.5
+pnpm eval:recommend --bundle pipelines/out/bundles --embeddings pipelines/out/embeddings --max-cities 20 --sweep   # the real catalogue and BGE-M3 vectors, the 20 biggest cities (all 108 take over an hour)
+# options: --k 10 --max-rank 20 --seed N --profiles-per-city 4 --repeats 2 --liked 6 --max-cities N (the N cities with most places) --json --min-hit10 0.5
 ```
 
 No database, network or key: it reads a bundle and a vector run from disk and calls the API's own scoring (`suggestForCity`). It exits 1 when an invariant fails.
 
-**The seeded trip cannot be left out one at a time.** It has 274 hand-written ideas, **0 votes**, and 163 planned ideas, none of which is a catalogue place with a vector (a hand-written idea gets a vector only if the load job adopts it; the golden bundle adopts none). So the groups are **synthetic**:
+**The seeded trip is too thin to leave out one at a time.** It has 274 hand-written ideas, **0 votes**, and 163 planned ideas, almost none of which is a catalogue place with a vector (a hand-written idea gets a vector only if the load job adopts it; the golden bundle adopts none, the real one 46 of the 163). So the groups are **synthetic**:
 
 - Real: the places, their categories, ranks, tags, enrichment and vectors.
 - Made up: the groups. A profile is "this group likes one category (or two) in this city". Its liked places (six) are sampled from the catalogue's places of those categories; three members vote them up at random (one member half the time, two 30%, all three 20%) and about a third are planned.
@@ -292,25 +292,42 @@ No database, network or key: it reads a bundle and a vector run from disk and ca
 
 **Caveat that matters.** A place's category is part of the text its vector is made from, so this protocol favours the vector methods by construction, and it rewards a list that concentrates on the profile's category (which is what a hidden place of that category is). It shows the taste signal is picked up and the diversity and exclusion rules work; it does not show real groups would like the suggestions. Only live votes can.
 
-**Numbers recorded so far** (golden bundle: 80 places in Tokyo and Osaka; **fake hashing vectors, 64 dimensions**; 60 cases from 10 profiles in 2 cities; seed 20261125; `pnpm eval:recommend --sweep`):
+**Numbers on the real catalogue** (the 2026-11-22 bundle, 8,000 places, with its real BGE-M3 8-bit vectors, 1,024 dimensions; the 20 cities with the most places (Beijing 238, Tokyo 231, Bali 193, Hanoi 193, Ho Chi Minh City 153, Shanghai 145, Seoul 142, Hong Kong 135, and so on down to 99); 160 synthetic group profiles and **960 leave-one-out cases**; seed 20261125, so a rerun gives the same table; `pnpm eval:recommend --bundle ... --embeddings ... --max-cities 20 --sweep`, about 25 minutes on a laptop, progress on stderr):
 
-| method | hit@1 | hit@5 | hit@10 | MRR@20 | categories in top 10 | redundancy |
+| method | hit@1 | hit@5 | hit@10 | MRR@20 | categories in top 10 | share of top 10 in the profile's categories | redundancy |
+|---|---|---|---|---|---|---|---|
+| **group taste + MMR (shipped)** | 0.072 | 0.127 | **0.168** | 0.100 | 8.99 | 0.222 | 0.559 |
+| group taste, no diversity | 0.072 | 0.323 | 0.523 | 0.197 | 3.24 | 0.724 | 0.635 |
+| average taste only (+MMR) | 0.072 | 0.127 | 0.171 | 0.100 | 9.04 | 0.216 | 0.565 |
+| nearest liked place only (+MMR) | 0.071 | 0.123 | 0.165 | 0.098 | 8.83 | 0.237 | 0.550 |
+| baseline: catalogue rank | 0.010 | 0.054 | 0.113 | 0.039 | 4.56 | 0.171 | 0.536 |
+| baseline: notability | 0.007 | 0.032 | 0.064 | 0.024 | 6.33 | 0.092 | 0.529 |
+| baseline: random | 0.016 | 0.047 | 0.077 | 0.034 | 7.58 | 0.119 | 0.510 |
+
+Sweep on the same cases (everything else as shipped):
+
+| setting | hit@5 | hit@10 | MRR@20 | categories in top 10 | share in profile categories | redundancy |
 |---|---|---|---|---|---|---|
-| **group taste + MMR (shipped)** | 0.183 | 0.400 | 0.600 | 0.300 | 8.25 | 0.394 |
-| group taste, no diversity | 0.183 | 0.417 | 0.667 | 0.293 | 5.45 | 0.525 |
-| average taste only (+MMR) | 0.150 | 0.350 | 0.500 | 0.258 | 8.13 | 0.398 |
-| nearest liked place only (+MMR) | 0.167 | 0.400 | 0.600 | 0.295 | 8.47 | 0.368 |
-| baseline: catalogue rank | 0.033 | 0.200 | 0.517 | 0.156 | 4.63 | 0.411 |
-| baseline: notability | 0.033 | 0.217 | 0.450 | 0.146 | 4.50 | 0.433 |
-| baseline: random | 0.033 | 0.150 | 0.300 | 0.106 | 8.20 | 0.233 |
-| sweep: MMR lambda 0.5 / 0.6 / 0.85 | | | 0.483 / 0.533 / 0.633 | 0.268 / 0.270 / 0.303 | 9.68 / 9.05 / 7.30 | 0.228 / 0.319 / 0.465 |
-| sweep: no category charge / charge 0.08 | | | 0.700 / 0.533 | 0.322 / 0.288 | 6.85 / 9.12 | 0.431 / 0.363 |
+| **shipped: lambda 0.7, category charge 0.04** | 0.127 | 0.168 | 0.100 | 8.99 | 0.222 | 0.559 |
+| lambda 0.5 / 0.6 / 0.85 / 0.95 | 0.091 / 0.097 / 0.156 / 0.168 | 0.100 / 0.135 / 0.214 / 0.238 | 0.085 / 0.091 / 0.116 / 0.121 | 9.81 / 9.41 / 8.29 / 7.78 | 0.145 / 0.184 / 0.277 / 0.313 | 0.499 / 0.536 / 0.584 / 0.596 |
+| category charge 0 / 0.01 / 0.02 / 0.08 | 0.292 / 0.220 / 0.170 / 0.094 | 0.488 / 0.315 / 0.231 / 0.113 | 0.185 / 0.143 / 0.121 / 0.086 | 4.18 / 6.71 / 7.91 / 9.73 | 0.672 / 0.420 / 0.312 / 0.153 | 0.601 / 0.578 / 0.568 / 0.553 |
+| lambda 0.85, charge 0 / 0.02 | 0.328 / 0.216 | 0.522 / 0.315 | 0.196 / 0.140 | 3.61 / 6.96 | 0.716 / 0.391 | 0.623 / 0.596 |
+| average-taste share 0.25 / 0.75 | 0.118 / 0.127 | 0.167 / 0.160 | 0.097 / 0.096 | 8.93 / 9.00 | 0.229 / 0.221 | 0.555 / 0.563 |
 
-Invariants: 0 of 1,200 suggestions already planned or voted (must be 0); 1,200 of 1,200 have a reason (cold start 100%); 620 of 620 "similar to" reasons name a liked place with the right voters and plan; no reason shows a number; the 8 sampled cases are repeatable. Cold start: all 2 cities use `catalogue_rank`, 100% of picks are inside the catalogue's top 30 and 80% of its top 10 are kept; with a liked tag 75% of the top 10 carry it (25% without).
+Checks, all on the real vectors: **0 of 19,200 suggestions** already planned, voted, commented on or the group's own (must be 0); **19,200 of 19,200** have a reason (cold start 100%); 19,193 of 19,193 "similar to" reasons name a liked place with the right voters and plan; no reason shows a number or credits a model; the 137 sampled cases are repeatable in any row order; every list is full when there are enough candidates. Cold start with no signal: all 20 cities use `catalogue_rank`, 99.5% of the picks are in the catalogue's top 30 and 83% of its top 10 are kept (diversity swaps some out); with one liked tag from elsewhere, 45.5% of the top 10 carry it, against 3.5% without.
 
-What to read from it: the taste signal beats the three baselines at every depth (hit@10 0.60 against 0.52 for the catalogue's own rank, 0.45 for notability and 0.30 for random; hit@1 0.18 against 0.03), averaging the liked places alone is weaker than keeping each one (0.50 against 0.60), and diversity is a trade: it costs about 7 points of hit@10 and buys 2.8 more categories in the top 10 and 0.13 less redundancy. The "no category charge" row shows how much of the hit rate is the protocol rewarding concentration; the defaults were chosen before this run and were not tuned on it.
+**What is real and what is not.** Real: the 8,000 places, their categories, ranks, tags, enrichment and BGE-M3 vectors, and the scoring code (the API's own function). **Synthetic: every group.** Nobody voted. A profile is "this group likes one or two categories in this city", six liked places are sampled from those categories, three simulated members vote them up at random and about a third are planned; then one liked place is hidden and the rest are the signals. Of the seeded trip's 163 planned ideas, 46 are adopted into a catalogue place with a vector in this bundle, but they are spread thinly over many stops (one to three planned per stop, no votes), so a leave-one-out on the seeded trip itself was not run.
 
-**Not yet measured, and why.** The real numbers (BGE-M3 vectors, the 8,000-place bundle) need `pipelines/out/` from the owner's laptop, which this change did not have; the fake vectors are character n-grams, so the figures above test the code and not the model. Run the real-bundle command above after the next `embed` and add the table here. The tuning constants (0.5 blend, 0.7 lambda, 0.04 category charge, the 0.45 "close" cutoff, which are BGE-M3 and search-scale choices) are untested on real vectors.
+**What the real numbers say.**
+
+- The taste signal beats the three baselines at every depth: hit@10 0.168 against 0.113 for the catalogue's own rank, 0.077 for random and 0.064 for notability, hit@1 0.072 against 0.010 to 0.016. Hit rates are low in absolute terms because a hidden place has to beat about 100 to 230 other places and ten slots, and most cities hold many places of the profile's categories that the simulation did not make liked.
+- **The shipped diversity settings look too strong on real vectors.** Without the category charge, hit@10 is 0.488 instead of 0.168 and the share of the top 10 in the profile's categories is 0.67 instead of 0.22; with the charge, a group that voted only for temples sees about two temples in ten suggestions. On BGE-M3 the similarity gaps between places of one city are small, so a charge of 0.04 per earlier pick in a category and the 0.3 weight on redundancy outweigh relevance quickly. The 0.04 was chosen before real vectors existed and it sits at the diverse end: 9.0 categories in ten, close to a random list's 7.6.
+- **This protocol cannot say what the right setting is.** The hidden place is always in the profile's categories, so the protocol rewards concentration by construction (no charge scores best), while the diversity columns reward the opposite. A group that likes temples may well want one museum among ten suggestions; hit rate on hidden temples cannot tell. The sweep shows the trade, not a clearly better setting: charge 0.01 gives hit@10 0.315 with 6.7 categories, charge 0.02 gives 0.231 with 7.9, lambda 0.85 with no charge gives 0.522 with 3.6. **The shipped constants were not changed.** Lowering the charge to somewhere between 0.01 and 0.02 is the change to consider, and it should be judged on how real groups react to the lists, which only live votes can show.
+- Averaging the liked places or taking only the nearest one scores the same as the blend (0.171 and 0.165 against 0.168); on real vectors the blend's share (0.5) makes no measurable difference. The blend stays because it handles a group that likes two kinds of place without a rule.
+- "Both kinds present" (a group liking two categories gets both in the top 10) is 1.000 with the shipped settings against 0.849 without diversity: the one place the diversity is clearly earning its cost.
+- The 0.45 cutoff for naming a liked place ("close") was not tested apart from the 100% truthfulness check (every named place is one the group really liked); whether 0.45 is the right threshold on BGE-M3 is unmeasured, and the check does not read the wording for how convincing it is.
+
+A plumbing run on the checked-in golden bundle with fake hashing vectors (`pnpm eval:recommend`, 80 places, 60 cases) is what the tests use: it checks the code, not the model, and gives shipped hit@10 0.600 against 0.517 for the catalogue's rank, 0.450 notability and 0.300 random. Do not read those figures as quality.
 
 ### Tests and what was not run
 

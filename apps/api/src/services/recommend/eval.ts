@@ -297,7 +297,7 @@ export interface EvalReport {
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 const round = (x: number, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
 
-export function runEval(allPlaces: EvalPlace[], partial: Partial<EvalOptions> = {}, extra: Method[] = []): EvalReport {
+export function runEval(allPlaces: EvalPlace[], partial: Partial<EvalOptions> = {}, extra: Method[] = [], progress?: (message: string) => void): EvalReport {
   const options = { ...DEFAULT_EVAL, ...partial };
   const random = mulberry32(options.seed);
   const byCity = new Map<string, EvalPlace[]>();
@@ -311,7 +311,10 @@ export function runEval(allPlaces: EvalPlace[], partial: Partial<EvalOptions> = 
   let profiles = 0;
   let cases = 0;
 
+  let done = 0;
+  const started = Date.now();
   for (const [city, places] of cityList) {
+    progress?.(`city ${++done} of ${cityList.length}: ${city} (${places.length} places), ${cases} cases so far, ${Math.round((Date.now() - started) / 1000)} s`);
     for (const profile of profilesFor(city, places, options, random)) {
       profiles++;
       for (const liked of profile.liked) {
