@@ -31,7 +31,6 @@ const row = (id: string, over: Partial<CityActivity> = {}): CityActivity => ({
   score: 3,
   bestTime: null,
   indoor: null,
-  hasVector: true,
   votes: [],
   planCount: 0,
   commentCount: 0,

@@ -24,7 +24,6 @@ export interface CityActivity {
   score: number | null;
   bestTime: string | null;
   indoor: boolean | null;
-  hasVector: boolean;
   /** Who voted and how (-1 or 1). */
   votes: { userId: string; value: number }[];
   planCount: number;
@@ -47,7 +46,6 @@ type ActivityRow = {
   score: unknown;
   bestTime: string | null;
   indoor: unknown;
-  hasVector: unknown;
   votes: { userId: string | null; value: unknown }[] | null;
   planCount: unknown;
   commentCount: unknown;
@@ -78,7 +76,6 @@ export function recommendRepository(db: GraphClient) {
         score: optNum(r.score),
         bestTime: r.bestTime ?? null,
         indoor: typeof r.indoor === "boolean" ? r.indoor : null,
-        hasVector: r.hasVector === true,
         votes: (r.votes ?? [])
           .filter((v) => v && v.userId != null && v.value != null)
           .map((v) => ({ userId: String(v.userId), value: Math.sign(num(v.value)) })),

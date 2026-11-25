@@ -15,5 +15,5 @@ OPTIONAL MATCH (a)-[:TAGGED]->(tg:Tag)
 WITH a, votes, planCount, commentCount, collect(tg.name) AS tags
 RETURN a.id AS id, a.title AS title, coalesce(a.catalogue, false) AS catalogue, coalesce(a.listed, true) AS listed,
        a.category AS category, a.rank AS rank, a.score AS score, a.bestTime AS bestTime, a.indoor AS indoor,
-       a.embedding IS NOT NULL AS hasVector, votes, planCount, commentCount, tags
+       votes, planCount, commentCount, tags
 ORDER BY id
