@@ -104,7 +104,10 @@ export interface SearchHit {
   activity: LibraryActivity;
   /** Ranking score, 0 to about 1. Only meaningful within one response. */
   score: number;
-  /** Cosine similarity to the question (-1 to 1); null when the vectors did not rank this place. */
+  /**
+   * Cosine similarity to the question (-1 to 1); null when the vectors did not rank this place. For ordering and tests only:
+   * an index may be approximate, so clients show `reason`, never this number.
+   */
   similarity: number | null;
   /** How well the words match the name, local name or address (0 to 1). */
   lexical: number;

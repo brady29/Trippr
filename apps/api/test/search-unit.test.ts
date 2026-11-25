@@ -112,7 +112,8 @@ describe("combining the signals", () => {
     expect(a.score).toBeGreaterThan(b.score);
     expect(a.match).toBe("name");
     expect(b.match).toBe("meaning");
-    expect(b.reason).toMatch(/Similar in meaning/);
+    expect(b.reason).toMatch(/Similar in meaning.*\((close|loosely related|very close)\)/);
+    expect(b.reason).not.toMatch(/\d%/);
   });
 
   it("says both when the name and the meaning agree, and counts only the words without vectors", () => {
@@ -531,7 +532,7 @@ describe("the assistant's tool", () => {
     query: "q", mode: "hybrid", notice: null, engine: "index", truncated: false,
     hits: [{
       activity: { id: "cat-1", title: "Garden", cityCode: "KYO", cityName: "Kyoto", category: "park", tags: ["nature"], votes: 2, plannedIn: [{ routeId: "route-main", routeName: "Main", stopId: "s" }], address: "1 Path", website: null, lat: 35.123456789, lon: 135.1 } as unknown as LibraryActivity,
-      score: 0.7, similarity: 0.8, lexical: 0.5, match: "both", reason: "The name matches and the meaning is close (80% similar)", distanceKm: 1.2,
+      score: 0.7, similarity: 0.8, lexical: 0.5, match: "both", reason: "The name matches and the meaning is close (very close)", distanceKm: 1.2,
     }],
     ...over,
   });

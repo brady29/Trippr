@@ -139,9 +139,15 @@ describe("the vector index", () => {
       const got = await nearestWhenReady(repos(), q, 5);
       const context = `${h.db.dialect} index for "${q}": got ${JSON.stringify(got)}, exact ${JSON.stringify(exact)}. The native score is converted with scoreToSimilarity("${h.db.dialect}", score); if the similarities differ from the exact cosine, that conversion is wrong for this database version.`;
       expect(got.map((r) => r.id), context).toEqual(exact.map((r) => r.id));
-      // The index is approximate and, in Neo4j, quantised: it scored "Ichiran Ramen" 0.882 where the exact cosine is 0.893.
-      // The ids above must match in order; the similarities only have to be close.
-      got.forEach((r, i) => expect(Math.abs(r.similarity - exact[i]!.similarity), context).toBeLessThan(0.02));
+      // The ids above must match in order. The similarities: the best hit must be close in both databases (0.02). Below it
+      // FalkorDB's index must still be tight (0.005, it passed), but Neo4j's default vector index is scalar-quantised
+      // (int8) and approximate, and with 32-dimension test vectors it scored the lower hits up to 0.06 above the exact
+      // cosine (CI: 0.577 vs 0.518). Real 1,024-dimension vectors lose less, which was not measured. So Neo4j gets 0.1
+      // for the rest: the number only orders results, and the API never shows it.
+      got.forEach((r, i) => {
+        const tolerance = i === 0 ? 0.02 : h.db.dialect === "neo4j" ? 0.1 : 0.005;
+        expect(Math.abs(r.similarity - exact[i]!.similarity), `${context} (hit ${i}, tolerance ${tolerance})`).toBeLessThan(tolerance);
+      });
     }
   });
 

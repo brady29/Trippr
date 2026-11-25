@@ -129,15 +129,17 @@ export function combine(
 }
 
 function reasonFor(match: SearchMatch, similarity: number | null, vectors: boolean): string {
-  const percent = similarity == null ? "" : ` (${Math.round(Math.max(0, similarity) * 100)}% similar)`;
+  // A coarse word, never a number: the two databases' indexes score a little differently (Neo4j's is quantised), so a
+  // percentage would look more exact than it is. Similarity only ever orders results.
+  const closeness = similarity == null ? "" : similarity >= 0.6 ? " (very close)" : similarity >= 0.45 ? " (close)" : " (loosely related)";
   if (!vectors) return match === "name" ? "The name matches your words" : "Your words appear in its details";
   switch (match) {
     case "both":
-      return `The name matches and the meaning is close${percent}`;
+      return `The name matches and the meaning is close${closeness}`;
     case "name":
       return "The name matches your words";
     case "meaning":
-      return `Similar in meaning to your search${percent}`;
+      return `Similar in meaning to your search${closeness}`;
     default:
       return "Your words appear in its details";
   }
