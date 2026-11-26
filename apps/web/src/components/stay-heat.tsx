@@ -21,7 +21,7 @@ export function useStayHeat(tripId: string, enabled: boolean, view: [[number, nu
 export function StayToggle({ checked, onChange }: { checked: boolean; onChange: (on: boolean) => void }) {
   return (
     <label className="inline-flex cursor-pointer items-center gap-1.5" data-testid="stay-toggle">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-[#0f151d]" />
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-accent" />
       <span aria-hidden className="inline-block h-2.5 w-6 rounded-sm border border-line" style={{ background: GRADIENT }} />
       <span>Stay prices</span>
     </label>

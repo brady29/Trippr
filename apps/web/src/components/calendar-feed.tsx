@@ -102,7 +102,7 @@ export function CalendarFeedPanel({ tripId, onClose }: { tripId: string; onClose
                 Include booking references
                 <span className="block text-xs text-ink-faint">Calendar providers store feed contents on their own servers.</span>
                 {enabled && wantPrivate !== status.data?.includePrivate ? (
-                  <span className="block text-xs text-amber">Applies to the next link you make.</span>
+                  <span className="block text-xs text-warn">Applies to the next link you make.</span>
                 ) : null}
               </span>
             </label>

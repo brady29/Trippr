@@ -11,6 +11,7 @@ import type { GraphIndex } from "@/lib/graph";
 import { NODE_LABEL, primaryTag, TAG_LABEL } from "@/lib/graph-palette";
 import { NodeGlyph } from "./glyphs";
 import { MapsLink } from "@/components/maps-link";
+import { routeHref } from "@/lib/routes";
 
 const MODE: Record<string, string> = { flight: "Flight", hsr: "High-speed train", train: "Train", maglev: "Maglev", boat: "Boat", road: "Road" };
 
@@ -179,12 +180,12 @@ export function DetailsPanel({
             />
           ) : null}
           {routeId && ["activity", "stop", "leg", "hotel"].includes(node.type) ? (
-            <Link href={`/routes/${routeId}`} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm font-medium hover:border-ink-faint">
+            <Link href={routeHref(tripId, routeId)} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm font-medium hover:border-ink-faint">
               Open in route editor
             </Link>
           ) : null}
           {node.type === "route" ? (
-            <Link href={`/routes/${node.id.replace(/^route:/, "")}`} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm font-medium hover:border-ink-faint">
+            <Link href={routeHref(tripId, node.id.replace(/^route:/, ""))} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm font-medium hover:border-ink-faint">
               Open route
             </Link>
           ) : null}

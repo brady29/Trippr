@@ -84,15 +84,30 @@ test("plan an activity from the city library", async ({ page }) => {
 });
 
 test("route editor fits a phone screen @phone", async ({ page }) => {
+  // Old links redirect into the trip.
   await page.goto("/routes/route-main");
+  await expect(page).toHaveURL(/\/trips\/asia-2027\/routes\/route-main/);
   await expect(page.getByTestId("stop-card").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("Booked tab lists the route's bookings and what is still to book", async ({ page }) => {
+test("the left menu folds to icons and slides out on a phone @phone", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "On a laptop the menu starts open");
   await page.goto("/trips/asia-2027");
-  await page.getByRole("link", { name: "Booked", exact: true }).click();
+  const menu = page.getByTestId("sidebar");
+  await expect(menu).toHaveAttribute("data-fold", "in");
+  await expect(menu.getByRole("link", { name: "Map", exact: true })).toBeVisible();
+  await page.getByTestId("fold-menu").click();
+  await expect(menu).toHaveAttribute("data-fold", "out");
+  await menu.getByRole("link", { name: "Itinerary", exact: true }).click();
+  await expect(page).toHaveURL(/\/trips\/asia-2027\/itinerary/);
+  await expect(menu).toHaveAttribute("data-fold", "in");
+});
+
+test("Bookings lists the route's bookings and what is still to book", async ({ page }) => {
+  await page.goto("/trips/asia-2027");
+  await page.getByRole("link", { name: "Bookings", exact: true }).click();
   await expect(page).toHaveURL(/\/trips\/asia-2027\/bookings/);
   await expect(page.getByLabel("Route")).toBeVisible();
   await expect(page.getByTestId("to-book")).toBeVisible();

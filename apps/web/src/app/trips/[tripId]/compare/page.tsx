@@ -5,20 +5,21 @@ import { shortDate } from "@trippr/rules";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { BoardHeader, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, RequireAuth } from "@/components/shell";
 import { cad } from "@/components/budget-panel";
-import { TripNav } from "@/components/trip-nav";
 import { ChecksBadge, ErrorNote, Panel, Select, Spinner } from "@/components/ui";
 import { useCompare, useTrip } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 function RouteHead({ route, side }: { route: RouteSummary; side: "A" | "B" }) {
+  const { tripId } = useParams<{ tripId: string }>();
   return (
     <div className="ticket p-4">
       <div className="flex items-center gap-2">
         <span className={`grid h-6 w-6 place-items-center rounded font-mono text-xs font-bold ${side === "A" ? "bg-board text-amber" : "bg-sky text-white"}`}>
           {side}
         </span>
-        <Link href={`/routes/${route.id}`} className="truncate text-lg font-semibold hover:underline">
+        <Link href={routeHref(tripId, route.id)} className="truncate text-lg font-semibold hover:underline">
           {route.name}
         </Link>
       </div>
@@ -196,12 +197,8 @@ function Compare({ tripId }: { tripId: string }) {
 
 export default function ComparePage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Suspense fallback={<Spinner />}>
           <Compare tripId={tripId} />

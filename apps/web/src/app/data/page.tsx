@@ -4,7 +4,7 @@ import type { CheckStatus, DataCheckView, DataLoadView, DataSourceView } from "@
 import Link from "next/link";
 import { EnrichmentStats } from "@/components/data-enrichment";
 import { DataStay } from "@/components/data-stay";
-import { BoardHeader, BoardStat, NavLink, TopBar } from "@/components/shell";
+import { BoardHeader, BoardStat } from "@/components/shell";
 import { ErrorNote, Panel, Spinner, Tag } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useDataSources } from "@/lib/queries";
@@ -191,12 +191,6 @@ export default function DataPage() {
   const load = data.data?.latestLoad ?? null;
   return (
     <>
-      <TopBar>
-        <NavLink href="/">Trips</NavLink>
-        <NavLink href="/data" active>
-          Data
-        </NavLink>
-      </TopBar>
       <BoardHeader
         eyebrow="Open data behind the activity catalogue"
         title="Data"

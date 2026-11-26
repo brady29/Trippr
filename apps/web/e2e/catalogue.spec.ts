@@ -75,13 +75,14 @@ test.describe("Data page", () => {
     await expect(page.getByTestId("pipeline")).not.toContainText("AI summaries (not built yet)");
   });
 
-  test("is linked from the home screen and the trip navigation", async ({ page, request }) => {
+  test("is linked from the account menu", async ({ page, request }) => {
     const login = await request.post(`${E2E_API_URL}/auth/dev-login`, { data: { name: "E2E Owner" } });
     const token = (await login.json()).token as string;
     await request.post(`${E2E_API_URL}/invites/${E2E_OWNER_INVITE}/accept`, { headers: { authorization: `Bearer ${token}` } });
     await page.addInitScript((t) => window.localStorage.setItem("trippr.token", t), token);
     await page.goto("/trips/asia-2027");
-    await page.getByRole("link", { name: "Data", exact: true }).click();
+    await page.getByTestId("account-menu").click();
+    await page.getByRole("menuitem", { name: "Data sources" }).click();
     await expect(page).toHaveURL(/\/data$/);
     await expect(page.getByTestId("source-card").first()).toBeVisible();
   });

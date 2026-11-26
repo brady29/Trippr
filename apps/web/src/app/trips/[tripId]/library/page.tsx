@@ -7,11 +7,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityItem, NewActivityForm } from "@/components/activity";
 import { CatalogueFooter, humanize } from "@/components/catalogue-footer";
 import { SemanticSearch } from "@/components/semantic-search";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
-import { TripNav } from "@/components/trip-nav";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
 import { BEST_TIME_LABEL, PRICE_LABEL, durationMaxLabel } from "@/lib/enrichment";
 import { useActivityFacets, useActivityPages, useLookupPlace, useTrip, useTripActivities } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 /**
  * "Find places": looks up every activity that has no pin yet, one at a time
@@ -286,7 +286,7 @@ function Library({ tripId }: { tripId: string }) {
                     <div className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-ink-soft">
                       {a.plannedIn.length ? "Planned in" : "Not planned in any route"}
                       {a.plannedIn.map((p) => (
-                        <Link key={`${p.routeId}-${p.stopId}`} href={`/routes/${p.routeId}`}>
+                        <Link key={`${p.routeId}-${p.stopId}`} href={routeHref(tripId, p.routeId)}>
                           <Tag tone="dark">{p.routeName}</Tag>
                         </Link>
                       ))}
@@ -320,12 +320,8 @@ function Library({ tripId }: { tripId: string }) {
 
 export default function LibraryPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Library tripId={tripId} />
       </RequireAuth>

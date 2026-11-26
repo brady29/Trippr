@@ -27,7 +27,7 @@ export function PriceDisclaimer({ text }: { text: string }) {
 
 function SampleBadge() {
   return (
-    <p className="rounded-md bg-amber-soft/50 px-2 py-1 text-[11px] font-medium text-ink" data-testid="flight-price-sample">
+    <p className="rounded-md bg-mark/20 px-2 py-1 text-[11px] font-medium text-ink" data-testid="flight-price-sample">
       {SAMPLE_DATA_NOTE}
     </p>
   );
