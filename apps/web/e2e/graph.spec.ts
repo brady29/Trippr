@@ -52,6 +52,7 @@ test("filtering by a tag changes the count", async ({ page, request }) => {
   test.skip(activities.length === 0 || culture.length === activities.length, "needs a mix of activity tags");
   await page.goto(`/trips/${TRIP}/graph?view=list&scope=route&route=${ROUTE}`);
   await expect(page.getByTestId("graph-list-row")).toHaveCount(graph.nodes.length);
+  await page.getByRole("button", { name: /^Filters and key/ }).click();
   await page.getByRole("group", { name: "Activity tags" }).getByRole("button", { name: /Culture/ }).click();
   await expect(page.getByTestId("graph-list-row")).toHaveCount(graph.nodes.length - activities.length + culture.length);
   await expect(page).toHaveURL(/tags=culture/);

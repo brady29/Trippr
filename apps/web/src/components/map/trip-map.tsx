@@ -35,9 +35,9 @@ export interface TripMapProps {
 }
 
 const CLUSTER_MAX_ZOOM = 9;
-const PAPER = "#FFFDF8";
-const INK = "#0F151D";
-const FOCUS = "#C4452A";
+const PAPER = "#FFFFFF";
+const INK = "#1B1C1F";
+const FOCUS = "#D52B1E";
 const ICON_SHAPES: MapShape[] = ["diamond", "square", "square-outline", "triangle", "plane"];
 const ICON_PX = 40;
 
@@ -135,7 +135,7 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
           source: "route",
           filter: ["==", ["get", "focus"], 1],
           layout: { "line-cap": "round" },
-          paint: { "line-color": "#FFC23D", "line-width": 9, "line-opacity": 0.6 },
+          paint: { "line-color": "#F2B705", "line-width": 9, "line-opacity": 0.6 },
         },
         "route-rail",
       );
@@ -169,7 +169,7 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
         source: "m-places",
         filter: ["==", ["get", "shape"], "area"],
         layout: { "text-field": ["get", "label"], "text-font": MAP_FONT, "text-size": 11, "text-optional": true, "text-max-width": 8 },
-        paint: { "text-color": "#1B222B", "text-halo-color": PAPER, "text-halo-width": 1.5 },
+        paint: { "text-color": "#15171A", "text-halo-color": PAPER, "text-halo-width": 1.5 },
       });
       m.addLayer({
         id: "m-places-icons",
@@ -188,7 +188,7 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
         filter: ["has", "point_count"],
         paint: {
           "circle-radius": ["step", ["get", "point_count"], 13, 10, 17, 40, 22],
-          "circle-color": "#1B222B",
+          "circle-color": "#1B1C1F",
           "circle-stroke-color": PAPER,
           "circle-stroke-width": 2,
         },
@@ -199,7 +199,7 @@ export default function TripMap({ items, segments, selected, fit, fly, onSelect,
         source: "m-acts",
         filter: ["has", "point_count"],
         layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": MAP_FONT, "text-size": 11, "text-allow-overlap": true },
-        paint: { "text-color": "#FFC23D" },
+        paint: { "text-color": "#FFFFFF" },
       });
       m.addLayer({
         id: "m-act-ideas",

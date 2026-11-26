@@ -249,18 +249,18 @@ export default function GlobeView({ graph, index, selected, step, camera, onSele
         filter: ["==", ["get", "kind"], "arc"],
         paint: { "line-color": ["get", "color"], "line-opacity": ["get", "opacity"], "line-width": 2.2, "line-dasharray": [2, 1.5] },
       });
-      map.addLayer({ id: "g-step", type: "line", source: "g-step", paint: { "line-color": "#FFC23D", "line-width": 6, "line-opacity": 0.55, "line-blur": 1 } });
+      map.addLayer({ id: "g-step", type: "line", source: "g-step", paint: { "line-color": "#F2C94C", "line-width": 6, "line-opacity": 0.55, "line-blur": 1 } });
       // Cities and hubs always show; everything else appears from zoom 4 (below that, count bubbles).
       const pointPaint = {
         "circle-radius": ["get", "radius"],
-        "circle-color": ["case", ["==", ["get", "hollow"], 1], "#0F151D", ["get", "color"]],
-        "circle-stroke-color": ["case", ["==", ["get", "fixed"], 1], FIXED_DATE.globe, ["==", ["get", "hollow"], 1], ["get", "color"], "#0F151D"],
+        "circle-color": ["case", ["==", ["get", "hollow"], 1], "#1B1C1F", ["get", "color"]],
+        "circle-stroke-color": ["case", ["==", ["get", "fixed"], 1], FIXED_DATE.globe, ["==", ["get", "hollow"], 1], ["get", "color"], "#1B1C1F"],
         "circle-stroke-width": ["case", ["==", ["get", "fixed"], 1], 3, ["==", ["get", "hollow"], 1], 2.5, 1.5],
       } as maplibregl.CircleLayerSpecification["paint"];
       map.addLayer({ id: "g-points-items", type: "circle", source: "g-points", minzoom: CLUSTER_BELOW, filter: ["==", ["get", "always"], 0], paint: pointPaint });
       map.addLayer({ id: "g-points", type: "circle", source: "g-points", filter: ["==", ["get", "always"], 1], paint: pointPaint });
       const labelLayout = { "text-field": ["get", "label"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top", "text-optional": true, "text-max-width": 10 } as maplibregl.SymbolLayerSpecification["layout"];
-      const labelPaint = { "text-color": "#F4EFE4", "text-halo-color": "#0F151D", "text-halo-width": 1.5 };
+      const labelPaint = { "text-color": "#F1F2F4", "text-halo-color": "#1B1C1F", "text-halo-width": 1.5 };
       map.addLayer({ id: "g-labels", type: "symbol", source: "g-points", filter: ["==", ["get", "type"], "city"], layout: labelLayout, paint: labelPaint });
       map.addLayer({ id: "g-labels-items", type: "symbol", source: "g-points", minzoom: 5, filter: ["!=", ["get", "type"], "city"], layout: labelLayout, paint: labelPaint });
       map.addLayer({
@@ -268,7 +268,7 @@ export default function GlobeView({ graph, index, selected, step, camera, onSele
         type: "circle",
         source: "g-bubbles",
         maxzoom: CLUSTER_BELOW,
-        paint: { "circle-radius": 9, "circle-color": ["get", "color"], "circle-stroke-color": "#0F151D", "circle-stroke-width": 1.5, "circle-opacity": 0.9 },
+        paint: { "circle-radius": 9, "circle-color": ["get", "color"], "circle-stroke-color": "#1B1C1F", "circle-stroke-width": 1.5, "circle-opacity": 0.9 },
       });
       map.addLayer({
         id: "g-bubble-count",
@@ -276,9 +276,9 @@ export default function GlobeView({ graph, index, selected, step, camera, onSele
         source: "g-bubbles",
         maxzoom: CLUSTER_BELOW,
         layout: { "text-field": ["get", "count"], "text-font": ["Noto Sans Regular"], "text-size": 10, "text-allow-overlap": true },
-        paint: { "text-color": "#0F151D" },
+        paint: { "text-color": "#1B1C1F" },
       });
-      map.addLayer({ id: "g-selected", type: "circle", source: "g-selected", paint: { "circle-radius": 13, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#FFC23D", "circle-stroke-width": 3 } });
+      map.addLayer({ id: "g-selected", type: "circle", source: "g-selected", paint: { "circle-radius": 13, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#F2C94C", "circle-stroke-width": 3 } });
 
       const pick = (e: maplibregl.MapLayerMouseEvent) => {
         const id = e.features?.[0]?.properties?.id;

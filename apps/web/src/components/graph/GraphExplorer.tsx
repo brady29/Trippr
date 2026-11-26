@@ -63,6 +63,7 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
   const graphQuery = useGraph(tripId, state.scope, state.route, state.city);
   const [extra, setExtra] = useState<GraphJSON | null>(null);
   const [webglNotice, setWebglNotice] = useState<string | null>(null);
+  // The canvas comes first; filters and the key open on request (floating over the canvas on wide screens).
   const [showFilters, setShowFilters] = useState(false);
   const [announce, setAnnounce] = useState("");
   const [fitSignal, setFitSignal] = useState(0);
@@ -179,7 +180,7 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
   );
 
   return (
-    <div className="flex min-h-[calc(100dvh-44px)] flex-col lg:h-[calc(100dvh-44px)]">
+    <div className="flex min-h-dvh flex-col lg:h-dvh">
       <a
         href="#graph-list"
         onClick={(e) => {
@@ -191,11 +192,14 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
       >
         Skip to list
       </a>
-      <div className="bg-board pb-3 pt-3 text-amber-soft">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-4">
-          <h1 className="min-w-0 text-xl sm:text-2xl">
-            <Flaps text={`Graph · ${scopeLabel}`} />
-          </h1>
+      <div className="bg-board py-3 text-amber-soft">
+        <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6">
+          <div className="min-w-0">
+            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-soft/60">{scopeLabel} · graph</div>
+            <h1 className="mt-1.5 text-xl sm:text-2xl">
+              <Flaps text="Graph" />
+            </h1>
+          </div>
           <div role="radiogroup" aria-label="View" className="flex rounded-lg border border-board-3 p-0.5" data-testid="graph-view-toggle">
             {viewButton("2d", "2D")}
             {viewButton("3d", "3D")}
@@ -266,8 +270,9 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
                 Fit
               </Button>
             ) : null}
-            <Button size="sm" className="h-10 lg:hidden" onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters}>
-              Filters{nFilters ? ` (${nFilters})` : ""}
+            <Button size="sm" variant="board" className="h-10" onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters}>
+              {showFilters ? "Hide filters" : "Filters and key"}
+              {nFilters ? ` (${nFilters})` : ""}
             </Button>
           </div>
         </div>
@@ -284,7 +289,16 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
         </div>
       ) : full && filtered && index ? (
         <>
-          <div className={`border-b border-line bg-card px-4 py-3 ${showFilters ? "block" : "hidden lg:block"}`}>
+        <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
+          {/* Filters: in the flow on phones and in the list view; a card floating over the canvas otherwise. */}
+          <div
+            className={`border-b border-line bg-card px-4 py-3 ${showFilters ? "block" : "hidden"} ${
+              view === "list"
+                ? ""
+                : "lg:absolute lg:left-3 lg:top-3 lg:z-10 lg:max-h-[calc(100%-1.5rem)] lg:w-[min(30rem,calc(100%-27rem))] lg:overflow-y-auto lg:rounded-xl lg:border lg:bg-card/95 lg:shadow-xl lg:backdrop-blur"
+            }`}
+            data-testid="graph-filters"
+          >
             <div className="mx-auto flex max-w-[1400px] flex-col gap-3">
               <Legend
                 counts={counts}
@@ -309,7 +323,6 @@ export function GraphExplorer({ tripId }: { tripId: string }) {
             ) : null}
           </div>
 
-          <div className="relative flex min-h-0 flex-1">
             <div className="relative h-[70dvh] min-w-0 flex-1 lg:h-auto lg:min-h-[360px]">
               {filtered.nodes.length === 0 ? (
                 <div className="grid h-full place-items-center p-6 text-center text-sm text-ink-soft">

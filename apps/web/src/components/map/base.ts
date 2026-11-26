@@ -47,7 +47,7 @@ export function addRouteLayers(m: maplibregl.Map, source = "route") {
     source,
     filter: ["==", ["get", "kind"], "rail"],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#2e7a59", "line-width": 3.5 },
+    paint: { "line-color": "#1f7a4d", "line-width": 3.5 },
   });
   m.addLayer({
     id: `${source}-flight`,
@@ -55,7 +55,7 @@ export function addRouteLayers(m: maplibregl.Map, source = "route") {
     source,
     filter: ["==", ["get", "kind"], "flight"],
     layout: { "line-cap": "butt" },
-    paint: { "line-color": "#3867c8", "line-width": 2.25, "line-dasharray": [3, 2] },
+    paint: { "line-color": "#2c5fb3", "line-width": 2.25, "line-dasharray": [3, 2] },
   });
   m.addLayer({
     id: `${source}-other`,
@@ -76,8 +76,8 @@ export function stopMarker(
 ): maplibregl.Marker {
   const el = document.createElement("button");
   el.type = "button";
-  el.className = `grid h-5 w-5 place-items-center rounded-full bg-[#0f151d] font-mono text-[10px] font-semibold text-[#ffc23d] shadow ring-2 ${
-    highlighted ? "ring-[#ffc23d]" : "ring-white"
+  el.className = `grid h-5 w-5 place-items-center rounded-full bg-[#1b1c1f] font-mono text-[10px] font-semibold text-white shadow ring-2 ${
+    highlighted ? "ring-[#d52b1e]" : "ring-white"
   }`;
   el.textContent = String(stop.n);
   el.title = stop.code ? `${stop.n}. ${stop.name} (${stop.code})` : `${stop.n}. ${stop.name}`;

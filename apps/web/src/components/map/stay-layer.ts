@@ -38,7 +38,7 @@ export function addStayLayers(m: maplibregl.Map) {
       type: "line",
       source: STAY_SOURCE,
       layout: { visibility: "none" },
-      paint: { "line-color": "#59626e", "line-width": 0.6, "line-opacity": 0.35 },
+      paint: { "line-color": "#5b616b", "line-width": 0.6, "line-opacity": 0.35 },
     },
     before,
   );

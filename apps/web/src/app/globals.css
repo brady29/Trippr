@@ -50,8 +50,8 @@
 
 /* Trip Graph Explorer node colours (paper / globe), mirrored in src/lib/graph-palette.ts. */
 :root {
-  --node-city: #1b222b;
-  --node-city-globe: #f4efe4;
+  --node-city: #15171a;
+  --node-city-globe: #f1f2f4;
   --node-route: #ffc23d;
   --node-route-globe: #ffc23d;
   --node-stop: #59626e;

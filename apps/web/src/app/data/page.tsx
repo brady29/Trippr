@@ -41,14 +41,15 @@ const STAGES = [
 
 function Pipeline() {
   return (
-    <ol className="flex flex-wrap items-stretch gap-2" aria-label="Pipeline stages" data-testid="pipeline">
+    <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8" aria-label="Pipeline stages" data-testid="pipeline">
       {STAGES.map((s, i) => (
-        <li key={s.name} className="flex items-center gap-2">
-          <div className={`rounded-lg border px-3 py-2 ${s.built ? "border-line bg-card" : "border-dashed border-line bg-paper text-ink-faint"}`}>
-            <div className="text-sm font-medium">{s.name}</div>
-            <div className="text-[11px] text-ink-soft">{s.built ? s.note : `${s.note} (not built yet)`}</div>
-          </div>
-          {i < STAGES.length - 1 ? <span aria-hidden className="text-ink-faint">→</span> : null}
+        <li
+          key={s.name}
+          className={`relative rounded-lg border px-3 py-2.5 ${s.built ? "border-line bg-paper" : "border-dashed border-line bg-card text-ink-faint"}`}
+        >
+          <div className="font-mono text-[10px] text-ink-faint">{String(i + 1).padStart(2, "0")}</div>
+          <div className="text-sm font-semibold">{s.name}</div>
+          <div className="text-[11px] leading-snug text-ink-soft">{s.built ? s.note : `${s.note} (not built yet)`}</div>
         </li>
       ))}
     </ol>
