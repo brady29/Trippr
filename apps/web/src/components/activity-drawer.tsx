@@ -90,7 +90,7 @@ export function ActivityDrawer({
                       toggle.mutate({ stopId: stop.id, activityId: a.id, planned: e.target.checked, title: a.title })
                     }
                     aria-label={`Plan ${a.title} for this stop`}
-                    className="mt-1 h-4 w-4 accent-[#2e7a59]"
+                    className="mt-1 h-4 w-4 accent-ok"
                   />
                 }
               />

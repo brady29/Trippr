@@ -22,6 +22,7 @@ import { api, API_URL, ApiError, authHeaders } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { XIcon } from "./icons";
 import { Button, ErrorNote, Spinner } from "./ui";
+import { routeHref } from "@/lib/routes";
 
 /**
  * The Ask panel: questions about the trip, answered by the trip assistant
@@ -131,7 +132,7 @@ function ToolLines({ tools }: { tools: string[] }) {
 function targetLink(tripId: string, target: AssistantProposalTarget): { href: string; label: string } {
   switch (target.kind) {
     case "route":
-      return { href: `/routes/${target.routeId}`, label: "Open the route" };
+      return { href: routeHref(tripId, target.routeId), label: "Open the route" };
     case "itinerary":
       return { href: `/trips/${tripId}/itinerary?route=${encodeURIComponent(target.routeId)}`, label: "See the itinerary" };
     case "map":
@@ -147,7 +148,7 @@ const STATUS_LABEL: Record<AssistantProposalStatus, string> = {
   failed: "Couldn't apply",
 };
 const STATUS_STYLE: Record<AssistantProposalStatus, string> = {
-  open: "bg-amber/20 text-ink",
+  open: "bg-mark/20 text-ink",
   applied: "bg-ok/15 text-ok",
   dismissed: "bg-paper-2 text-ink-faint",
   stale: "bg-stamp/10 text-stamp",
@@ -202,7 +203,7 @@ function ProposalCard({ proposal, tripId, onNavigate }: { proposal: AssistantPro
   const done = proposal.status !== "open";
   return (
     <li
-      className={`rounded-xl border px-3 py-2.5 ${done ? "border-line bg-paper" : "border-amber/60 bg-amber/5"}`}
+      className={`rounded-xl border px-3 py-2.5 ${done ? "border-line bg-paper" : "border-mark/60 bg-mark/5"}`}
       data-testid="assistant-proposal"
       data-status={proposal.status}
     >

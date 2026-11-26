@@ -74,7 +74,7 @@ export function JourneyPlayer({
         onChange={(e) => onIndex(Number(e.target.value))}
         aria-label="Journey position"
         aria-valuetext={`${step.stop.label}${step.arrive ? `, arriving ${dayDate(step.arrive)}` : ""}`}
-        className="h-11 min-w-0 flex-1 accent-[#ffc23d]"
+        className="h-11 min-w-0 flex-1 accent-accent"
         data-testid="journey-scrubber"
       />
       <span className="min-w-0 basis-full truncate font-mono text-xs sm:basis-auto" aria-live="polite">

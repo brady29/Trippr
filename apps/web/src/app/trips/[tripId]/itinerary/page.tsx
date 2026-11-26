@@ -8,11 +8,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { CalendarFeedPanel } from "@/components/calendar-feed";
 import { CalendarIcon, ModeIcon } from "@/components/icons";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { useToast } from "@/components/toast";
-import { TripNav } from "@/components/trip-nav";
 import { Button, ErrorNote, Select, Spinner } from "@/components/ui";
 import { usePlanDay, useRoute, useTrip } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 const KIND_LABEL: Record<DayKind, string> = { travel: "Travel day", full: "Full", light: "Light", free: "Free day" };
 const KIND_STYLE: Record<DayKind, string> = {
@@ -253,7 +253,7 @@ function Itinerary({ tripId }: { tripId: string }) {
             ))}
           </Select>
           {routeId ? (
-            <Link href={`/routes/${routeId}`} className="text-sm text-sky hover:underline">
+            <Link href={routeHref(tripId, routeId)} className="text-sm text-sky hover:underline">
               Edit this route
             </Link>
           ) : null}
@@ -278,12 +278,8 @@ function Itinerary({ tripId }: { tripId: string }) {
 
 export default function ItineraryPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Suspense fallback={<Spinner />}>
           <Itinerary tripId={tripId} />

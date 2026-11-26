@@ -7,14 +7,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { useToast } from "@/components/toast";
-import { TripNav } from "@/components/trip-nav";
 import { Button, ChecksBadge, ErrorNote, Input, Panel, Select, Spinner, Tag } from "@/components/ui";
 import { cad } from "@/components/budget-panel";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { keys, useTrip } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 function RouteCard({
   route,
@@ -104,7 +104,7 @@ function RouteCard({
               </form>
             ) : (
               <>
-                <Link href={`/routes/${route.id}`} className="text-lg font-semibold hover:underline">
+                <Link href={routeHref(trip.trip.id, route.id)} className="text-lg font-semibold hover:underline">
                   {route.name}
                 </Link>
                 <div className="mt-1 flex flex-wrap gap-1.5">
@@ -120,7 +120,7 @@ function RouteCard({
         <p className="line-clamp-2 text-sm text-ink-soft">{route.cities.join(" → ") || "No stops yet"}</p>
         {route.derivedFrom ? <p className="text-xs text-ink-faint">Duplicated from {route.derivedFrom.name}</p> : null}
         <div className="flex flex-wrap gap-2">
-          <Link href={`/routes/${route.id}`}>
+          <Link href={routeHref(trip.trip.id, route.id)}>
             <Button size="sm" variant="primary">
               Open
             </Button>
@@ -356,7 +356,7 @@ function TripHome({ tripId }: { tripId: string }) {
     mutationFn: () => api<RouteView>(`/trips/${tripId}/routes`, { method: "POST", body: { name: "New route" } }),
     onSuccess: (view) => {
       qc.setQueryData(keys.route(view.route.id), view);
-      router.push(`/routes/${view.route.id}`);
+      router.push(routeHref(tripId, view.route.id));
     },
   });
 
@@ -427,12 +427,8 @@ function TripHome({ tripId }: { tripId: string }) {
 
 export default function TripPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <TripHome tripId={tripId} />
       </RequireAuth>

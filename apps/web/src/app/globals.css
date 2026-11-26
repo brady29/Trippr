@@ -1,25 +1,40 @@
 @import "tailwindcss";
 
+/*
+ * Swiss Rail: a graphite departure board with white split-flap lettering,
+ * signal red for actions, cool grey paper. Night mode redefines the same
+ * tokens below, so components never name a colour directly.
+ *
+ * board / board-2 / board-3   the dark departure board and its raised tiles
+ * amber                       lettering on the board (white flaps); kept as the name the components use
+ * amber-soft                  quieter text on the board
+ * accent                      signal red: primary actions, the current item
+ * mark                        signal yellow highlight for notices and chips on paper
+ */
 @theme {
-  --color-paper: #f4efe4;
-  --color-paper-2: #e9e1d0;
-  --color-card: #fffdf8;
-  --color-ink: #1b222b;
-  --color-ink-soft: #59626e;
-  --color-ink-faint: #8c939c;
-  --color-line: #d9d0bd;
-  --color-board: #0f151d;
-  --color-board-2: #19222e;
-  --color-board-3: #243042;
-  --color-amber: #ffc23d;
-  --color-amber-soft: #f5d58a;
-  --color-stamp: #c4452a;
-  --color-rail: #2e7a59;
-  --color-sky: #3867c8;
-  --color-ok: #2e7a59;
-  --color-info: #3867c8;
-  --color-warn: #b97c0c;
-  --color-err: #c4452a;
+  --color-paper: #f1f2f4;
+  --color-paper-2: #e6e8eb;
+  --color-card: #ffffff;
+  --color-ink: #15171a;
+  --color-ink-soft: #5b616b;
+  --color-ink-faint: #8d929a;
+  --color-line: #dadde2;
+  --color-board: #1b1c1f;
+  --color-board-2: #26282c;
+  --color-board-3: #34373c;
+  --color-amber: #ffffff;
+  --color-amber-soft: #c9ccd2;
+  --color-accent: #d52b1e;
+  --color-accent-hover: #b8231a;
+  --color-on-accent: #ffffff;
+  --color-mark: #f2b705;
+  --color-stamp: #d52b1e;
+  --color-rail: #1f7a4d;
+  --color-sky: #2c5fb3;
+  --color-ok: #1f7a4d;
+  --color-info: #2c5fb3;
+  --color-warn: #b46f00;
+  --color-err: #a3133a;
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
@@ -59,6 +74,62 @@
   --tag-other: #8c939c;
 }
 
+/* Night mode: the system setting, unless the person chose Day or Night in the menu. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: #0f1012;
+    --color-paper-2: #1c1d21;
+    --color-card: #18191c;
+    --color-ink: #ebedf0;
+    --color-ink-soft: #9ba1aa;
+    --color-ink-faint: #6d727a;
+    --color-line: #2a2c31;
+    --color-board: #050506;
+    --color-board-2: #141518;
+    --color-board-3: #222428;
+    --color-amber: #f5f5f5;
+    --color-amber-soft: #a9adb4;
+    --color-accent: #e0352a;
+    --color-accent-hover: #f0493e;
+    --color-on-accent: #ffffff;
+    --color-mark: #f2c94c;
+    --color-stamp: #ff5a4d;
+    --color-rail: #4cc38a;
+    --color-sky: #7aa2f7;
+    --color-ok: #4cc38a;
+    --color-info: #7aa2f7;
+    --color-warn: #f0b34a;
+    --color-err: #ff6b8a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-paper: #0f1012;
+  --color-paper-2: #1c1d21;
+  --color-card: #18191c;
+  --color-ink: #ebedf0;
+  --color-ink-soft: #9ba1aa;
+  --color-ink-faint: #6d727a;
+  --color-line: #2a2c31;
+  --color-board: #050506;
+  --color-board-2: #141518;
+  --color-board-3: #222428;
+  --color-amber: #f5f5f5;
+  --color-amber-soft: #a9adb4;
+  --color-accent: #e0352a;
+  --color-accent-hover: #f0493e;
+  --color-on-accent: #ffffff;
+  --color-mark: #f2c94c;
+  --color-stamp: #ff5a4d;
+  --color-rail: #4cc38a;
+  --color-sky: #7aa2f7;
+  --color-ok: #4cc38a;
+  --color-info: #7aa2f7;
+  --color-warn: #f0b34a;
+  --color-err: #ff6b8a;
+  color-scheme: dark;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -78,7 +149,7 @@ body {
   padding: 0.08em 0.12em;
   margin-right: 0.08em;
   border-radius: 3px;
-  background: linear-gradient(to bottom, var(--color-board-3) 0 49%, #0b1017 49% 51%, var(--color-board-2) 51% 100%);
+  background: linear-gradient(to bottom, var(--color-board-3) 0 49%, var(--color-board) 49% 51%, var(--color-board-2) 51% 100%);
   color: var(--color-amber);
   font-family: var(--font-mono);
   font-weight: 600;
@@ -93,7 +164,7 @@ body {
   background: var(--color-card);
   border: 1px solid var(--color-line);
   border-radius: 14px;
-  box-shadow: 0 1px 0 rgb(27 34 43 / 0.04), 0 6px 18px -12px rgb(27 34 43 / 0.35);
+  box-shadow: 0 1px 0 rgb(21 23 26 / 0.04), 0 6px 18px -12px rgb(21 23 26 / 0.3);
 }
 
 .ticket-perf {

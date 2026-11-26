@@ -6,9 +6,8 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { MapsLink } from "@/components/maps-link";
 import { PlaceLinks } from "@/components/place-links";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { useToast } from "@/components/toast";
-import { TripNav } from "@/components/trip-nav";
 import { Button, ErrorNote, Panel, Select, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -414,12 +413,8 @@ function Inbox({ tripId }: { tripId: string }) {
 
 export default function InboxPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Inbox tripId={tripId} />
       </RequireAuth>

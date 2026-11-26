@@ -7,6 +7,8 @@ const config: NextConfig = {
   poweredByHeader: false,
   // Lets the e2e server build alongside a running dev server.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // The left menu's account button sits in the bottom-left corner.
+  devIndicators: { position: "bottom-right" },
 };
 
 export default config;

@@ -11,8 +11,7 @@ import type { Bounds } from "@/components/map/trip-map";
 import { PlaceEditor } from "@/components/place-editor";
 import { PlaceLinks } from "@/components/place-links";
 import { StayCellCard, StayLegend, StayToggle, useStayHeat } from "@/components/stay-heat";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
-import { TripNav } from "@/components/trip-nav";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
 import { useGraph } from "@/lib/graph";
 import { ACTIVITY_TAGS, NODE_FILL, TAG_COLOR, TAG_LABEL, type ActivityTag } from "@/lib/graph-palette";
@@ -35,6 +34,7 @@ import {
 } from "@/lib/map-features";
 import { useRoute, useTrip } from "@/lib/queries";
 import type { StayFeatureProps } from "@/lib/stay-cells";
+import { routeHref } from "@/lib/routes";
 
 const TripMap = dynamic(() => import("@/components/map/trip-map"), {
   ssr: false,
@@ -91,6 +91,7 @@ function DetailCard({
   canEdit: boolean;
   onClose(): void;
 }) {
+  const { tripId } = useParams<{ tripId: string }>();
   const [moving, setMoving] = useState(false);
   const activity = node?.type === "activity" ? activityFromNode(node, item.cityName) : null;
   const facts: string[] = [];
@@ -156,7 +157,7 @@ function DetailCard({
         </a>
       ) : null}
       {stop ? (
-        <Link href={`/routes/${routeId}`} className="mt-2 inline-block text-sm text-sky hover:underline">
+        <Link href={routeHref(tripId, routeId)} className="mt-2 inline-block text-sm text-sky hover:underline">
           Open in the route editor
         </Link>
       ) : null}
@@ -319,7 +320,7 @@ function MapTab({ tripId }: { tripId: string }) {
           <legend className="sr-only">Layers</legend>
           {MAP_LAYERS.map((layer) => (
             <label key={layer} className="inline-flex cursor-pointer items-center gap-1.5">
-              <input type="checkbox" checked={layers.has(layer)} onChange={() => toggle(layer)} className="accent-[#0f151d]" />
+              <input type="checkbox" checked={layers.has(layer)} onChange={() => toggle(layer)} className="accent-accent" />
               {LAYER_GLYPH[layer].map((g) => (
                 <ShapeGlyph key={g.shape} shape={g.shape} color={g.color} n={1} className="h-3.5 w-3.5" />
               ))}
@@ -492,12 +493,8 @@ function MapTab({ tripId }: { tripId: string }) {
 
 export default function MapPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Suspense fallback={<Spinner />}>
           <MapTab tripId={tripId} />

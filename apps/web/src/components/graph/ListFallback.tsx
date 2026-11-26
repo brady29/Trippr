@@ -48,7 +48,7 @@ export const ListFallback = forwardRef<HTMLTableElement, {
               ...(index.in.get(n.id) ?? []).map((e) => e.source),
             ].filter((id) => visible.has(id));
             return (
-              <tr key={n.id} data-testid="graph-list-row" data-node-id={n.id} className={n.id === selected ? "bg-amber/15" : "odd:bg-card"}>
+              <tr key={n.id} data-testid="graph-list-row" data-node-id={n.id} className={n.id === selected ? "bg-mark/15" : "odd:bg-card"}>
                 <td className="whitespace-nowrap px-2 py-1.5 align-top">
                   <span className="inline-flex items-center gap-1.5">
                     <NodeGlyph node={n} />

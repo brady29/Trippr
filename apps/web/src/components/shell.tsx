@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { ClerkSignIn } from "@/lib/clerk";
-import { Button, Input, Spinner, Tag } from "./ui";
+import { Button, Input, Spinner } from "./ui";
 
 /** Split-flap text: one tile per character, for the departure-board look. */
 export function Flaps({ text, className = "" }: { text: string; className?: string }) {
@@ -19,72 +18,54 @@ export function Flaps({ text, className = "" }: { text: string; className?: stri
   );
 }
 
-export function TopBar({ children }: { children?: ReactNode }) {
-  const { me, status, signOut } = useAuth();
-  return (
-    <header className="bg-board text-amber-soft">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-        <Link href="/" className="flex items-center gap-2 font-mono text-sm font-semibold tracking-[0.2em] text-amber">
-          <span className="grid h-6 w-6 place-items-center rounded bg-amber text-board">T</span>
-          TRIPPR
-        </Link>
-        <nav className="ml-2 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-sm">{children}</nav>
-        {status === "signedIn" && me ? (
-          <div className="flex items-center gap-2">
-            {me.isDemo ? <Tag tone="board">demo, read-only</Tag> : null}
-            <span className="hidden max-w-[10rem] truncate text-xs text-amber-soft/80 sm:inline">{me.name}</span>
-            <button onClick={() => void signOut()} className="text-xs text-amber-soft/70 underline-offset-2 hover:underline">
-              Sign out
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </header>
-  );
-}
-
-export function NavLink({ href, children, active }: { href: string; children: ReactNode; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`whitespace-nowrap rounded-md px-2.5 py-1 ${active ? "bg-board-3 text-amber" : "text-amber-soft/80 hover:text-amber"}`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-/** Departure-board header used on the trip and route screens. */
+/**
+ * Departure-board header at the top of each screen. Compact: one row for the
+ * split-flap title and its actions, one for the stats.
+ */
 export function BoardHeader({
   eyebrow,
   title,
+  badges,
   meta,
   actions,
+  below,
 }: {
   eyebrow: string;
   title: string;
+  /** Small tags beside the title, e.g. "current". */
+  badges?: ReactNode;
   meta?: ReactNode;
   actions?: ReactNode;
+  /** A full-width strip under the header, e.g. the route timeline. */
+  below?: ReactNode;
 }) {
   return (
-    <div className="bg-board pb-5 pt-4 text-amber-soft">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="font-mono text-[11px] uppercase tracking-[0.25em] text-amber-soft/60">{eyebrow}</div>
-        <h1 className="mt-2 text-2xl sm:text-3xl">
-          <Flaps text={title} />
-        </h1>
-        {meta ? <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs">{meta}</div> : null}
-        {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
+    <div className="bg-board text-amber-soft">
+      <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-soft/60">{eyebrow}</div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl">
+                <Flaps text={title} />
+              </h1>
+              {badges}
+            </div>
+          </div>
+          {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        </div>
+        {meta ? <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 font-mono text-xs">{meta}</div> : null}
       </div>
+      {below}
     </div>
   );
 }
 
 export function BoardStat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div>
-      <div className="text-[10px] uppercase tracking-[0.2em] text-amber-soft/50">{label}</div>
-      <div className="text-sm text-amber">{value}</div>
+    <div className="flex items-baseline gap-1.5">
+      <span className="text-[10px] uppercase tracking-[0.18em] text-amber-soft/55">{label}</span>
+      <span className="text-amber">{value}</span>
     </div>
   );
 }

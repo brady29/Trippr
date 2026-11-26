@@ -5,7 +5,8 @@ import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type R
 import { AlertIcon, CheckIcon, InfoIcon } from "./icons";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  /** `board` is for buttons that sit on the dark departure board. */
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "board";
   size?: "sm" | "md";
 };
 
@@ -14,10 +15,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   const variants = {
-    primary: "bg-board text-amber hover:bg-board-2 border border-board",
+    primary: "bg-accent text-on-accent hover:bg-accent-hover border border-accent hover:border-accent-hover",
     secondary: "bg-card text-ink border border-line hover:border-ink-faint",
     ghost: "text-ink-soft hover:text-ink hover:bg-paper-2 border border-transparent",
     danger: "bg-card text-err border border-line hover:border-err",
+    board: "bg-board-2 text-amber-soft border border-board-3 hover:text-amber hover:border-amber-soft/40",
   };
   const sizes = { sm: "h-8 px-2.5 text-xs gap-1.5", md: "h-10 px-3.5 text-sm gap-2" };
   return (
@@ -63,7 +65,7 @@ export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: st
 export function Tag({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "amber" | "dark" | "board" }) {
   const tones = {
     plain: "bg-paper-2 text-ink-soft",
-    amber: "bg-amber/25 text-[#7a5300]",
+    amber: "bg-mark/25 text-ink",
     dark: "bg-board text-amber",
     /** For use on the dark departure board. */
     board: "border border-amber/40 text-amber",

@@ -4,7 +4,7 @@ import type { InvitePreview } from "@trippr/contracts";
 import { shortDate } from "@trippr/rules";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { BoardHeader, RequireAuth, TopBar } from "@/components/shell";
+import { BoardHeader, RequireAuth } from "@/components/shell";
 import { Button, ErrorNote, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 
@@ -29,7 +29,6 @@ export default function InvitePage() {
   const preview = useQuery({ queryKey: ["invite", token], queryFn: () => api<InvitePreview>(`/invites/${token}`) });
   return (
     <>
-      <TopBar />
       <BoardHeader eyebrow="You're invited" title={preview.data?.trip.name ?? "Invite"} />
       <main className="mx-auto max-w-xl space-y-4 px-4 py-6">
         {preview.isPending ? <Spinner /> : null}

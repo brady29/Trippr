@@ -9,14 +9,14 @@ import { Suspense } from "react";
 import { BookingLinks } from "@/components/booking-links";
 import { ModeIcon } from "@/components/icons";
 import { MapsLink } from "@/components/maps-link";
-import { BoardHeader, BoardStat, RequireAuth, TopBar } from "@/components/shell";
-import { TripNav } from "@/components/trip-nav";
+import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { ErrorNote, Panel, Select, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { cad, useTripFlightPrices } from "@/lib/flights";
 import { useAuth } from "@/lib/auth";
 import { formatLegTime } from "@/lib/explorer";
-import { useTrip } from "@/lib/queries";
+import {  } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 const MODE_LABEL: Record<string, string> = { flight: "Flight", hsr: "High-speed train", train: "Train", road: "Road", boat: "Boat", maglev: "Maglev" };
 const STATUS_STYLE: Record<string, string> = {
@@ -180,7 +180,7 @@ function Bookings({ tripId }: { tripId: string }) {
                   </option>
                 ))}
               </Select>
-              <Link href={`/routes/${b.route.id}`} className="text-sm font-medium text-sky hover:underline">
+              <Link href={routeHref(tripId, b.route.id)} className="text-sm font-medium text-sky hover:underline">
                 Open in route editor
               </Link>
             </div>
@@ -222,7 +222,7 @@ function Bookings({ tripId }: { tripId: string }) {
                 <ul className="space-y-2" data-testid="to-book">
                   {b.toBook.map((t) => (
                     <li key={t.stopId} className="flex flex-wrap items-center gap-2 text-sm">
-                      <Link href={`/routes/${b.route.id}#stop-${t.stopId}`} className="font-medium hover:underline">
+                      <Link href={routeHref(tripId, b.route.id, `stop-${t.stopId}`)} className="font-medium hover:underline">
                         {t.stopOrder + 1}. {t.cityName}
                       </Link>
                       <span className="font-mono text-xs text-ink-faint">{shortDate(t.arrive)}</span>
@@ -264,12 +264,8 @@ function Bookings({ tripId }: { tripId: string }) {
 
 export default function BookingsPage() {
   const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
     <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
       <RequireAuth>
         <Suspense fallback={<Spinner />}>
           <Bookings tripId={tripId} />

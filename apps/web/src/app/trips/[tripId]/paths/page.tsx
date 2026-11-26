@@ -1,12 +1,10 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ModeIcon } from "@/components/icons";
-import { BoardHeader, RequireAuth, TopBar } from "@/components/shell";
-import { TripNav } from "@/components/trip-nav";
+import { BoardHeader, RequireAuth } from "@/components/shell";
 import { Button, ErrorNote, Input, Label, Panel, Select, Spinner } from "@/components/ui";
-import { usePath, useTrip } from "@/lib/queries";
+import { usePath } from "@/lib/queries";
 
 const fmt = (minutes: number | null | undefined) =>
   minutes == null ? "?" : minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60 ? `${minutes % 60} min` : ""}`.trim() : `${minutes} min`;
@@ -99,16 +97,9 @@ function Paths() {
 }
 
 export default function PathsPage() {
-  const { tripId } = useParams<{ tripId: string }>();
-  const trip = useTrip(tripId);
   return (
-    <>
-      <TopBar>
-        <TripNav tripId={tripId} tripName={trip.data?.trip.name} />
-      </TopBar>
-      <RequireAuth>
-        <Paths />
-      </RequireAuth>
-    </>
+    <RequireAuth>
+      <Paths />
+    </RequireAuth>
   );
 }
