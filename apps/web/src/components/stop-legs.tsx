@@ -1,7 +1,7 @@
 "use client";
 
 import { LEG_MODES, LEG_STATUSES, type Hub, type HubKind, type Leg, type LegMode, type LegStatus, type StopView } from "@trippr/contracts";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ComponentProps, type ReactNode } from "react";
 import {
   defaultOffset,
   formatLegTime,
@@ -139,7 +139,9 @@ function DateTimeField({ label, value, onChange, cityCode }: { label: string; va
 
 function LegForm({
   initial,
-  stop,
+  formId,
+  defaultMode,
+  toCityCode,
   prevCityCode,
   canSeePrivate,
   pending,
@@ -147,7 +149,11 @@ function LegForm({
   onCancel,
 }: {
   initial?: Leg;
-  stop: StopView;
+  /** Unique per form on the page, for the field ids. */
+  formId: string;
+  defaultMode: LegMode;
+  /** Where the ticket goes: the stop's city, or home. Used to suggest hubs and time zones. */
+  toCityCode?: string;
   prevCityCode?: string;
   canSeePrivate: boolean;
   pending: boolean;
@@ -165,7 +171,7 @@ function LegForm({
   }) => void;
   onCancel: () => void;
 }) {
-  const [mode, setMode] = useState<LegMode>(initial?.mode ?? (stop.arriveMode as LegMode));
+  const [mode, setMode] = useState<LegMode>(initial?.mode ?? defaultMode);
   const [from, setFrom] = useState<Hub | null>(initial?.from ?? null);
   const [to, setTo] = useState<Hub | null>(initial?.to ?? null);
   const [operator, setOperator] = useState(initial?.operator ?? "");
@@ -200,8 +206,8 @@ function LegForm({
     >
       <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)_minmax(0,1fr)]">
         <div>
-          <Label htmlFor={`leg-mode-${stop.id}`}>Mode</Label>
-          <Select id={`leg-mode-${stop.id}`} value={mode} onChange={(e) => setMode(e.target.value as LegMode)} className="w-full">
+          <Label htmlFor={`leg-mode-${formId}`}>Mode</Label>
+          <Select id={`leg-mode-${formId}`} value={mode} onChange={(e) => setMode(e.target.value as LegMode)} className="w-full">
             {LEG_MODES.map((m) => (
               <option key={m} value={m}>
                 {MODE_LABEL[m]}
@@ -210,24 +216,24 @@ function LegForm({
           </Select>
         </div>
         <HubPicker label="From" value={from} onChange={setFrom} kind={kind} cityHint={prevCityCode} />
-        <HubPicker label="To" value={to} onChange={setTo} kind={kind} cityHint={stop.city.code} />
+        <HubPicker label="To" value={to} onChange={setTo} kind={kind} cityHint={toCityCode} />
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div>
-          <Label htmlFor={`leg-op-${stop.id}`}>Operator</Label>
-          <Input id={`leg-op-${stop.id}`} value={operator} onChange={(e) => setOperator(e.target.value)} placeholder="ANA, China Railway" />
+          <Label htmlFor={`leg-op-${formId}`}>Operator</Label>
+          <Input id={`leg-op-${formId}`} value={operator} onChange={(e) => setOperator(e.target.value)} placeholder="ANA, China Railway" />
         </div>
         <div>
-          <Label htmlFor={`leg-no-${stop.id}`}>Number</Label>
-          <Input id={`leg-no-${stop.id}`} value={number} onChange={(e) => setNumber(e.target.value)} placeholder="NH963, G2201" />
+          <Label htmlFor={`leg-no-${formId}`}>Number</Label>
+          <Input id={`leg-no-${formId}`} value={number} onChange={(e) => setNumber(e.target.value)} placeholder="NH963, G2201" />
         </div>
         <div>
-          <Label htmlFor={`leg-price-${stop.id}`}>Price per person</Label>
-          <Input id={`leg-price-${stop.id}`} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="CAD" />
+          <Label htmlFor={`leg-price-${formId}`}>Price per person</Label>
+          <Input id={`leg-price-${formId}`} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="CAD" />
         </div>
         <div>
-          <Label htmlFor={`leg-status-${stop.id}`}>Status</Label>
-          <Select id={`leg-status-${stop.id}`} value={status} onChange={(e) => setStatus(e.target.value as LegStatus)} className="w-full">
+          <Label htmlFor={`leg-status-${formId}`}>Status</Label>
+          <Select id={`leg-status-${formId}`} value={status} onChange={(e) => setStatus(e.target.value as LegStatus)} className="w-full">
             {LEG_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -238,13 +244,13 @@ function LegForm({
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <DateTimeField label="Departs (local time)" value={departAt} onChange={setDepartAt} cityCode={from?.cityCode ?? prevCityCode} />
-        <DateTimeField label="Arrives (local time)" value={arriveAt} onChange={setArriveAt} cityCode={to?.cityCode ?? stop.city.code} />
+        <DateTimeField label="Arrives (local time)" value={arriveAt} onChange={setArriveAt} cityCode={to?.cityCode ?? toCityCode} />
       </div>
       {canSeePrivate ? (
         <div>
-          <Label htmlFor={`leg-ref-${stop.id}`}>Booking reference (editors only)</Label>
+          <Label htmlFor={`leg-ref-${formId}`}>Booking reference (editors only)</Label>
           <Input
-            id={`leg-ref-${stop.id}`}
+            id={`leg-ref-${formId}`}
             value={bookingRef ?? priv.data?.bookingRef ?? ""}
             onChange={(e) => setBookingRef(e.target.value)}
             placeholder="Not shown to viewers"
@@ -264,49 +270,64 @@ function LegForm({
   );
 }
 
-/** "Getting here": the ticket segments into this stop, between real stations and airports. */
-export function StopLegs({
+/** A list of tickets with add, edit and remove: the legs into a stop, or the tickets home. */
+function LegList({
   routeId,
-  stop,
+  legs,
+  formId,
+  defaultMode,
+  toCityCode,
   prevCityCode,
   canEdit,
-  pricesOn = false,
+  pricesOn,
   lead,
+  emptyText,
+  testId,
+  openNew,
+  onAdd,
 }: {
   routeId: string;
-  stop: StopView;
+  legs: Leg[];
+  formId: string;
+  defaultMode: LegMode;
+  toCityCode?: string;
   prevCityCode?: string;
   canEdit: boolean;
-  /** Flight price tracking is on: flights between airports get a "Prices" button. */
-  pricesOn?: boolean;
-  /** Shown at the head of the list in place of the "Getting here" label (the stop card's travel-mode row). */
-  lead?: ReactNode;
+  pricesOn: boolean;
+  lead: ReactNode;
+  emptyText: string;
+  testId: string;
+  /** Changes when something outside asks for the new-leg form ("Did you book it?"). */
+  openNew?: number;
+  onAdd: (body: Parameters<ComponentProps<typeof LegForm>["onSave"]>[0], done: () => void) => void;
 }) {
   const write = useRouteWrite(routeId);
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [pricesFor, setPricesFor] = useState<string | null>(null);
-  const legs = stop.legs ?? [];
+  useEffect(() => {
+    if (openNew && canEdit) setEditing("new");
+  }, [openNew, canEdit]);
 
   return (
-    <div className="space-y-1.5" data-testid="stop-legs">
+    <div className="space-y-1.5" data-testid={testId}>
       <div className="flex items-center justify-between gap-3">
-        {lead ?? <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Getting here</span>}
+        {lead}
         {canEdit && editing === null ? (
           <button onClick={() => setEditing("new")} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-sky hover:underline">
             <PlusIcon className="h-3.5 w-3.5" /> Add leg
           </button>
         ) : null}
       </div>
-      {legs.length === 0 && editing === null && canEdit ? (
-        <p className="text-xs text-ink-faint">No tickets yet. Add the flight or train that gets you here.</p>
-      ) : null}
+      {legs.length === 0 && editing === null && canEdit ? <p className="text-xs text-ink-faint">{emptyText}</p> : null}
       <ol className="space-y-1">
         {legs.map((leg) =>
           editing === leg.id ? (
             <li key={leg.id}>
               <LegForm
                 initial={leg}
-                stop={stop}
+                formId={`${formId}-${leg.id}`}
+                defaultMode={defaultMode}
+                toCityCode={toCityCode}
                 prevCityCode={prevCityCode}
                 canSeePrivate={canEdit}
                 pending={write.isPending}
@@ -368,14 +389,96 @@ export function StopLegs({
       </ol>
       {editing === "new" ? (
         <LegForm
-          stop={stop}
+          formId={`${formId}-new`}
+          defaultMode={defaultMode}
+          toCityCode={toCityCode}
           prevCityCode={prevCityCode}
           canSeePrivate={canEdit}
           pending={write.isPending}
           onCancel={() => setEditing(null)}
-          onSave={(body) => write.mutate({ kind: "addLeg", stopId: stop.id, body }, { onSuccess: () => setEditing(null) })}
+          onSave={(body) => onAdd(body, () => setEditing(null))}
         />
       ) : null}
     </div>
+  );
+}
+
+const sectionLabel = (text: string) => <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">{text}</span>;
+
+/** "Getting here": the ticket segments into this stop, between real stations and airports. */
+export function StopLegs({
+  routeId,
+  stop,
+  prevCityCode,
+  canEdit,
+  pricesOn = false,
+  lead,
+  openNew,
+}: {
+  routeId: string;
+  stop: StopView;
+  prevCityCode?: string;
+  canEdit: boolean;
+  /** Flight price tracking is on: flights between airports get a "Prices" button. */
+  pricesOn?: boolean;
+  /** Shown at the head of the list in place of the "Getting here" label (the stop card's travel-mode row). */
+  lead?: ReactNode;
+  openNew?: number;
+}) {
+  const write = useRouteWrite(routeId);
+  return (
+    <LegList
+      routeId={routeId}
+      legs={stop.legs ?? []}
+      formId={stop.id}
+      defaultMode={stop.arriveMode as LegMode}
+      toCityCode={stop.city.code}
+      prevCityCode={prevCityCode}
+      canEdit={canEdit}
+      pricesOn={pricesOn}
+      lead={lead ?? sectionLabel("Getting here")}
+      emptyText="No tickets yet. Add the flight or train that gets you here."
+      testId="stop-legs"
+      openNew={openNew}
+      onAdd={(body, done) => write.mutate({ kind: "addLeg", stopId: stop.id, body }, { onSuccess: done })}
+    />
+  );
+}
+
+/** "Getting home": the tickets after the last stop. A booked one fixes the home date. */
+export function HomeLegs({
+  routeId,
+  legs,
+  lastCityCode,
+  homeCityCode,
+  canEdit,
+  pricesOn = false,
+  openNew,
+}: {
+  routeId: string;
+  legs: Leg[];
+  lastCityCode?: string;
+  homeCityCode?: string | null;
+  canEdit: boolean;
+  pricesOn?: boolean;
+  openNew?: number;
+}) {
+  const write = useRouteWrite(routeId);
+  return (
+    <LegList
+      routeId={routeId}
+      legs={legs}
+      formId="home"
+      defaultMode="flight"
+      toCityCode={homeCityCode ?? undefined}
+      prevCityCode={lastCityCode}
+      canEdit={canEdit}
+      pricesOn={pricesOn}
+      lead={sectionLabel("Getting home")}
+      emptyText="No ticket home yet. Once it's booked, the home date stays fixed when you change the plan."
+      testId="home-legs"
+      openNew={openNew}
+      onAdd={(body, done) => write.mutate({ kind: "addHomeLeg", body }, { onSuccess: done })}
+    />
   );
 }

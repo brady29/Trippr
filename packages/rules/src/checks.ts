@@ -1,7 +1,7 @@
-import { addDays, shortDate } from "./dates";
+import { addDays, daysBetween, shortDate } from "./dates";
 import { eventFits, isFixedDate, whenLabel } from "./events";
 import { computeSchedule } from "./schedule";
-import type { Check, CheckLevel, ChecksResult, EventCheck, RuleStop } from "./types";
+import type { Check, CheckLevel, ChecksResult, EventCheck, RuleLeg, RuleStop } from "./types";
 import { visaSummaries } from "./visa";
 
 const LEVEL_RANK: Record<CheckLevel, number> = { ok: 0, info: 1, warn: 2, error: 3 };
@@ -19,7 +19,13 @@ const plural = (n: number, word: string, many = `${word}s`) => `${n} ${n === 1 ?
  * days per entry, number of entries, the policy end date, and fixed-date
  * events against the dates of the stop that plans them.
  */
-export function runChecks<S extends RuleStop>(startDate: string, stops: readonly S[]): ChecksResult<S> {
+export function runChecks<S extends RuleStop>(
+  startDate: string,
+  stops: readonly S[],
+  home: readonly RuleLeg[] = [],
+  /** The latest the group can be home, from trip setup's date range. */
+  latestReturn?: string | null,
+): ChecksResult<S> {
   const schedule = computeSchedule(startDate, stops);
   const checks: Check[] = [
     {
@@ -128,6 +134,37 @@ export function runChecks<S extends RuleStop>(startDate: string, stops: readonly
         detail: `Booked ${shortDate(stay.arrive)} to ${shortDate(stay.depart)}; you are now in ${stop.cityName} ${shortDate(arrive)} to ${shortDate(depart)}.`,
         stopId: stop.id,
         hotelId: stay.hotelId,
+      });
+    }
+  }
+
+  if (latestReturn && schedule.returnDate > latestReturn) {
+    const over = daysBetween(latestReturn, schedule.returnDate);
+    checks.push({
+      id: "return-window",
+      kind: "return-window",
+      level: "error",
+      title: `Home ${shortDate(schedule.returnDate)}, ${plural(over, "day")} after your latest return`,
+      detail: `The trip has to end by ${shortDate(latestReturn)}.`,
+    });
+  }
+
+  // The ticket home leaves on the home date: the day you leave the last stop. An overnight flight with only
+  // an arrival time can land the day after.
+  const homeLeg = home.find((l) => l.departAt || l.arriveAt);
+  const last = schedule.stops.at(-1);
+  if (homeLeg && last) {
+    const dep = homeLeg.departAt?.slice(0, 10);
+    const arr = homeLeg.arriveAt?.slice(0, 10);
+    const ok = dep ? dep === schedule.returnDate : arr === schedule.returnDate || arr === addDays(schedule.returnDate, 1);
+    if (!ok) {
+      checks.push({
+        id: `home-day-${homeLeg.id}`,
+        kind: "home-day",
+        level: "warn",
+        title: `${homeLeg.label ?? "The ticket home"} ${dep ? `departs ${shortDate(dep)}` : `arrives ${shortDate(arr!)}`}`,
+        detail: `You leave ${last.stop.cityName} on ${shortDate(schedule.returnDate)}; the ticket home should leave that day.`,
+        legId: homeLeg.id,
       });
     }
   }

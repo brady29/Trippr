@@ -49,6 +49,38 @@ describe("health and errors", () => {
     expect(res.body.error.code).toBe("bad_request");
   });
 
+  it("drafts a first route around must-dos and checks the latest return", async () => {
+    const res = await owner.api.post<{ id: string; routeId: string; missed: { title: string }[] }>("/trips", {
+      name: "Festival run",
+      startDate: "2027-07-01",
+      latestReturn: "2027-07-12",
+      travellers: 3,
+      mustDos: [
+        { cityCode: "HKG", title: "Dragon boats", from: "2027-07-08", to: "2027-07-08" },
+        { cityCode: "TYO", title: "Fireworks", from: "2027-07-03", to: "2027-07-03" },
+        { cityCode: "TYO", title: "Too late", from: "2027-08-03", to: "2027-08-03" },
+      ],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.missed.map((m) => m.title)).toEqual(["Too late"]);
+    let route = (await owner.api.get<RouteView>(`/routes/${res.body.routeId}`)).body;
+    expect(route.stops.map((s) => [s.city.code, s.nights])).toEqual([
+      ["TYO", 6],
+      ["HKG", 5],
+    ]);
+    expect(route.stops[0]!.planned.map((p) => p.title)).toEqual(["Fireworks"]);
+    expect(route.trip).toMatchObject({ latestReturn: "2027-07-12", travellers: 3 });
+    expect(route.checks.returnDate).toBe("2027-07-12");
+    expect(route.checks.checks.some((c) => c.kind === "return-window")).toBe(false);
+
+    expect((await owner.api.patch(`/trips/${res.body.id}`, { latestReturn: "2027-07-10" })).status).toBe(200);
+    route = (await owner.api.get<RouteView>(`/routes/${res.body.routeId}`)).body;
+    expect(route.checks.checks.find((c) => c.kind === "return-window")).toMatchObject({ level: "error" });
+
+    expect((await owner.api.post("/trips", { name: "Bad", startDate: "2027-07-01", mustDos: [{ cityCode: "ZZZ", title: "x", from: "2027-07-02", to: "2027-07-02" }] })).status).toBe(400);
+    expect((await owner.api.post("/trips", { name: "Bad", startDate: "2027-07-10", latestReturn: "2027-07-01" })).status).toBe(400);
+  });
+
   // FalkorDB only: Neo4j has no per-graph keys, and dropAll() there would wipe the shared test database.
   it.skipIf(process.env.DB_DIALECT === "neo4j")("pings a brand-new, empty database (regression: read-only queries fail on a missing FalkorDB graph)", async () => {
     const config = loadConfig({

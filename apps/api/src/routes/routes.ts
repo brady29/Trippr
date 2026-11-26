@@ -4,6 +4,7 @@ import {
   patchStopBody,
   planBody,
   reorderBody,
+  setNightsBody,
   versionQuery,
   type Role,
   type RouteView,
@@ -103,12 +104,17 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
     const stopId = newId("st");
     const ids = stored.stops.map((s) => s.id);
     ids.splice(position, 0, stopId);
-    const version = await repos.routes.addStop(
+    const also = body.alsoNights ?? [];
+    const known = new Set(stored.stops.map((s) => s.id));
+    if (!also.every((n) => known.has(n.stopId))) throw badRequest("alsoNights must name stops already on this route");
+    let version = await repos.routes.addStop(
       id,
       body.version,
       { id: stopId, cityCode: body.cityCode, nights: body.nights, arriveMode: body.arriveMode, order: position },
       ids.map((sid, order) => ({ id: sid, order })),
     );
+    // The trade that keeps a booked date in place, right after the stop goes in.
+    if (version !== null && also.length) version = await repos.routes.setNights(id, version, also);
     reply.status(201);
     return afterWrite(id, version, role, { tripId, by: user.id });
   });
@@ -132,6 +138,22 @@ export function routeRoutes(app: FastifyInstance, ctx: AppContext) {
       body.stopIds.map((sid, order) => ({ id: sid, order })),
     );
     return afterWrite(id, version, role, { tripId, by: user.id });
+  });
+
+  /** Nights for several stops at once: { nights: [{ stopId, nights }], version }. */
+  app.put("/routes/:id/nights", async (req) => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    const { role, tripId } = await guards.route(user, id, "editor");
+    const body = ctx.parse(setNightsBody, req.body);
+    const stored = await loadOrThrow(id);
+    if (stored.route.version !== body.version) throw versionConflict(stored.route.version);
+    const current = new Set(stored.stops.map((s) => s.id));
+    const given = new Set(body.nights.map((n) => n.stopId));
+    if (given.size !== body.nights.length || ![...given].every((s) => current.has(s))) {
+      throw badRequest("Each stopId must be a stop in this route, listed once");
+    }
+    return afterWrite(id, await repos.routes.setNights(id, body.version, body.nights), role, { tripId, by: user.id });
   });
 
   /** Nights, travel mode, travel note, notes. */

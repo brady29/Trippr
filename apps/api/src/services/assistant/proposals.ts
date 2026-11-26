@@ -12,7 +12,18 @@ import {
   type LibraryActivity,
   type RouteView,
 } from "@trippr/contracts";
-import { addDays, buildItinerary, dayDate, safeWebUrl } from "@trippr/rules";
+import {
+  addDays,
+  bookingNames,
+  buildItinerary,
+  dayDate,
+  describeNights as describeNightsRule,
+  listNames,
+  planInsert,
+  planNights,
+  safeWebUrl,
+} from "@trippr/rules";
+import { ruleHomeOfView, ruleStopsOfView } from "../route-view";
 import { z } from "zod/v4";
 
 /**
@@ -27,6 +38,10 @@ export const PROPOSE_TOOL_NAME = "propose_changes";
 const id = z.string().min(1).max(80);
 const code = z.string().regex(/^[A-Za-z]{3}$/, "City codes are three letters, like CKG");
 const nights = z.number().int().min(0).max(120);
+const moveBookings = z
+  .boolean()
+  .optional()
+  .describe("Set true only when the member asked to change dates that a booked ticket or hotel depends on. Otherwise leave it out.");
 const localDateTime = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)$/, "Use a local date-time with offset, like 2027-05-19T08:05+08:00");
@@ -62,13 +77,16 @@ export const proposalSchema = z.discriminatedUnion("kind", [
       durationMin: z.number().int().min(15).max(720).optional(),
     })
     .describe("Plan an existing activity idea at a stop in its city, optionally on a day and time (also moves one already planned)"),
-  z.object({ kind: z.literal("set_nights"), stopId: id, nights }).describe("Change how many nights a stop has"),
+  z
+    .object({ kind: z.literal("set_nights"), stopId: id, nights, moveBookings })
+    .describe("Change how many nights a stop has. Booked tickets and hotels keep their dates: a change that would move them comes back with a trade that keeps them."),
   z
     .object({
       kind: z.literal("add_stop"),
       cityCode: code,
       afterStopId: id.optional().describe("Insert after this stop; omitted means at the end"),
       nights,
+      moveBookings,
     })
     .describe("Add a city to the route"),
   z
@@ -95,7 +113,7 @@ export const proposeSchema = z.object({
   proposals: z.array(proposalSchema).min(1).max(ASSISTANT_MAX_PROPOSALS),
 });
 
-export const PROPOSE_DESCRIPTION = `Suggest up to ${ASSISTANT_MAX_PROPOSALS} changes to the trip. This changes nothing: each suggestion becomes a card with Apply and Dismiss buttons for the member, and Apply makes the change as them. Kinds: add_activity (a new idea in a city's library), plan_activity (plan an existing idea at a stop, optionally on a day and time), set_nights, add_stop, and add_leg (a travel idea, never booked). Use ids from the snapshot or tool results. Invalid suggestions come back with the reason.`;
+export const PROPOSE_DESCRIPTION = `Suggest up to ${ASSISTANT_MAX_PROPOSALS} changes to the trip. This changes nothing: each suggestion becomes a card with Apply and Dismiss buttons for the member, and Apply makes the change as them. Kinds: add_activity (a new idea in a city's library), plan_activity (plan an existing idea at a stop, optionally on a day and time), set_nights, add_stop, and add_leg (a travel idea, never booked). Use ids from the snapshot or tool results. Invalid suggestions come back with the reason. Booked tickets and hotels fix their dates: a nights change or new stop that would move one comes back with a trade that keeps it, so suggest the trade unless the member asked to move the booking.`;
 
 export function proposeToolDefinition(): Anthropic.Beta.BetaTool {
   const { $schema: _ignored, ...schema } = z.toJSONSchema(proposeSchema) as Record<string, unknown>;
@@ -312,10 +330,27 @@ export function checkProposal(p: ProposalInput, facts: ProposalFacts): CheckedPr
       const stop = stopOf(p.stopId);
       if (!stop) return noStop(p.stopId);
       if (stop.nights === p.nights) return { reason: `${stop.city.name} already has ${plural(p.nights, "night")}.` };
+      // Booked tickets and hotels fix their dates: protect them unless the member asked to move them.
+      const rules = ruleStopsOfView(view);
+      const home = ruleHomeOfView(view);
+      const plan = planNights(view.trip.startDate, rules, stop.id, p.nights - stop.nights, home);
+      const moved = bookingNames(plan.shift.impact.breaks);
+      if (moved.length && !p.moveBookings) {
+        const trade = plan.trades[0];
+        const other = trade && view.stops.find((s) => s.id === trade.withStopId);
+        return {
+          reason:
+            `That would move ${listNames(moved)} off ${moved.length === 1 ? "its" : "their"} booked dates. ` +
+            (trade && other
+              ? `To keep every booking, suggest it together with set_nights for ${other.city.name} (${other.id}) to ${trade.changes.find((c) => c.stopId === other.id)!.nights} (${describeNightsRule(rules, trade.changes)}). `
+              : "No trade with another stop keeps every booking. ") +
+            "Only suggest moving the booking if the member asked for that, and then set moveBookings: true.",
+        };
+      }
       return {
         kind: p.kind,
         change: { kind: "set_nights", stopId: stop.id, nights: p.nights },
-        summary: describeNights(stop.city.name, stop.nights, p.nights),
+        summary: describeNights(stop.city.name, stop.nights, p.nights) + (moved.length ? ` (moves ${listNames(moved)} off ${moved.length === 1 ? "its" : "their"} booked dates)` : ""),
         ...routeBound,
       };
     }
@@ -325,10 +360,33 @@ export function checkProposal(p: ProposalInput, facts: ProposalFacts): CheckedPr
       if (!c) return { reason: `There is no city ${p.cityCode.toUpperCase()}.` };
       const after = p.afterStopId ? stopOf(p.afterStopId) : null;
       if (p.afterStopId && !after) return noStop(p.afterStopId);
+      const rules = ruleStopsOfView(view);
+      const position = after ? view.stops.indexOf(after) + 1 : view.stops.length;
+      const plan = planInsert(
+        view.trip.startDate,
+        rules,
+        // Anchors only need the dates; the country matters for visa checks, which this doesn't run.
+        { id: "new", nights: p.nights, cityName: c.name, countryIso: "", countryName: "", visaRule: null },
+        position,
+        ruleHomeOfView(view),
+      );
+      const moved = bookingNames(plan.impact.breaks);
+      if (moved.length && !p.moveBookings) {
+        const trade = plan.trades[0];
+        const other = trade && view.stops.find((s) => s.id === trade.withStopId);
+        return {
+          reason:
+            `Adding ${plural(p.nights, "night")} in ${c.name} there would move ${listNames(moved)} off ${moved.length === 1 ? "its" : "their"} booked dates. ` +
+            (trade && other
+              ? `To keep every booking, also suggest set_nights for ${other.city.name} (${other.id}) to ${other.nights - p.nights}. `
+              : "No single stop can give up the nights without moving a booking. ") +
+            "Only suggest moving the booking if the member asked for that, and then set moveBookings: true.",
+        };
+      }
       return {
         kind: p.kind,
         change: { kind: "add_stop", cityCode: c.code, afterStopId: after?.id ?? null, nights: p.nights },
-        summary: describeAddStop(c.name, p.nights, after ? after.city.name : null),
+        summary: describeAddStop(c.name, p.nights, after ? after.city.name : null) + (moved.length ? ` (moves ${listNames(moved)} off ${moved.length === 1 ? "its" : "their"} booked dates)` : ""),
         ...routeBound,
       };
     }

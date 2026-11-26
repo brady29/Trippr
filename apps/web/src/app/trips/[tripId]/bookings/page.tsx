@@ -1,7 +1,7 @@
 "use client";
 
 import type { BookingItem, BookingsResult, LegBooking, StayBooking } from "@trippr/contracts";
-import { dayDate, hotelLinks, shortDate, travelLinks, type LinkMode } from "@trippr/rules";
+import { dayDate, homeFlightLinks, hotelLinks, shortDate, travelLinks, type LinkMode } from "@trippr/rules";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -58,9 +58,7 @@ function LegCard({ item, travellers }: { item: LegBooking; travellers: number })
           {item.operator || item.number ? <span>{[item.operator, item.number].filter(Boolean).join(" ")}</span> : null}
           {item.departAt ? <span>Departs {formatLegTime(item.departAt)}</span> : null}
           {item.arriveAt ? <span>Arrives {formatLegTime(item.arriveAt)}</span> : null}
-          <span>
-            Into {item.cityName} (stop {item.stopOrder + 1})
-          </span>
+          <span>{item.stopId === "home" ? `Getting home${item.cityName !== "home" ? ` to ${item.cityName}` : ""}` : `Into ${item.cityName} (stop ${item.stopOrder + 1})`}</span>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
           <span className="font-mono">
@@ -247,8 +245,28 @@ function Bookings({ tripId }: { tripId: string }) {
 
             <section aria-labelledby="to-book-heading">
               <SectionHeading note={b.toBook.length ? "Search links are filled in with the dates and group size" : undefined}>
-                <span id="to-book-heading">Still to book · {b.toBook.length}</span>
+                <span id="to-book-heading">Still to book · {b.toBook.length + (b.homeToBook ? 1 : 0)}</span>
               </SectionHeading>
+              {b.homeToBook ? (
+                <div className="mb-3 rounded-2xl border border-line bg-card p-4" data-testid="home-to-book">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <span className="grid h-7 w-7 place-items-center rounded-md bg-board font-mono text-xs font-semibold text-amber">⌂</span>
+                    <Link href={`${routeHref(tripId, b.route.id)}#home-card`} className="font-semibold hover:underline">
+                      Getting home
+                    </Link>
+                    <span className="font-mono text-xs text-ink-soft">
+                      leave {b.homeToBook.fromCity.name} {shortDate(b.homeToBook.date)}
+                    </span>
+                    <span className="ml-auto rounded-full bg-warn/15 px-2 py-0.5 text-[11px] font-medium text-warn">Flight home</span>
+                  </div>
+                  <p className="mt-2 text-xs text-ink-soft">A booked flight home fixes the home date, so the route builder keeps the last stretch of the trip the right length.</p>
+                  {b.homeToBook.toCity ? (
+                    <BookingLinks className="mt-1.5" label="Search:" links={homeFlightLinks(b.homeToBook.fromCity, b.homeToBook.toCity, b.homeToBook.date, b.trip.travellers)} />
+                  ) : (
+                    <p className="mt-1 text-xs text-ink-faint">Set the trip&apos;s home city to get search links.</p>
+                  )}
+                </div>
+              ) : null}
               {b.toBook.length === 0 ? (
                 <p className="rounded-2xl border border-line bg-card px-4 py-5 text-sm text-ok">Every stop has its transport and hotel booked.</p>
               ) : (

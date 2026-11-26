@@ -19,6 +19,59 @@ const STATUS_STYLE: Record<StayStatus, string> = {
   booked: "bg-ok/15 text-ok",
 };
 
+/**
+ * The dates a hotel was booked for. They become fixed dates the route builder
+ * works around, so they're asked for rather than copied from the plan.
+ */
+function BookingDates({
+  hotelName,
+  arrive,
+  depart,
+  pending,
+  onSave,
+  onCancel,
+}: {
+  hotelName: string;
+  arrive: string;
+  depart: string;
+  pending: boolean;
+  onSave: (arrive: string, depart: string) => void;
+  onCancel: () => void;
+}) {
+  const [from, setFrom] = useState(arrive);
+  const [to, setTo] = useState(depart);
+  const valid = Boolean(from && to && from < to);
+  return (
+    <form
+      className="mt-2 grid gap-2 rounded-lg bg-paper p-2.5 text-xs"
+      data-testid="booking-dates"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (valid) onSave(from, to);
+      }}
+    >
+      <p className="text-ink-soft">Which dates is {hotelName} booked for? The route keeps them fixed when you change the plan.</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-0.5">
+          <span className="text-ink-faint">Check in</span>
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={`Check-in at ${hotelName}`} className="h-8 text-xs" />
+        </label>
+        <label className="grid gap-0.5">
+          <span className="text-ink-faint">Check out</span>
+          <Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} aria-label={`Check-out at ${hotelName}`} className="h-8 text-xs" />
+        </label>
+        <Button size="sm" type="submit" disabled={!valid || pending}>
+          Save booking
+        </Button>
+        <Button size="sm" variant="ghost" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+      {from && to && !valid ? <p className="text-err">Check-out has to be after check-in.</p> : null}
+    </form>
+  );
+}
+
 export const perPerson = (h: Pick<Hotel, "priceCadPerNight" | "priceBasis" | "sleeps">) =>
   h.priceCadPerNight == null ? null : h.priceBasis === "room" ? Math.round(h.priceCadPerNight / Math.max(h.sleeps, 1)) : h.priceCadPerNight;
 
@@ -163,6 +216,8 @@ export function HotelDrawer({
   }, [onClose]);
 
   const setStay = (h: Hotel, status: StayStatus) => write.mutate({ kind: "setStay", stopId: stop.id, hotelId: h.id, status });
+  const [booking, setBooking] = useState<string | null>(null);
+  const bookedDates = (hotelId: string) => stop.stays.find((s) => s.hotel.id === hotelId && s.status === "booked");
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={`Where to stay in ${stop.city.name}`}>
@@ -273,7 +328,7 @@ export function HotelDrawer({
                           <button
                             key={s}
                             disabled={write.isPending || stay?.status === s}
-                            onClick={() => setStay(h, s)}
+                            onClick={() => (s === "booked" ? setBooking(h.id) : setStay(h, s))}
                             className="rounded-md border border-line px-2 py-0.5 hover:border-ink-faint disabled:border-transparent disabled:bg-paper-2 disabled:text-ink"
                           >
                             {s === "shortlist" ? "Shortlist" : s === "chosen" ? "Choose" : "Mark booked"}
@@ -293,6 +348,28 @@ export function HotelDrawer({
                           Delete
                         </button>
                       </div>
+                    ) : null}
+                    {bookedDates(h.id)?.arrive && booking !== h.id ? (
+                      <p className="mt-1.5 text-xs text-ink-soft" data-testid="booked-dates">
+                        Booked <span className="font-mono text-ink">{dayDate(bookedDates(h.id)!.arrive!)} → {dayDate(bookedDates(h.id)!.depart!)}</span>
+                        {canEdit ? (
+                          <button onClick={() => setBooking(h.id)} className="ml-2 font-medium text-sky hover:underline">
+                            Change dates
+                          </button>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    {booking === h.id ? (
+                      <BookingDates
+                        hotelName={h.name}
+                        arrive={bookedDates(h.id)?.arrive ?? stop.arrive}
+                        depart={bookedDates(h.id)?.depart ?? stop.depart}
+                        pending={write.isPending}
+                        onCancel={() => setBooking(null)}
+                        onSave={(arrive, depart) =>
+                          write.mutate({ kind: "setStay", stopId: stop.id, hotelId: h.id, status: "booked", arrive, depart }, { onSuccess: () => setBooking(null) })
+                        }
+                      />
                     ) : null}
                   </li>
                 );

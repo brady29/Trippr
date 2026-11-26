@@ -2,6 +2,7 @@
 
 import { hasRole, type City, type InboxItem, type InboxResult, type InboxSuggestion, type StopView } from "@trippr/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { MapsLink } from "@/components/maps-link";
@@ -13,6 +14,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatLegTime } from "@/lib/explorer";
 import { keys, useRoute, useTrip } from "@/lib/queries";
+import { routeHref } from "@/lib/routes";
 
 const KIND_LABEL: Record<InboxItem["kind"], string> = { leg: "Ticket", stay: "Hotel", activity: "Idea", unknown: "Message" };
 const STATUS: Record<InboxItem["status"], { label: string; style: string }> = {
@@ -149,7 +151,7 @@ function Details({ s, canSeePrivate, cities }: { s: InboxSuggestion; canSeePriva
   );
 }
 
-function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tripId: string; stops: StopView[]; canSeePrivate: boolean }) {
+function ItemCard({ item, tripId, stops, canSeePrivate, routeId }: { item: InboxItem; tripId: string; stops: StopView[]; canSeePrivate: boolean; routeId?: string }) {
   const refresh = useInboxRefresh(tripId);
   const toast = useToast();
   const [stopId, setStopId] = useState(item.stopId ?? "");
@@ -185,6 +187,11 @@ function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tri
       {item.suggestion ? <Details s={item.suggestion} canSeePrivate={canSeePrivate} cities={cityMap} /> : null}
       <LookupState item={item} tripId={tripId} />
       {item.note ? <p className={`text-xs ${item.status === "failed" ? "text-err" : "text-ink-soft"}`}>{item.note}</p> : null}
+      {item.status === "applied" && item.kind === "stay" && item.stopId && routeId && item.note?.includes("The booking is") ? (
+        <Link href={routeHref(tripId, routeId, `stop-${item.stopId}`)} className="text-xs font-medium text-sky hover:underline" data-testid="fit-plan-link">
+          Fit the plan to this booking
+        </Link>
+      ) : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-faint">
         <span>{item.source === "email" ? `Emailed by ${item.fromName ?? item.from ?? "someone"}` : `Pasted by ${item.fromName ?? "someone"}`}</span>
         {item.subject ? <span className="truncate">“{item.subject}”</span> : null}
@@ -363,7 +370,7 @@ function Inbox({ tripId }: { tripId: string }) {
   const list = (stops: StopView[], group: InboxItem[]) => (
     <ol className="space-y-3">
       {group.map((i) => (
-        <ItemCard key={i.id} item={i} tripId={tripId} stops={stops} canSeePrivate={q.data?.canSeePrivate ?? false} />
+        <ItemCard key={i.id} item={i} tripId={tripId} stops={stops} canSeePrivate={q.data?.canSeePrivate ?? false} routeId={currentRouteId} />
       ))}
     </ol>
   );

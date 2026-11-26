@@ -73,15 +73,18 @@ export function useLegPrivate(legId: string, enabled: boolean) {
 
 type RouteWrite =
   | { kind: "addLeg"; stopId: string; body: Omit<CreateLegBody, "version"> }
+  | { kind: "addHomeLeg"; body: Omit<CreateLegBody, "version"> }
   | { kind: "patchLeg"; legId: string; body: Omit<PatchLegBody, "version"> }
   | { kind: "deleteLeg"; legId: string }
-  | { kind: "setStay"; stopId: string; hotelId: string; status: StayStatus; rooms?: number | null }
+  | { kind: "setStay"; stopId: string; hotelId: string; status: StayStatus; rooms?: number | null; arrive?: string; depart?: string }
   | { kind: "removeStay"; stopId: string; hotelId: string };
 
-function sendWrite(version: number, w: RouteWrite): Promise<RouteView> {
+function sendWrite(routeId: string, version: number, w: RouteWrite): Promise<RouteView> {
   switch (w.kind) {
     case "addLeg":
       return api(`/stops/${w.stopId}/legs`, { method: "POST", body: { ...w.body, version } });
+    case "addHomeLeg":
+      return api(`/routes/${routeId}/home-legs`, { method: "POST", body: { ...w.body, version } });
     case "patchLeg":
       return api(`/legs/${w.legId}`, { method: "PATCH", body: { ...w.body, version } });
     case "deleteLeg":
@@ -89,7 +92,12 @@ function sendWrite(version: number, w: RouteWrite): Promise<RouteView> {
     case "setStay":
       return api(`/stops/${w.stopId}/stays/${w.hotelId}`, {
         method: "PUT",
-        body: { status: w.status, ...(w.rooms != null ? { rooms: w.rooms } : {}), version },
+        body: {
+          status: w.status,
+          ...(w.rooms != null ? { rooms: w.rooms } : {}),
+          ...(w.arrive && w.depart ? { arrive: w.arrive, depart: w.depart } : {}),
+          version,
+        },
       });
     case "removeStay":
       return api(`/stops/${w.stopId}/stays/${w.hotelId}?version=${version}`, { method: "DELETE" });
@@ -108,7 +116,7 @@ export function useRouteWrite(routeId: string) {
     mutationFn: async (w: RouteWrite) => {
       const current = qc.getQueryData<RouteView>(keys.route(routeId));
       if (!current) throw new Error("Route not loaded");
-      return sendWrite(current.route.version, w);
+      return sendWrite(routeId, current.route.version, w);
     },
     onSuccess: (view, w) => {
       qc.setQueryData(keys.route(routeId), view);

@@ -3,13 +3,14 @@
 import type React from "react";
 
 import type { StopView } from "@trippr/contracts";
-import { ARRIVE_MODES, dayDate, isFixedDate, whenLabel, type ArriveMode } from "@trippr/rules";
+import { ARRIVE_MODES, dayDate, isFixedDate, whenLabel, type AnchorState, type ArriveMode, type Pace, type StopLock } from "@trippr/rules";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
+import { PinRow } from "./anchors";
 import { MapsLink } from "./maps-link";
 import { Flaps } from "./shell";
-import { DownIcon, GripIcon, MinusIcon, ModeIcon, PlusIcon, StarIcon, UpIcon, XIcon } from "./icons";
+import { DownIcon, GripIcon, LockIcon, MinusIcon, ModeIcon, PlusIcon, StarIcon, UpIcon, XIcon } from "./icons";
 
 export const MODE_LABEL: Record<ArriveMode, string> = {
   flight: "Flight",
@@ -131,6 +132,31 @@ function BlurMoney({
 
 const cadShort = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
+const PACE_STYLE: Record<Pace["level"], string> = {
+  empty: "text-ink-faint",
+  light: "bg-paper-2 text-ink-soft",
+  good: "bg-ok/10 text-ok",
+  full: "bg-mark/25 text-ink",
+  over: "bg-err/10 text-err",
+};
+const PACE_WORD: Record<Pace["level"], string> = { empty: "", light: "Room to spare", good: "Good pace", full: "Full", over: "Too much" };
+
+/** Plans against the half-days the stop has, counting a late arrival. */
+function PaceChip({ pace }: { pace: Pace }) {
+  const text = `${pace.used} half-day${pace.used === 1 ? "" : "s"} of plans for about ${pace.slots}${pace.lateArrival ? "; the arrival day is lost to travel" : ""}`;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${PACE_STYLE[pace.level]}`} title={text} data-testid="pace" data-level={pace.level}>
+      <span className="flex gap-0.5" aria-hidden>
+        {Array.from({ length: Math.min(Math.max(pace.slots, pace.used), 12) }, (_, i) => (
+          <i key={i} className={`h-2 w-1.5 rounded-[1px] ${i < pace.used ? (i < pace.slots ? "bg-current" : "bg-err") : "bg-current opacity-25"}`} />
+        ))}
+      </span>
+      {PACE_WORD[pace.level]}
+      <span className="sr-only">: {text}</span>
+    </span>
+  );
+}
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{children}</div>;
 }
@@ -148,6 +174,13 @@ export function StopCard({
   actions,
   getHere,
   stay,
+  lock = "free",
+  pins = [],
+  trade,
+  issues,
+  issueCount = 0,
+  pace,
+  compact = false,
 }: {
   stop: StopView;
   index: number;
@@ -159,7 +192,23 @@ export function StopCard({
   getHere?: (lead: React.ReactNode) => React.ReactNode;
   /** Where the group is staying. */
   stay?: React.ReactNode;
+  /** How free this stop's nights are, given the bookings around it. */
+  lock?: StopLock;
+  /** This stop's fixed dates: booked tickets into it, its booked hotel, held tickets. */
+  pins?: AnchorState[];
+  /** The trade panel, when a nights change needs a decision. */
+  trade?: React.ReactNode;
+  /** Checks that belong to this stop, with their fixes. */
+  issues?: React.ReactNode;
+  issueCount?: number;
+  /** How full the stop is, when anything is planned. */
+  pace?: Pace;
+  /** One line per stop until opened. */
+  compact?: boolean;
 }) {
+  const broken = pins.some((p) => p.strength === "booked" && !p.holds);
+  const [expanded, setExpanded] = useState(false);
+  const folded = compact && !expanded && !trade;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: stop.id,
     disabled: !canEdit,
@@ -211,30 +260,98 @@ export function StopCard({
     </div>
   );
 
+  const stepper = (
+    <div className="flex items-center rounded-full border border-line" role="group" aria-label={`Nights in ${stop.city.name}`}>
+      <button
+        className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+        onClick={() => actions.onNights(stop.nights - 1)}
+        disabled={!canEdit || stop.nights <= 0}
+        aria-label={`One fewer night in ${stop.city.name}`}
+      >
+        <MinusIcon />
+      </button>
+      <span className="inline-flex min-w-[4.75rem] items-center justify-center gap-1 whitespace-nowrap text-center font-mono text-sm font-semibold">
+        {lock === "booked" ? <LockIcon className="h-3 w-3 text-ok" /> : null}
+        <span data-testid="stop-nights">
+          {stop.nights} night{stop.nights === 1 ? "" : "s"}
+        </span>
+      </span>
+      <button
+        className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+        onClick={() => actions.onNights(stop.nights + 1)}
+        disabled={!canEdit}
+        aria-label={`One more night in ${stop.city.name}`}
+      >
+        <PlusIcon />
+      </button>
+    </div>
+  );
+
+  const grip = canEdit ? (
+    <button
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={`Drag to reorder ${stop.city.name}${lock === "booked" ? " (its hotel is booked for these dates)" : ""}`}
+      title={lock === "booked" ? "Its hotel is booked for these dates. Moving it means changing the booking." : undefined}
+      className="-ml-1 cursor-grab touch-none rounded p-1 text-ink-faint hover:bg-paper-2 hover:text-ink active:cursor-grabbing"
+    >
+      {lock === "booked" ? <LockIcon className="text-ok" /> : <GripIcon />}
+    </button>
+  ) : null;
+
+  const shared = {
+    ref: setNodeRef,
+    id: `stop-${stop.id}`,
+    "data-testid": "stop-card",
+    "data-city": stop.city.code,
+    "data-lock": lock,
+    style: { transform: CSS.Transform.toString(transform), transition },
+  };
+
+  if (folded) {
+    const bookedCount = stop.legs.filter((l) => l.status === "booked").length + stop.stays.filter((s) => s.status === "booked").length;
+    return (
+      <li {...shared} data-compact="true" className={`ticket flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 ${isDragging ? "z-10 opacity-90 shadow-2xl" : ""} ${broken ? "outline outline-1 outline-err" : ""}`}>
+        <div className="flex items-center gap-1">
+          {grip}
+          <span className="font-mono text-[11px] text-ink-faint">{String(index + 1).padStart(2, "0")}</span>
+        </div>
+        <span className="text-[13px]" aria-hidden>
+          <Flaps text={stop.city.code} />
+        </span>
+        <button onClick={() => setExpanded(true)} className="min-w-0 flex-1 text-left" aria-label={`Open ${stop.city.name}`}>
+          <span className="block truncate text-sm font-semibold">{stop.city.name}</span>
+          <span className="block font-mono text-xs text-ink-soft" data-testid="stop-dates">
+            {dayDate(stop.arrive)} → {dayDate(stop.depart)}
+          </span>
+        </button>
+        <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          {issueCount ? <span className="rounded-full bg-err/10 px-2 py-0.5 font-medium text-err">{issueCount} to fix</span> : null}
+          {broken ? <span className="rounded-full bg-err/10 px-2 py-0.5 font-medium text-err">Off booked dates</span> : null}
+          {bookedCount ? <span className="rounded-full bg-ok/10 px-2 py-0.5 font-medium text-ok">{bookedCount} booked</span> : null}
+          {pace && pace.level !== "empty" ? <PaceChip pace={pace} /> : null}
+        </span>
+        {stepper}
+      </li>
+    );
+  }
+
   return (
     <li
-      ref={setNodeRef}
-      id={`stop-${stop.id}`}
-      data-testid="stop-card"
-      data-city={stop.city.code}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`ticket grid scroll-mt-4 grid-cols-1 sm:grid-cols-[104px_minmax(0,1fr)] ${isDragging ? "z-10 opacity-90 shadow-2xl" : ""}`}
+      {...shared}
+      className={`ticket grid scroll-mt-4 grid-cols-1 sm:grid-cols-[104px_minmax(0,1fr)] ${isDragging ? "z-10 opacity-90 shadow-2xl" : ""} ${broken ? "outline outline-1 outline-err" : ""}`}
     >
       {/* Stub: number, city code in split-flap tiles, city and country. */}
       <div className="flex items-center gap-3 border-b-2 border-dashed border-line px-3 py-2.5 sm:flex-col sm:items-start sm:gap-2 sm:border-b-0 sm:border-r-2 sm:px-3 sm:py-3.5">
         <div className="flex items-center gap-1">
-          {canEdit ? (
-            <button
-              ref={setActivatorNodeRef}
-              {...attributes}
-              {...listeners}
-              aria-label={`Drag to reorder ${stop.city.name}`}
-              className="-ml-1 cursor-grab touch-none rounded p-1 text-ink-faint hover:bg-paper-2 hover:text-ink active:cursor-grabbing"
-            >
-              <GripIcon />
+          {grip}
+          <span className="font-mono text-[11px] text-ink-faint">{String(index + 1).padStart(2, "0")}</span>
+          {compact ? (
+            <button onClick={() => setExpanded(false)} className="ml-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-sky hover:bg-sky/10" aria-label={`Fold ${stop.city.name}`}>
+              Fold
             </button>
           ) : null}
-          <span className="font-mono text-[11px] text-ink-faint">{String(index + 1).padStart(2, "0")}</span>
         </div>
         <div className="text-[15px]" aria-hidden>
           <Flaps text={stop.city.code} />
@@ -283,28 +400,12 @@ export function StopCard({
           <div className="font-mono text-sm font-medium" data-testid="stop-dates">
             {dayDate(stop.arrive)} <span className="text-ink-faint">→</span> {dayDate(stop.depart)}
           </div>
-          <div className="flex items-center rounded-full border border-line" role="group" aria-label={`Nights in ${stop.city.name}`}>
-            <button
-              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
-              onClick={() => actions.onNights(stop.nights - 1)}
-              disabled={!canEdit || stop.nights <= 0}
-              aria-label={`One fewer night in ${stop.city.name}`}
-            >
-              <MinusIcon />
-            </button>
-            <span className="min-w-[4.75rem] whitespace-nowrap text-center font-mono text-sm font-semibold" data-testid="stop-nights">
-              {stop.nights} night{stop.nights === 1 ? "" : "s"}
-            </span>
-            <button
-              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
-              onClick={() => actions.onNights(stop.nights + 1)}
-              disabled={!canEdit}
-              aria-label={`One more night in ${stop.city.name}`}
-            >
-              <PlusIcon />
-            </button>
-          </div>
+          {stepper}
         </div>
+
+        <PinRow pins={pins} lock={lock} />
+        {trade}
+        {issues}
 
         <section className="space-y-1.5" aria-label={`Getting to ${stop.city.name}`}>
           <SectionLabel>Getting here</SectionLabel>
@@ -312,7 +413,10 @@ export function StopCard({
         </section>
 
         <section className="space-y-1.5" aria-label={`Plans in ${stop.city.name}`}>
-          <SectionLabel>Plans</SectionLabel>
+          <div className="flex flex-wrap items-center gap-2">
+            <SectionLabel>Plans</SectionLabel>
+            {pace && pace.level !== "empty" ? <PaceChip pace={pace} /> : null}
+          </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {stop.planned.map((a) =>
               isFixedDate(a.when) ? (

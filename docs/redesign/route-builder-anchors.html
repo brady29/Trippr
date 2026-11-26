@@ -1,0 +1,827 @@
+<title>Trippr Anchored Route Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Trippr's own Swiss Rail system. A departure-board band on top, then a single reading column
+   that widens for the journey line and the live demo. Bookings are green stamps, fixed dates are pins. */
+:root {
+  --paper: #f1f2f4; --paper-2: #e6e8eb; --card: #ffffff; --ink: #15171a; --ink-soft: #5b616b; --ink-faint: #8d929a; --line: #dadde2;
+  --board: #1b1c1f; --board-2: #26282c; --board-3: #34373c; --board-ink: #ffffff; --board-soft: #c9ccd2;
+  --accent: #d52b1e; --accent-hover: #b8231a; --on-accent: #ffffff; --mark: #f2b705;
+  --ok: #1f7a4d; --sky: #2c5fb3; --warn: #b46f00; --err: #a3133a;
+  --ok-tint: #e2f0e8; --err-tint: #f7e2e8; --mark-tint: #fbf1cf; --sky-tint: #e3eaf6;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1012; --paper-2: #1c1e21; --card: #18191c; --ink: #eceef1; --ink-soft: #a5aab2; --ink-faint: #737880; --line: #2c2f34;
+    --board: #050506; --board-2: #141518; --board-3: #26282c; --board-ink: #ffffff; --board-soft: #c9ccd2;
+    --accent: #e0352a; --accent-hover: #f04a3f; --on-accent: #ffffff; --mark: #f2b705;
+    --ok: #46b07c; --sky: #77a3ea; --warn: #e3a440; --err: #ec6a8a;
+    --ok-tint: #14281e; --err-tint: #2f1520; --mark-tint: #2b2410; --sky-tint: #142034;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1012; --paper-2: #1c1e21; --card: #18191c; --ink: #eceef1; --ink-soft: #a5aab2; --ink-faint: #737880; --line: #2c2f34;
+  --board: #050506; --board-2: #141518; --board-3: #26282c; --board-ink: #ffffff; --board-soft: #c9ccd2;
+  --accent: #e0352a; --accent-hover: #f04a3f; --on-accent: #ffffff; --mark: #f2b705;
+  --ok: #46b07c; --sky: #77a3ea; --warn: #e3a440; --err: #ec6a8a;
+  --ok-tint: #14281e; --err-tint: #2f1520; --mark-tint: #2b2410; --sky-tint: #142034;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h2 { font-size: 1.45rem; font-weight: 600; }
+h3 { font-size: 1.02rem; font-weight: 600; }
+p { margin: 0; }
+.prose { max-width: 66ch; display: grid; gap: 0.75rem; }
+.eyebrow { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.soft { color: var(--ink-soft); }
+.faint { color: var(--ink-faint); }
+section.block { padding-block: 2.6rem; border-top: 1px solid var(--line); }
+section.block > .wrap { display: grid; gap: 1.4rem; }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+
+/* Board band */
+.board { background: var(--board); color: var(--board-ink); }
+.board .wrap { padding-block: 2.2rem 2rem; display: grid; gap: 0.9rem; }
+.board .eyebrow { color: var(--board-soft); }
+.flaps { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.flap { position: relative; display: inline-grid; place-items: center; min-width: 1.05em; padding: 0.08em 0.12em; background: var(--board-2); color: var(--board-ink); font-family: var(--mono); font-weight: 600; border-radius: 3px; box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.5); line-height: 1.15; }
+.flap::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(0 0 0 / 0.55); }
+.board .title-flaps { font-size: clamp(1.6rem, 6vw, 2.6rem); }
+.board h1 { font-size: clamp(1.25rem, 3vw, 1.6rem); font-weight: 500; color: var(--board-soft); max-width: 40ch; }
+.board-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; font-family: var(--mono); font-size: 0.8rem; color: var(--board-soft); }
+.board-stats b { color: var(--board-ink); font-weight: 600; }
+
+/* Problem scenario */
+.scenario { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.ticket { background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.scene { padding: 1rem 1.1rem; display: grid; gap: 0.55rem; align-content: start; }
+.scene ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; color: var(--ink-soft); }
+.scene ol b { color: var(--ink); font-weight: 600; }
+
+/* Journey line */
+.journey-scroll { overflow-x: auto; padding-bottom: 0.4rem; }
+.journey { display: grid; grid-template-columns: repeat(6, minmax(168px, 1fr)); min-width: 1020px; }
+.station { display: grid; grid-template-rows: auto auto 1fr auto; gap: 0.6rem; padding-right: 0.9rem; }
+.station .stop-line { position: relative; height: 22px; }
+.station .stop-line::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 3px; background: var(--ink); }
+.station:first-child .stop-line::before { left: 8px; }
+.station:last-child .stop-line::before { right: calc(100% - 8px); }
+.station .stop-line::after { content: ""; position: absolute; left: 0; top: 3px; width: 17px; height: 17px; border-radius: 50%; background: var(--card); border: 3px solid var(--ink); }
+.station.focus .stop-line::after { background: var(--accent); border-color: var(--accent); }
+.station .stage { display: grid; gap: 0.1rem; }
+.station .stage .mono { font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0.12em; }
+.station blockquote { margin: 0; font-size: 0.86rem; color: var(--ink-soft); font-style: italic; }
+.station .rows { display: grid; gap: 0.5rem; align-content: start; font-size: 0.84rem; }
+.station .row { border-radius: 10px; padding: 0.55rem 0.65rem; }
+.row.today { background: var(--paper-2); }
+.row.next { background: var(--card); border: 1px solid var(--line); }
+.station.focus .row.next { border-color: var(--accent); }
+.row .label { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 0.15rem; }
+
+/* Anchor rules */
+.rules { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 620px; }
+.rules th { text-align: left; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); }
+.rules td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.rules tr:last-child td { border-bottom: 0; }
+.table-scroll { overflow-x: auto; }
+.strength { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; font-size: 0.82rem; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* Pills and stamps */
+.pill { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 999px; padding: 0.1rem 0.55rem; font-size: 0.74rem; font-weight: 500; white-space: nowrap; }
+.pill svg { width: 12px; height: 12px; }
+.pill.ok { background: var(--ok-tint); color: var(--ok); }
+.pill.err { background: var(--err-tint); color: var(--err); }
+.pill.quiet { background: var(--paper-2); color: var(--ink-soft); }
+.pill.mark { background: var(--mark-tint); color: var(--ink); }
+.pill.sky { background: var(--sky-tint); color: var(--sky); }
+
+/* Demo */
+.demo { display: grid; gap: 1.2rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .demo { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
+.demo-main { display: grid; gap: 0.9rem; min-width: 0; }
+.strip { background: var(--board); border-radius: 14px; padding: 0.85rem 0.9rem 0.7rem; display: grid; gap: 0.55rem; color: var(--board-soft); }
+.strip-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-family: var(--mono); font-size: 0.72rem; }
+.strip-head b { color: var(--board-ink); font-weight: 600; }
+.bar { display: flex; align-items: stretch; height: 34px; gap: 0; }
+.seg { position: relative; display: grid; place-items: center; background: var(--board-3); color: var(--board-ink); font-family: var(--mono); font-size: 0.72rem; font-weight: 600; min-width: 26px; border-right: 1px solid var(--board); transition: flex-grow 280ms ease; overflow: hidden; }
+.seg:first-child { border-radius: 6px 0 0 6px; }
+.seg:last-of-type { border-radius: 0 6px 6px 0; }
+.seg.locked { background: var(--ok); }
+.seg.boxed { background: repeating-linear-gradient(135deg, var(--board-3) 0 6px, var(--board-2) 6px 12px); }
+.pinmark { position: relative; width: 0; z-index: 1; }
+.pinmark::before { content: ""; position: absolute; top: -6px; bottom: -6px; left: -1.5px; width: 3px; background: var(--mark); border-radius: 2px; }
+.pinmark.broken::before { background: var(--err); }
+.strip-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.72rem; }
+.strip-key span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.key-sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.rail { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.2rem 0.35rem 0.9rem; font-size: 0.78rem; color: var(--ink-soft); }
+.rail svg { width: 15px; height: 15px; color: var(--mark); flex-shrink: 0; }
+.rail .mono { color: var(--ink); font-weight: 600; }
+.rail.broken svg, .rail.broken .mono { color: var(--err); }
+.rail.free { height: 10px; padding: 0; }
+.stop { display: grid; grid-template-columns: 84px minmax(0, 1fr); background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.stop.is-locked { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.stop.is-broken { border-color: var(--err); }
+.stop .stub { border-right: 2px dashed var(--line); padding: 0.7rem 0.6rem; display: grid; gap: 0.35rem; align-content: start; }
+.stop .stub .idx { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-faint); }
+.stop .stub .flaps { font-size: 0.85rem; }
+.stop .stub .flap { background: var(--board); }
+.stop .body { padding: 0.7rem 0.85rem; display: grid; gap: 0.45rem; min-width: 0; }
+.stop .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.stop .name { font-weight: 600; }
+.stop .dates { font-family: var(--mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+.stop .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; }
+.stepper button { width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-soft); display: grid; place-items: center; }
+.stepper button:hover:not(:disabled) { background: var(--paper-2); color: var(--ink); }
+.stepper button:disabled { opacity: 0.3; cursor: default; }
+.stepper .n { min-width: 5.4rem; text-align: center; font-family: var(--mono); font-size: 0.84rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; }
+.stepper .n svg { width: 12px; height: 12px; color: var(--ok); }
+
+.proposal { grid-column: 1 / -1; border-top: 1px solid var(--line); background: var(--mark-tint); padding: 0.8rem 0.9rem; display: grid; gap: 0.6rem; }
+.proposal h4 { margin: 0; font-size: 0.92rem; font-weight: 600; }
+.proposal p { font-size: 0.84rem; color: var(--ink-soft); }
+.opts { display: grid; gap: 0.45rem; }
+.opt { text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 0.55rem 0.7rem; display: grid; gap: 0.1rem; }
+.opt:hover { border-color: var(--ink-soft); }
+.opt b { font-weight: 600; font-size: 0.88rem; }
+.opt span { font-size: 0.78rem; color: var(--ink-soft); }
+.opt.primary { border-color: var(--ok); }
+.opt.primary b::after { content: "Suggested"; margin-left: 0.5rem; font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ok); font-weight: 500; }
+.opt.danger b { color: var(--err); }
+.cancel { justify-self: start; border: 0; background: transparent; color: var(--ink-soft); font-size: 0.82rem; text-decoration: underline; padding: 0; }
+
+.home { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.9rem; border: 1px dashed var(--line); border-radius: 12px; font-size: 0.85rem; margin-top: 0.4rem; }
+
+.changebar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; background: var(--board); color: var(--board-soft); border-radius: 12px; padding: 0.65rem 0.8rem; font-size: 0.82rem; }
+.changebar[hidden] { display: none !important; }
+.changebar .msg { flex: 1 1 240px; min-width: 0; }
+.changebar .msg b { color: var(--board-ink); font-weight: 600; }
+.btn-board { border: 1px solid var(--board-3); background: var(--board-2); color: var(--board-ink); border-radius: 8px; padding: 0.3rem 0.75rem; font-size: 0.8rem; font-weight: 500; }
+.btn-board:hover { background: var(--board-3); }
+
+.demo-side { display: grid; gap: 0.8rem; }
+.side-card { padding: 0.9rem 1rem; display: grid; gap: 0.5rem; font-size: 0.86rem; }
+.side-card ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; color: var(--ink-soft); }
+.side-card ul b { color: var(--ink); font-weight: 600; }
+.reset { justify-self: start; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.82rem; }
+
+/* Static mockups */
+.mocks { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.mock { display: grid; gap: 0.7rem; align-content: start; }
+.mock .frame { padding: 0.9rem; display: grid; gap: 0.6rem; font-size: 0.86rem; }
+.mock .caption { font-size: 0.85rem; color: var(--ink-soft); }
+.mini-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.check-strip { display: flex; gap: 0.55rem; align-items: flex-start; background: var(--err-tint); border-radius: 10px; padding: 0.55rem 0.7rem; font-size: 0.82rem; }
+.check-strip svg { width: 16px; height: 16px; color: var(--err); flex-shrink: 0; margin-top: 2px; }
+.check-strip.warn { background: var(--mark-tint); }
+.check-strip.warn svg { color: var(--warn); }
+.diff { display: grid; grid-template-columns: auto 1fr auto; gap: 0.3rem 0.7rem; font-size: 0.82rem; align-items: baseline; }
+.diff .mono { font-size: 0.78rem; }
+.ghost { border: 2px dashed var(--sky); border-radius: 10px; padding: 0.45rem 0.65rem; color: var(--sky); font-size: 0.82rem; font-weight: 500; }
+.nb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.nb-list li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: 0.55rem; align-items: center; padding: 0.45rem 0.55rem; border-radius: 10px; background: var(--paper); }
+.nb-list .rank { font-family: var(--mono); font-size: 0.75rem; font-weight: 600; color: var(--ink-faint); }
+.nb-list small { display: block; color: var(--ink-soft); font-size: 0.75rem; }
+.pace { display: grid; gap: 0.3rem; }
+.pace-bar { display: flex; gap: 3px; }
+.pace-bar i { flex: 1; height: 8px; border-radius: 2px; background: var(--paper-2); }
+.pace-bar i.on { background: var(--sky); }
+.pace-bar i.over { background: var(--warn); }
+
+/* Ideas table */
+.ideas { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 700px; }
+.ideas th { text-align: left; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--line); }
+.ideas td { padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ideas td:first-child { font-family: var(--mono); color: var(--ink-faint); width: 2.5rem; }
+.ideas td b { font-weight: 600; }
+.meter { display: inline-flex; gap: 2px; vertical-align: middle; }
+.meter i { width: 7px; height: 12px; border-radius: 1.5px; background: var(--paper-2); }
+.meter i.on { background: var(--ink); }
+
+/* Phases */
+.phases { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.phase { padding: 1rem 1.1rem; display: grid; gap: 0.6rem; align-content: start; }
+.phase.first { border: 2px solid var(--accent); }
+.phase ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; font-size: 0.88rem; color: var(--ink-soft); }
+.phase ul b { color: var(--ink); font-weight: 600; }
+.phase code, .prose code, td code { font-family: var(--mono); font-size: 0.82em; background: var(--paper-2); padding: 0.05em 0.3em; border-radius: 4px; }
+.questions { display: grid; gap: 0.8rem; counter-reset: q; }
+.q { padding: 0.9rem 1rem; display: grid; gap: 0.35rem; }
+.q p { font-size: 0.88rem; color: var(--ink-soft); }
+.q .rec { font-size: 0.86rem; color: var(--ink); }
+.q .rec b { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ok); font-weight: 600; margin-right: 0.4rem; }
+footer { padding-block: 2rem 3rem; border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--ink-faint); }
+
+@media (prefers-reduced-motion: reduce) { .seg { transition: none; } }
+@media (max-width: 520px) {
+  .stop { grid-template-columns: 1fr; }
+  .stop .stub { border-right: 0; border-bottom: 2px dashed var(--line); grid-auto-flow: column; justify-content: start; align-items: center; gap: 0.7rem; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1.5 5 3.5 4H6l3.5-4z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="board">
+  <div class="wrap">
+    <span class="eyebrow">Trippr · route builder proposal · Nov 2026</span>
+    <div class="title-flaps flaps" aria-label="Anchors">
+      <span class="flap">A</span><span class="flap">N</span><span class="flap">C</span><span class="flap">H</span><span class="flap">O</span><span class="flap">R</span><span class="flap">S</span>
+    </div>
+    <h1>Build the trip around what's already booked, and make every change show its cost before it happens.</h1>
+    <div class="board-stats">
+      <span>Scope <b>trip + route builder</b></span>
+      <span>Core idea <b>bookings become fixed dates</b></span>
+      <span>First slice <b>constraint engine + locked stops + undo</b></span>
+    </div>
+  </div>
+</header>
+
+<section class="block" style="border-top:0">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">The problem today</span>
+      <h2>The plan moves, but the bookings stay put</h2>
+      <p>Trippr works out every date from the trip start plus the nights at each stop. That's great early on, when you can reorder cities and nothing breaks. Once you start booking, it causes trouble. A ticket or a hotel keeps its real date, while the plan around it keeps moving.</p>
+      <p>The rules package already spots the mismatch (<code>leg-day</code> and <code>stay-dates</code> in <code>checks.ts</code>). But it only tells you afterwards, in the side panel, with no way to fix it.</p>
+    </div>
+    <div class="scenario">
+      <div class="ticket scene">
+        <span class="eyebrow">What happens now</span>
+        <h3>"Can we add a night in Tokyo?"</h3>
+        <ol>
+          <li>You press <b>+</b> on Tokyo. It saves straight away.</li>
+          <li>Hakone, Kyoto, Osaka and Hong Kong all move one day later. The home date moves too.</li>
+          <li>The Shinkansen and the ryokan you booked for May 15 no longer match the plan. A warning shows up in the Checks panel.</li>
+          <li>To fix it, you have to work out yourself which stop should give up a night. The only undo is pressing <b>−</b>.</li>
+        </ol>
+      </div>
+      <div class="ticket scene">
+        <span class="eyebrow">What should happen</span>
+        <h3>The same tap, with the trade-off shown</h3>
+        <ol>
+          <li>Trippr knows May 15 is <b>fixed</b> because two bookings depend on it.</li>
+          <li>It explains that Tokyo and Hakone share 5 nights before that date, and suggests <b>taking the night from Hakone</b>.</li>
+          <li>Moving the bookings is still possible, but you have to choose it. The bookings affected are then marked <b>needs changing</b>.</li>
+          <li>A bar sums up what changed, with <b>Undo</b>.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">The user journey</span>
+      <h2>Six stages, from "let's go to Asia" to the trip itself</h2>
+      <p>Group trips go through stages, and each stage needs something different from the builder. Early on you need flexibility. Once bookings exist, you need protection. Trippr currently treats every stage the same. The red station is where it hurts most.</p>
+    </div>
+    <div class="journey-scroll" tabindex="0" aria-label="Journey map, scrolls sideways on small screens">
+      <div class="journey">
+        <div class="station">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">01</span><h3>Dream</h3></div>
+          <blockquote>"Three weeks in Asia in May, the four of us."</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>New trip asks for one exact start date, then shows an empty route.</div>
+            <div class="row next"><span class="label">Proposed</span>Trip setup takes a date range or "about 3 weeks in May", must-do events and a home airport, and drafts a first route.</div>
+          </div>
+        </div>
+        <div class="station">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">02</span><h3>Shape</h3></div>
+          <blockquote>"Tokyo first or Hong Kong first? How long in each?"</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>Add stop always puts the city at the end. Every edit saves silently. Removing a stop uses a browser confirm box, and there's no undo.</div>
+            <div class="row next"><span class="label">Proposed</span>New cities go where they fit on the map. Every change shows what it did, with Undo.</div>
+          </div>
+        </div>
+        <div class="station">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">03</span><h3>Fill</h3></div>
+          <blockquote>"What do we actually do in Kyoto? Is 3 nights enough?"</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>Checks sit in the side panel, away from the stop they're about. Nothing shows whether a stop is overbooked with plans.</div>
+            <div class="row next"><span class="label">Proposed</span>Problems appear on the stop card with a fix button. A pace meter compares plans with nights.</div>
+          </div>
+        </div>
+        <div class="station">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">04</span><h3>Book</h3></div>
+          <blockquote>"Flights are going up. Let's lock in the big stuff."</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>You book on another site, then come back and mark it booked. A booked hotel records the stop's dates, not the dates you actually booked.</div>
+            <div class="row next"><span class="label">Proposed</span>"Next to book" ranks what's most at risk. When you come back from a booking link, Trippr asks "Did you book it?" and saves the real dates.</div>
+          </div>
+        </div>
+        <div class="station focus">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">05</span><h3>Adjust</h3></div>
+          <blockquote>"Can we squeeze in a night in Hakone?"</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>Every later date moves. Bookings stop matching. A warning appears only afterwards.</div>
+            <div class="row next"><span class="label">Proposed</span>Booked dates become anchors. Trippr suggests trades that keep them, and moving one has to be deliberate.</div>
+          </div>
+        </div>
+        <div class="station">
+          <div class="stop-line"></div>
+          <div class="stage"><span class="mono">06</span><h3>Go</h3></div>
+          <blockquote>"Which train are we on today?"</blockquote>
+          <div class="rows">
+            <div class="row today"><span class="label">Today</span>The itinerary and calendar export cover this well.</div>
+            <div class="row next"><span class="label">Later</span>A "Today" view with the next booking, its reference and the walk to the station. Not part of this proposal.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">The core idea</span>
+      <h2>Bookings turn dates into anchors</h2>
+      <p>An anchor is a date the plan has to keep, because something real depends on it. Anchors split the trip into stretches. Within a stretch the number of nights is fixed, so the stops in it can only trade nights with each other. After the last anchor, nights can grow freely, and only the home date moves.</p>
+      <p>"Somewhat a constraint" means <b>protected, not frozen</b>. Trippr always looks for a way to keep the booking first. If you really want to move it, you can, but you choose that option on purpose, and the booking is then marked as needing a change.</p>
+    </div>
+    <div class="ticket table-scroll">
+      <table class="rules">
+        <thead><tr><th>What's booked</th><th>What it fixes</th><th>Strength</th><th>What the builder does</th></tr></thead>
+        <tbody>
+          <tr><td><b>Ticket into a stop</b> (status <code>booked</code>)</td><td>The arrival date of that stop. An overnight journey counts for the day it arrives.</td><td><span class="strength"><span class="dot" style="background:var(--ok)"></span>Protected</span></td><td>Offers trades with earlier stops in the same stretch. Moving the date flags the ticket.</td></tr>
+          <tr><td><b>Hotel</b> (status <code>booked</code>)</td><td>Arrival <i>and</i> departure, so the stop's nights are fixed.</td><td><span class="strength"><span class="dot" style="background:var(--ok)"></span>Protected</span></td><td>The stop shows a lock. Its nights stepper explains the booking before allowing a change.</td></tr>
+          <tr><td><b>Fixed-date event</b> you have a ticket for</td><td>The stop has to include that date. A range, not a single day.</td><td><span class="strength"><span class="dot" style="background:var(--ok)"></span>Protected</span></td><td>Changes that move the event outside the stop's dates go through the same choice.</td></tr>
+          <tr><td><b>Held</b> ticket, <b>chosen</b> hotel</td><td>Nothing fixed, but a preference.</td><td><span class="strength"><span class="dot" style="background:var(--mark)"></span>Soft</span></td><td>Shows a pin outline and a heads-up in the change bar. Doesn't block anything.</td></tr>
+          <tr><td>Trip start, booked return flight</td><td>The start and the home date.</td><td><span class="strength"><span class="dot" style="background:var(--ok)"></span>Protected</span></td><td>With a booked flight home, the last stretch becomes fixed too.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="demo">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">Try it · working prototype</span>
+      <h2>Change some nights and see what Trippr suggests</h2>
+      <p>This is a real route from the Asia 2027 sample trip, with three bookings: a Shinkansen and a ryokan for Kyoto, and a flight to Hong Kong. Press <b>+</b> or <b>−</b> on any stop. The yellow pins are the anchors.</p>
+    </div>
+    <div class="demo">
+      <div class="demo-main">
+        <div class="strip" aria-hidden="true">
+          <div class="strip-head"><span>ASIA 2027 · <b>Main route</b></span><span id="strip-dates"></span></div>
+          <div class="bar" id="bar"></div>
+          <div class="strip-key">
+            <span><i class="key-sw" style="background:var(--ok)"></i>booked stay</span>
+            <span><i class="key-sw" style="background:repeating-linear-gradient(135deg,var(--board-3) 0 4px,var(--board-2) 4px 8px)"></i>between two anchors</span>
+            <span><i class="key-sw" style="background:var(--mark);width:3px"></i>anchor</span>
+          </div>
+        </div>
+        <div class="changebar" id="changebar" role="status" aria-live="polite" hidden>
+          <span class="msg" id="change-msg"></span>
+          <button class="btn-board" id="undo" type="button">Undo</button>
+        </div>
+        <ol class="stops" id="stops"></ol>
+      </div>
+      <aside class="demo-side">
+        <div class="ticket side-card">
+          <span class="eyebrow">Things to try</span>
+          <ul>
+            <li><b>+ on Tokyo</b> suggests taking the night from Hakone.</li>
+            <li><b>+ on Osaka</b>: it sits between two anchors, so the only option is moving a booking.</li>
+            <li><b>+ on Kyoto</b>: the ryokan is booked, so Trippr explains that first.</li>
+            <li><b>+ on Hong Kong</b> is after the last anchor. It just saves, and the home date moves.</li>
+            <li>Pick <b>Shift the dates</b> to see how flagged bookings look.</li>
+          </ul>
+          <button class="reset" id="reset" type="button">Reset the route</button>
+        </div>
+        <div class="ticket side-card">
+          <span class="eyebrow">How it decides</span>
+          <p class="soft">The same rule every time. Find the stretch between the anchors around this stop. Offer trades with the other stops in that stretch that aren't locked. Moving a booking is always the last option, shown in red, and it says which bookings it affects.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">The other moments</span>
+      <h2>Where the anchors show up across the builder</h2>
+    </div>
+    <div class="mocks">
+      <div class="mock">
+        <div class="ticket frame">
+          <div class="mini-row"><span class="pill sky">Inbox</span><b>Ryokan Yachiyo · confirmation</b></div>
+          <div class="check-strip warn"><svg><use href="#i-alert"/></svg><div>You booked <b class="mono">May 16 → 19</b>. The plan has Kyoto <b class="mono">May 15 → 18</b>.</div></div>
+          <div class="diff">
+            <span>Tokyo</span><span class="mono soft">4 → 5 nights</span><span class="pill quiet">trade</span>
+            <span>Kyoto</span><span class="mono soft">May 16 → 19</span><span class="pill ok">booked</span>
+            <span>Osaka</span><span class="mono soft">2 → 1 night</span><span class="pill quiet">trade</span>
+          </div>
+          <div class="mini-row"><button class="btn primary" type="button">Fit the plan to this booking</button><button class="btn" type="button">Keep the plan, flag it</button></div>
+        </div>
+        <p class="caption"><b>A booking moves the plan.</b> When a confirmation comes in by email, or someone marks a hotel booked with different dates, Trippr offers the smallest change that makes the plan match. This is the same logic as the demo, working in the other direction.</p>
+      </div>
+      <div class="mock">
+        <div class="ticket frame">
+          <div class="mini-row"><span class="flaps" style="font-size:.8rem"><span class="flap" style="background:var(--board)">P</span><span class="flap" style="background:var(--board)">E</span><span class="flap" style="background:var(--board)">K</span></span><b>Beijing</b><span class="mono soft" style="font-size:.8rem">May 24 → 31</span></div>
+          <div class="check-strip"><svg><use href="#i-alert"/></svg><div><b>China entry 1: 12 of 10 days.</b> Over the visa-free limit by 2 days.<div class="mini-row" style="margin-top:.45rem"><button class="btn primary" type="button">Take 2 nights from Beijing</button><button class="btn" type="button">Move 2 nights to Hong Kong</button></div></div></div>
+        </div>
+        <p class="caption"><b>Problems show up on the stop, with a fix.</b> Checks that belong to a stop appear as a strip on its card, and the side panel turns into a summary. Each check offers its own fixes, worked out by the same engine, so the fixes keep the anchors too.</p>
+      </div>
+      <div class="mock">
+        <div class="ticket frame">
+          <b>Add Nara</b>
+          <div class="ghost">Between Kyoto and Osaka · 35 min by train · saves 1h 50 of backtracking</div>
+          <div class="diff">
+            <span>Nights</span><span class="mono soft">1 suggested</span><span></span>
+            <span>Osaka</span><span class="mono soft">2 → 1 night</span><span class="pill quiet">keeps CX 503</span>
+            <span>Home</span><span class="mono soft">no change</span><span></span>
+          </div>
+          <div class="mini-row"><button class="btn primary" type="button">Add Nara here</button><button class="btn" type="button">Add at the end</button></div>
+        </div>
+        <p class="caption"><b>New stops go where they fit.</b> Today, Add stop puts the city at the end. Instead, Trippr suggests the position with the least backtracking (using the travel graph it already has), suggests a number of nights, and shows the effect on the dates before you add it.</p>
+      </div>
+      <div class="mock">
+        <div class="ticket frame">
+          <div class="mini-row" style="justify-content:space-between"><b>Next to book</b><span class="mono faint" style="font-size:.75rem">3 of 11 left</span></div>
+          <ul class="nb-list">
+            <li><span class="rank">1</span><span>Flight home, HKG → YVR<small>Fare up 18% in 2 weeks · fixes the home date</small></span><button class="btn" type="button">Search</button></li>
+            <li><span class="rank">2</span><span>Hakone ryokan<small>Saturday night in May · few rooms left</small></span><button class="btn" type="button">Search</button></li>
+            <li><span class="rank">3</span><span>Osaka hotel<small>Flexible · book any time</small></span><button class="btn" type="button">Search</button></li>
+          </ul>
+        </div>
+        <p class="caption"><b>What to book next, by risk.</b> The Bookings page lists what's missing. The builder should also say what to book first: anything that would become an anchor, fares that are rising (<code>flight-signal.ts</code> already tracks this), and hard-to-get stays. When you come back from a search link, it asks "Did you book it?"</p>
+      </div>
+      <div class="mock">
+        <div class="ticket frame">
+          <div class="mini-row" style="justify-content:space-between"><b>Kyoto · 3 nights</b><span class="pill mark">Full</span></div>
+          <div class="pace">
+            <div class="pace-bar" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="over"></i><i class="over"></i></div>
+            <span class="soft" style="font-size:.8rem">8 plans for about 6 slots. The arrival day is lost to travel (arrive 14:10).</span>
+          </div>
+        </div>
+        <p class="caption"><b>Pace.</b> Plans compared with the time you actually have, counting the hours spent travelling on arrival and departure days. This helps answer "is 3 nights enough?" with numbers, not guesses.</p>
+      </div>
+      <div class="mock">
+        <div class="ticket frame">
+          <div class="mini-row"><span class="pill err"><svg><use href="#i-lock"/></svg>Would move 2 bookings</span></div>
+          <div class="ghost" style="border-color:var(--err);color:var(--err)">Drop Osaka before Kyoto?</div>
+          <p class="soft" style="font-size:.82rem">The Shinkansen to Kyoto (May 15) and the ryokan would no longer match. Drop here to choose what happens.</p>
+        </div>
+        <p class="caption"><b>Dragging respects anchors.</b> While you drag, each drop position is marked as safe or as moving bookings. A booked stop's handle shows a lock instead of the grip. You can still move it, but it goes through the same choice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">Everything on the table</span>
+      <h2>Ranked by how much they help, against the work involved</h2>
+    </div>
+    <div class="ticket table-scroll">
+      <table class="ideas">
+        <thead><tr><th>#</th><th>Idea</th><th>Stage</th><th>Impact</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td>01</td><td><b>Anchors from bookings</b>: trades within a stretch, deliberate moves, flagged bookings</td><td>Adjust</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td></tr>
+          <tr><td>02</td><td><b>Change bar with Undo</b> for nights, reordering and removing (replaces the browser confirm box)</td><td>Shape · Adjust</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+          <tr><td>03</td><td><b>Booked hotels keep their real dates</b> (from the email, or entered when marking booked) and can move the plan to match</td><td>Book</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+          <tr><td>04</td><td><b>Checks on the stop card</b> with fix buttons</td><td>Fill · Adjust</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td></tr>
+          <tr><td>05</td><td><b>Dragging respects anchors</b>: drop positions marked safe or not, lock on booked stops</td><td>Adjust</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+          <tr><td>06</td><td><b>Next to book</b>, ranked by risk, plus "Did you book it?" when you come back from a link</td><td>Book</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td></tr>
+          <tr><td>07</td><td><b>Smart add stop</b>: suggested position and nights, with the date effect shown first</td><td>Shape</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td></tr>
+          <tr><td>08</td><td><b>Pace meter</b> per stop, counting travel time on arrival and departure days</td><td>Fill</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+          <tr><td>09</td><td><b>Trip setup</b> with a date range, must-dos and a home airport, which drafts a first route</td><td>Dream</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td></tr>
+          <tr><td>10</td><td><b>Compact view</b> for long routes: one line per stop, tap to open (mostly for phones)</td><td>Shape</td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+          <tr><td>11</td><td><b>The assistant keeps anchors</b>: "fit in Nara" uses the same engine and never moves a booking unless asked</td><td>Shape · Adjust</td><td><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td><td><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">Suggested build order</span>
+      <h2>Three slices, starting with the constraint engine</h2>
+      <p>Everything else builds on the engine: the fixes for checks, smart add stop, fitting the plan to a booking, and the assistant. So it comes first, in the rules package, with tests, before any screen changes.</p>
+    </div>
+    <div class="phases">
+      <div class="ticket phase first">
+        <span class="eyebrow" style="color:var(--accent)">Slice 1 · recommended start</span>
+        <h3>Anchors, locked stops, Undo</h3>
+        <ul>
+          <li><b><code>rules/anchors.ts</code></b>: works out the anchors and stretches. <code>planNights</code> and <code>planReorder</code> return the trades and any bookings they'd move. Unit tests in vitest.</li>
+          <li><b>Real booked dates</b>: stays keep the email's check-in and check-out. Marking a hotel booked asks for its dates.</li>
+          <li><b><code>RouteView</code></b> returns the anchors and each stop's lock state. Checks reuse them.</li>
+          <li><b>Stop card</b>: locked and between-anchors states, plus the trade panel from the demo.</li>
+          <li><b>Change bar</b> with Undo for nights, reordering and removing. Drag shows which drop positions are safe.</li>
+        </ul>
+      </div>
+      <div class="ticket phase">
+        <span class="eyebrow">Slice 2</span>
+        <h3>Fixes and booking flow</h3>
+        <ul>
+          <li><b>Checks on the stop card</b> with fix buttons from the engine.</li>
+          <li><b>Fit the plan to this booking</b> in Inbox and when marking something booked.</li>
+          <li><b>Next to book</b> on the route page, and "Did you book it?" when you come back from a link.</li>
+          <li>The assistant's tools respect anchors.</li>
+        </ul>
+      </div>
+      <div class="ticket phase">
+        <span class="eyebrow">Slice 3</span>
+        <h3>Shaping and pace</h3>
+        <ul>
+          <li><b>Smart add stop</b>: position and nights, with the date effect shown first.</li>
+          <li><b>Pace meter</b> on each stop.</li>
+          <li><b>Compact view</b> for long routes and phones.</li>
+          <li><b>Trip setup</b> with a date range and must-dos.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="prose">
+      <span class="eyebrow">Open questions</span>
+      <h2>Three decisions before building</h2>
+    </div>
+    <div class="questions">
+      <div class="ticket q">
+        <h3>1. How firm is a booked date?</h3>
+        <p>Options: a hard block (you have to change the booking first), protected (the default is to keep it, moving it is a deliberate choice), or just a warning (what happens today).</p>
+        <p class="rec"><b>Recommend</b>Protected. It matches "somewhat a constraint", and plans for groups do change.</p>
+      </div>
+      <div class="ticket q">
+        <h3>2. Should held tickets and chosen hotels count?</h3>
+        <p>They signal intent, but nobody has paid yet. Treating them as anchors would make planning early on feel stuck.</p>
+        <p class="rec"><b>Recommend</b>Soft pins: shown, mentioned in the change bar, never blocking.</p>
+      </div>
+      <div class="ticket q">
+        <h3>3. Should Trippr know about the flight home?</h3>
+        <p>Today a route ends at its last stop, and the home date is just the result of the nights. A booked return flight is the biggest anchor there is, but it has nowhere to go yet.</p>
+        <p class="rec"><b>Recommend</b>Add an optional "getting home" ticket to the route, so a booked flight fixes the last stretch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Trippr design proposal · based on the code in <span class="mono">packages/rules</span>, the route editor and the Bookings page as of commit 50a81fb. The demo runs in this page only and changes no data.</div>
+</footer>
+
+<script>
+(function () {
+  var START = "2027-05-10";
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function addDays(iso, n) { var d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function sd(iso) { var d = new Date(iso + "T00:00:00Z"); return MONTHS[d.getUTCMonth()] + " " + d.getUTCDate(); }
+  function dd(iso) { var d = new Date(iso + "T00:00:00Z"); return DAYS[d.getUTCDay()] + " " + sd(iso); }
+  function nightsLabel(n) { return n + (n === 1 ? " night" : " nights"); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function icon(id) { return '<svg aria-hidden="true"><use href="#i-' + id + '"/></svg>'; }
+
+  function initial() {
+    return {
+      stops: [
+        { id: "tyo", code: "TYO", name: "Tokyo", nights: 4 },
+        { id: "hak", code: "HAK", name: "Hakone", nights: 1 },
+        { id: "kyo", code: "KYO", name: "Kyoto", nights: 3, stay: "Ryokan Yachiyo", leg: "Shinkansen Hikari 509" },
+        { id: "osa", code: "OSA", name: "Osaka", nights: 2 },
+        { id: "hkg", code: "HKG", name: "Hong Kong", nights: 3, leg: "Flight CX 503" }
+      ],
+      // Boundary k = the day you arrive at stop k (k = stops.length is the home date).
+      fixed: {
+        0: { date: "2027-05-10", items: ["the trip start"] },
+        2: { date: "2027-05-15", items: ["Shinkansen Hikari 509", "Ryokan Yachiyo check-in"] },
+        3: { date: "2027-05-18", items: ["Ryokan Yachiyo check-out"] },
+        4: { date: "2027-05-20", items: ["Flight CX 503"] }
+      }
+    };
+  }
+
+  var state = initial();
+  var history = [];
+  var open = null; // { i, d }
+
+  function clone(s) { return JSON.parse(JSON.stringify(s)); }
+  function bounds(s) { var b = [START]; s.stops.forEach(function (st, i) { b.push(addDays(b[i], st.nights)); }); return b; }
+  function fixedKeys(s) { return Object.keys(s.fixed).map(Number).sort(function (a, b) { return a - b; }); }
+  function isBroken(s, b, k) { return s.fixed[k] && s.fixed[k].date !== b[k]; }
+  function brokenCount(s) { var b = bounds(s); return fixedKeys(s).filter(function (k) { return isBroken(s, b, k); }).length; }
+  function stretch(s, i) {
+    var keys = fixedKeys(s), lo = 0, hi = null;
+    keys.forEach(function (k) { if (k <= i) lo = k; if (k >= i + 1 && hi === null) hi = k; });
+    return { lo: lo, hi: hi };
+  }
+  function anchorName(s, k) { return k === 0 ? "the trip start" : s.fixed[k].items[0]; }
+
+  function plan(i, d) {
+    var s = state, st = s.stops[i], b = bounds(s), seg = stretch(s, i);
+    var later = fixedKeys(s).filter(function (k) { return k > i; });
+    var affected = [];
+    later.forEach(function (k) { s.fixed[k].items.forEach(function (it) { if (affected.indexOf(it) < 0) affected.push(it); }); });
+    var shift = {
+      label: affected.length ? "Shift the dates and flag " + affected.length + " booking" + (affected.length === 1 ? "" : "s") : "Shift the dates",
+      detail: "Everything after " + st.name + " moves a day " + (d > 0 ? "later" : "earlier") + "." + (affected.length ? " " + affected.join(", ") + " would need changing." : ""),
+      changes: [[i, d]], danger: true
+    };
+    if (st.stay) {
+      return {
+        title: st.stay + " is booked for " + nightsLabel(st.nights),
+        text: "The booking is " + sd(b[i]) + " to " + sd(b[i + 1]) + ". To change Kyoto's nights you'll need to change the booking with the ryokan too.",
+        options: [shift]
+      };
+    }
+    if (seg.hi === null) return null;
+    var total = 0, names = [];
+    for (var j = seg.lo; j < seg.hi; j++) { total += s.stops[j].nights; names.push(s.stops[j].name); }
+    var options = [];
+    for (var j2 = seg.lo; j2 < seg.hi; j2++) {
+      if (j2 === i) continue;
+      var o = s.stops[j2];
+      if (o.stay) continue;
+      if (d > 0 && o.nights < 1) continue;
+      options.push({
+        label: d > 0 ? "Take a night from " + o.name : "Give the night to " + o.name,
+        detail: o.name + " " + o.nights + " → " + nightsLabel(o.nights - d) + (o.nights - d === 0 ? ", a day stop" : "") + ". No bookings move.",
+        changes: [[i, d], [j2, -d]]
+      });
+    }
+    if (options.length) options[0].primary = true;
+    options.push(shift);
+    var from = seg.lo === 0 ? "the trip starts " + sd(s.fixed[0].date) : anchorName(s, seg.lo) + " is " + sd(s.fixed[seg.lo].date);
+    var to = anchorName(s, seg.hi) + " is " + sd(s.fixed[seg.hi].date);
+    var text = names.length > 1
+      ? "Between when " + from + " and when " + to + ", there are " + nightsLabel(total) + " to share between " + names.join(" and ") + "."
+      : st.name + " sits between two anchors: " + from + " and " + to + ". There's no other stop in between to trade with.";
+    return {
+      title: d > 0 ? st.name + " can't get another night without moving a booking" : "Where should the spare night go?",
+      text: text,
+      options: options
+    };
+  }
+
+  function summary(before, after) {
+    var parts = [];
+    after.stops.forEach(function (st, i) {
+      var was = before.stops[i].nights;
+      if (was !== st.nights) parts.push("<b>" + esc(st.name) + "</b> " + was + " → " + nightsLabel(st.nights));
+    });
+    var hb = bounds(before), ha = bounds(after);
+    var homeB = hb[hb.length - 1], homeA = ha[ha.length - 1];
+    if (homeB !== homeA) parts.push("home " + sd(homeB) + " → <b>" + sd(homeA) + "</b>");
+    var nb = brokenCount(after) - brokenCount(before);
+    parts.push(nb > 0 ? '<b style="color:var(--err)">' + nb + " anchor" + (nb === 1 ? "" : "s") + " moved, bookings flagged</b>" : nb < 0 ? "<b>bookings match again</b>" : "no bookings moved");
+    return parts.join(" · ");
+  }
+
+  function apply(changes) {
+    var before = clone(state);
+    history.push(before);
+    changes.forEach(function (c) { state.stops[c[0]].nights += c[1]; });
+    open = null;
+    showChange(summary(before, state));
+    render();
+  }
+
+  function showChange(html) {
+    var bar = document.getElementById("changebar");
+    document.getElementById("change-msg").innerHTML = html;
+    bar.hidden = false;
+  }
+
+  function step(i, d) {
+    var st = state.stops[i];
+    if (d < 0 && st.nights === 0) return;
+    var p = plan(i, d);
+    if (!p) { apply([[i, d]]); return; }
+    open = { i: i, d: d, p: p };
+    render();
+    var first = document.querySelector("#stops .proposal .opt");
+    if (first) first.focus();
+  }
+
+  function render() {
+    var s = state, b = bounds(s), keys = fixedKeys(s);
+    var home = b[b.length - 1];
+    document.getElementById("strip-dates").innerHTML = "<b>" + sd(START) + "</b> → <b>" + sd(home) + "</b> · " + nightsLabel(b.length ? s.stops.reduce(function (a, x) { return a + x.nights; }, 0) : 0);
+
+    // Strip
+    var bar = "";
+    s.stops.forEach(function (st, i) {
+      if (s.fixed[i] && i > 0) bar += '<span class="pinmark' + (isBroken(s, b, i) ? " broken" : "") + '"></span>';
+      var boxed = !st.stay && s.fixed[i] && s.fixed[i + 1];
+      bar += '<span class="seg' + (st.stay ? " locked" : boxed ? " boxed" : "") + '" style="flex-grow:' + Math.max(st.nights, 0.35) + '">' + st.code + "</span>";
+    });
+    document.getElementById("bar").innerHTML = bar;
+
+    // Stops
+    var html = "";
+    function rail(k) {
+      if (!s.fixed[k]) return '<li class="rail free" aria-hidden="true"></li>';
+      var f = s.fixed[k], broken = isBroken(s, b, k);
+      var label = k === 0 ? "Trip starts" : f.items.join(" + ");
+      return '<li class="rail' + (broken ? " broken" : "") + '">' + icon("pin") +
+        '<span>Anchor · <span class="mono">' + sd(f.date) + "</span> · " + esc(label) +
+        (broken ? ' · <span class="mono">plan now says ' + sd(b[k]) + "</span>" : "") + "</span></li>";
+    }
+    html += rail(0);
+    s.stops.forEach(function (st, i) {
+      var boxed = !st.stay && s.fixed[i] && s.fixed[i + 1];
+      var broken = isBroken(s, b, i) || (st.stay && isBroken(s, b, i + 1));
+      var tags = "";
+      if (st.leg) tags += '<span class="pill ' + (isBroken(s, b, i) ? "err" : "ok") + '">' + icon("ticket") + (isBroken(s, b, i) ? "Needs changing · " : "Booked · ") + esc(st.leg) + "</span>";
+      if (st.stay) tags += '<span class="pill ' + (broken ? "err" : "ok") + '">' + icon("bed") + (broken ? "Needs changing · " : "Booked · ") + esc(st.stay) + "</span>";
+      if (boxed) tags += '<span class="pill quiet">Between two anchors</span>';
+      if (!tags) tags = '<span class="pill quiet">Flexible</span>';
+      var isOpen = open && open.i === i;
+      html += '<li class="stop' + (st.stay ? " is-locked" : "") + (broken ? " is-broken" : "") + '">' +
+        '<div class="stub"><span class="idx">' + String(i + 1).padStart(2, "0") + '</span><span class="flaps" aria-hidden="true">' +
+        st.code.split("").map(function (c) { return '<span class="flap">' + c + "</span>"; }).join("") + "</span></div>" +
+        '<div class="body"><div class="top"><div><div class="name">' + esc(st.name) + '</div><div class="dates">' + dd(b[i]) + ' <span class="faint">→</span> ' + dd(b[i + 1]) + "</div></div>" +
+        '<div class="stepper" role="group" aria-label="Nights in ' + esc(st.name) + '">' +
+        '<button type="button" data-i="' + i + '" data-d="-1" aria-label="One fewer night in ' + esc(st.name) + '"' + (st.nights === 0 ? " disabled" : "") + ">" + icon("minus").replace("<svg", '<svg width="16" height="16"') + "</button>" +
+        '<span class="n">' + (st.stay ? icon("lock") : "") + nightsLabel(st.nights) + "</span>" +
+        '<button type="button" data-i="' + i + '" data-d="1" aria-label="One more night in ' + esc(st.name) + '">' + icon("plus").replace("<svg", '<svg width="16" height="16"') + "</button>" +
+        "</div></div>" +
+        '<div class="tags">' + tags + "</div></div>";
+      if (isOpen) {
+        var p = open.p;
+        html += '<div class="proposal" role="region" aria-label="Options for ' + esc(st.name) + '"><h4>' + esc(p.title) + "</h4><p>" + esc(p.text) + '</p><div class="opts">' +
+          p.options.map(function (o, n) {
+            return '<button type="button" class="opt' + (o.primary ? " primary" : "") + (o.danger ? " danger" : "") + '" data-opt="' + n + '"><b>' + esc(o.label) + "</b><span>" + esc(o.detail) + "</span></button>";
+          }).join("") +
+          '</div><button type="button" class="cancel" data-cancel="1">Cancel, leave ' + esc(st.name) + " as it is</button></div>";
+      }
+      html += "</li>";
+      html += rail(i + 1 < s.stops.length ? i + 1 : -1);
+    });
+    document.getElementById("stops").innerHTML = html;
+    var homeEl = document.querySelector(".home");
+    if (!homeEl) {
+      homeEl = document.createElement("div");
+      homeEl.className = "home";
+      document.getElementById("stops").after(homeEl);
+    }
+    homeEl.innerHTML = '<span>Home</span><span class="mono"><b>' + dd(home) + '</b> <span class="faint">· after the last anchor, free to move</span></span>';
+  }
+
+  document.getElementById("stops").addEventListener("click", function (e) {
+    var t = e.target.closest("button");
+    if (!t) return;
+    if (t.dataset.cancel) { open = null; render(); return; }
+    if (t.dataset.opt !== undefined && open) { apply(open.p.options[Number(t.dataset.opt)].changes); return; }
+    if (t.dataset.i !== undefined) step(Number(t.dataset.i), Number(t.dataset.d));
+  });
+  document.getElementById("undo").addEventListener("click", function () {
+    if (!history.length) return;
+    state = history.pop();
+    open = null;
+    if (history.length) showChange("Undone. " + history.length + " earlier change" + (history.length === 1 ? "" : "s") + " can still be undone.");
+    else document.getElementById("changebar").hidden = true;
+    render();
+  });
+  document.getElementById("reset").addEventListener("click", function () {
+    state = initial(); history = []; open = null;
+    document.getElementById("changebar").hidden = true;
+    render();
+  });
+  render();
+})();
+</script>

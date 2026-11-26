@@ -1,4 +1,5 @@
-import { bookingsQuery, hasRole, type BookingItem, type BookingsResult, type LegPrivate } from "@trippr/contracts";
+import { bookingsQuery, hasRole, type BookingItem, type BookingsResult, type Leg, type LegPrivate } from "@trippr/contracts";
+import { daysBetween } from "@trippr/rules";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../app";
@@ -42,33 +43,38 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
     const home = view.trip.homeCity ? await repos.cities.get(view.trip.homeCity) : null;
     const items: BookingItem[] = [];
     const toBook: BookingsResult["toBook"] = [];
+    const legItem = (leg: Leg, base: { stopId: string; stopOrder: number; cityCode: string; cityName: string }, fallbackDate: string): BookingItem => {
+      const price = leg.priceCad ?? null;
+      const ref = refs.get(leg.id);
+      return {
+        ...base,
+        kind: "leg",
+        id: leg.id,
+        status: leg.status,
+        mode: leg.mode,
+        from: { id: leg.from.id, name: leg.from.name, kind: leg.from.kind },
+        to: { id: leg.to.id, name: leg.to.name, kind: leg.to.kind },
+        operator: leg.operator ?? null,
+        number: leg.number ?? null,
+        departAt: leg.departAt ?? null,
+        arriveAt: leg.arriveAt ?? null,
+        date: leg.departAt?.slice(0, 10) ?? fallbackDate,
+        pricePerPersonCad: price,
+        groupCad: price == null ? null : round2(price * travellers),
+        ...(canSeePrivate ? { bookingRef: ref?.bookingRef ?? null, seat: ref?.seat ?? null } : {}),
+      };
+    };
     for (const stop of view.stops) {
       const base = { stopId: stop.id, stopOrder: stop.order, cityCode: stop.city.code, cityName: stop.city.name };
-      for (const leg of stop.legs) {
-        const price = leg.priceCad ?? null;
-        const ref = refs.get(leg.id);
-        items.push({
-          ...base,
-          kind: "leg",
-          id: leg.id,
-          status: leg.status,
-          mode: leg.mode,
-          from: { id: leg.from.id, name: leg.from.name, kind: leg.from.kind },
-          to: { id: leg.to.id, name: leg.to.name, kind: leg.to.kind },
-          operator: leg.operator ?? null,
-          number: leg.number ?? null,
-          departAt: leg.departAt ?? null,
-          arriveAt: leg.arriveAt ?? null,
-          date: leg.departAt?.slice(0, 10) ?? stop.arrive,
-          pricePerPersonCad: price,
-          groupCad: price == null ? null : round2(price * travellers),
-          ...(canSeePrivate ? { bookingRef: ref?.bookingRef ?? null, seat: ref?.seat ?? null } : {}),
-        });
-      }
+      for (const leg of stop.legs) items.push(legItem(leg, base, stop.arrive));
       for (const stay of stop.stays) {
         if (stay.status === "shortlist") continue;
         const nightly = stay.perPersonCadPerNight ?? null;
-        const total = nightly == null ? null : round2(nightly * stop.nights);
+        // A booking keeps the dates it was made for, which can differ from the plan's.
+        const checkIn = (stay.status === "booked" && stay.arrive) || stop.arrive;
+        const checkOut = (stay.status === "booked" && stay.depart) || stop.depart;
+        const nights = Math.max(0, daysBetween(checkIn, checkOut));
+        const total = nightly == null ? null : round2(nightly * nights);
         items.push({
           ...base,
           kind: "stay",
@@ -78,12 +84,12 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
           hotelName: stay.hotel.name,
           areaName: stay.hotel.areaName,
           url: stay.hotel.url ?? null,
-          checkIn: stop.arrive,
-          checkOut: stop.depart,
-          nights: stop.nights,
+          checkIn,
+          checkOut,
+          nights,
           rooms: stay.rooms ?? null,
           perPersonPerNightCad: nightly,
-          date: stop.arrive,
+          date: checkIn,
           pricePerPersonCad: total,
           groupCad: total == null ? null : round2(total * travellers),
         });
@@ -109,6 +115,24 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
       }
     }
 
+    // The trip home: after the last stop, into the home city.
+    const last = view.stops.at(-1);
+    const homeBase = { stopId: "home", stopOrder: view.stops.length, cityCode: home?.code ?? "", cityName: home?.name ?? "home" };
+    for (const leg of view.homeLegs) items.push(legItem(leg, homeBase, view.checks.returnDate));
+    const homeToBook: BookingsResult["homeToBook"] =
+      last && !view.homeLegs.some((l) => l.status === "booked")
+        ? {
+            date: view.checks.returnDate,
+            fromCity: { code: last.city.code, name: last.city.name, countryIso: last.city.countryIso },
+            // The home city is free text when it isn't one of Trippr's cities ("Toronto").
+            toCity: home
+              ? { code: home.code, name: home.name, countryIso: home.countryIso }
+              : view.trip.homeCity
+                ? { code: view.trip.homeCity, name: view.trip.homeCity, countryIso: "" }
+                : null,
+          }
+        : null;
+
     const byDate = (a: BookingItem, b: BookingItem) =>
       a.date.localeCompare(b.date) || a.stopOrder - b.stopOrder || (a.kind === b.kind ? 0 : a.kind === "leg" ? -1 : 1);
     const booked = items.filter((i) => i.status === "booked").sort(byDate);
@@ -123,6 +147,7 @@ export function bookingsRoutes(app: FastifyInstance, ctx: AppContext) {
       booked,
       pending,
       toBook,
+      homeToBook,
       totals: {
         bookedPerPersonCad: sum(booked, "pricePerPersonCad"),
         pendingPerPersonCad: sum(pending, "pricePerPersonCad"),

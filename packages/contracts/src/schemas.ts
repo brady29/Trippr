@@ -54,11 +54,28 @@ export const updateMeBody = z.object({
 
 // --- trips and invites ------------------------------------------------------
 
-export const createTripBody = z.object({
-  name: shortText(80).min(1),
-  startDate: isoDate,
-  homeCity: shortText(80).optional(),
-});
+/** Something on a fixed date the trip is built around: trip setup turns these into a first route. */
+export const mustDoBody = z
+  .object({
+    cityCode,
+    title: shortText(120).min(1),
+    from: isoDate,
+    to: isoDate,
+  })
+  .refine((m) => m.from <= m.to, { message: "A must-do ends on or after the day it starts", path: ["to"] });
+
+export const createTripBody = z
+  .object({
+    name: shortText(80).min(1),
+    startDate: isoDate,
+    homeCity: shortText(80).optional(),
+    travellers: z.number().int().min(1).max(20).optional(),
+    /** The latest the group can be home: the end of the date range. */
+    latestReturn: isoDate.optional(),
+    /** Fixed-date things to build the first route around. */
+    mustDos: z.array(mustDoBody).max(12).optional(),
+  })
+  .refine((t) => !t.latestReturn || t.latestReturn > t.startDate, { message: "The latest return has to be after the start", path: ["latestReturn"] });
 
 export const patchTripBody = z.object({
   name: shortText(80).min(1).optional(),
@@ -66,6 +83,8 @@ export const patchTripBody = z.object({
   homeCity: shortText(80).optional(),
   /** How many people are travelling; drives the group budget. */
   travellers: z.number().int().min(1).max(20).optional(),
+  /** The latest the group can be home; null clears it. */
+  latestReturn: isoDate.nullable().optional(),
 });
 
 export const createInviteBody = z.object({
@@ -94,11 +113,19 @@ export const addStopBody = z.object({
   /** 0-based insert position; omitted means append. */
   position: z.number().int().min(0).optional(),
   arriveMode: arriveModeSchema.default("flight"),
+  /** Other stops' nights to change in the same write: a trade so a booked date stays put. */
+  alsoNights: z.array(z.object({ stopId: id, nights })).max(10).optional(),
   version,
 });
 
 export const reorderBody = z.object({
   stopIds: z.array(id).min(1).max(100),
+  version,
+});
+
+/** Several stops' nights in one write, so a trade between two stops saves (and undoes) as one change. */
+export const setNightsBody = z.object({
+  nights: z.array(z.object({ stopId: id, nights })).min(1).max(100),
   version,
 });
 
@@ -201,6 +228,7 @@ export type PatchRouteBody = z.infer<typeof patchRouteBody>;
 export type AddStopBody = z.input<typeof addStopBody>;
 export type ReorderBody = z.infer<typeof reorderBody>;
 export type PatchStopBody = z.infer<typeof patchStopBody>;
+export type SetNightsBody = z.infer<typeof setNightsBody>;
 export type CreateActivityBody = z.input<typeof createActivityBody>;
 export type PatchActivityBody = z.input<typeof patchActivityBody>;
 export type PlaceBody = z.infer<typeof placeBody>;

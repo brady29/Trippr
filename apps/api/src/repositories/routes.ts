@@ -74,7 +74,52 @@ export interface StoredRoute {
   route: RouteRef;
   trip: TripRef;
   stops: StoredStop[];
+  /** Tickets home after the last stop, in order. */
+  homeLegs: StoredLeg[];
 }
+
+type LegRow = { seq: number; leg: Record<string, unknown>; fromHub: RawHub; toHub: RawHub };
+
+function toStoredLeg(row: LegRow): StoredLeg {
+  const l = row.leg;
+  return {
+    id: String(l.id),
+    seq: num(row.seq),
+    mode: (str(l.mode) ?? "flight") as LegMode,
+    status: (str(l.status) ?? "idea") as LegStatus,
+    operator: str(l.operator),
+    number: str(l.number),
+    departAt: str(l.departAt),
+    arriveAt: str(l.arriveAt),
+    durationMin: optNum(l.durationMin),
+    priceCad: optNum(l.priceCad),
+    source: str(l.source),
+    asOf: str(l.asOf),
+    priceAsOf: str(l.priceAsOf),
+    priceSource: str(l.priceSource),
+    bookingRef: str(l.bookingRef),
+    seat: str(l.seat),
+    from: toHub(row.fromHub),
+    to: toHub(row.toHub),
+  };
+}
+
+type LegInput = {
+  id: string;
+  seq: number;
+  mode: string;
+  status: string;
+  from: string;
+  to: string;
+  operator: string | null;
+  number: string | null;
+  departAt: string | null;
+  arriveAt: string | null;
+  durationMin: number | null;
+  priceCad: number | null;
+  bookingRef: string | null;
+  seat: string | null;
+};
 
 type RawStop = {
   stop: Record<string, unknown>;
@@ -104,12 +149,8 @@ export function routesRepository(db: GraphClient) {
       const [meta] = await db.query<RawMeta>(q("routes/meta"), { routeId }, read);
       if (!meta) return null;
       const [loaded] = await db.query<{ stops: RawStop[] }>(q("routes/load"), { routeId }, read);
-      const [legRows, stayRows] = await Promise.all([
-        db.query<{ stopId: string; seq: number; leg: Record<string, unknown>; fromHub: RawHub; toHub: RawHub }>(
-          q("routes/legs"),
-          { routeId },
-          read,
-        ),
+      const [legRows, stayRows, homeRows] = await Promise.all([
+        db.query<LegRow & { stopId: string }>(q("routes/legs"), { routeId }, read),
         db.query<{
           stopId: string;
           status: string;
@@ -120,31 +161,12 @@ export function routesRepository(db: GraphClient) {
           areaId: string;
           areaName: string;
         }>(q("routes/stays"), { routeId }, read),
+        db.query<LegRow>(q("routes/home-legs"), { routeId }, read),
       ]);
       const legsByStop = new Map<string, StoredLeg[]>();
       for (const row of legRows) {
-        const l = row.leg;
         const list = legsByStop.get(row.stopId) ?? [];
-        list.push({
-          id: String(l.id),
-          seq: num(row.seq),
-          mode: (str(l.mode) ?? "flight") as LegMode,
-          status: (str(l.status) ?? "idea") as LegStatus,
-          operator: str(l.operator),
-          number: str(l.number),
-          departAt: str(l.departAt),
-          arriveAt: str(l.arriveAt),
-          durationMin: optNum(l.durationMin),
-          priceCad: optNum(l.priceCad),
-          source: str(l.source),
-          asOf: str(l.asOf),
-          priceAsOf: str(l.priceAsOf),
-          priceSource: str(l.priceSource),
-          bookingRef: str(l.bookingRef),
-          seat: str(l.seat),
-          from: toHub(row.fromHub),
-          to: toHub(row.toHub),
-        });
+        list.push(toStoredLeg(row));
         legsByStop.set(row.stopId, list);
       }
       const staysByStop = new Map<string, StoredStay[]>();
@@ -224,6 +246,7 @@ export function routesRepository(db: GraphClient) {
         },
         trip: meta.trip,
         stops,
+        homeLegs: homeRows.map(toStoredLeg).sort((a, b) => a.seq - b.seq),
       };
     },
 
@@ -312,6 +335,27 @@ export function routesRepository(db: GraphClient) {
         })),
       );
       if (legs.length) await db.query(cypher("explorer/legs-create", db.dialect), { legs });
+      const homeLegs = source.homeLegs.map((l) => ({
+        id: newId("lg"),
+        routeId: id,
+        seq: l.seq,
+        mode: l.mode,
+        status: l.status,
+        from: l.from.id,
+        to: l.to.id,
+        operator: l.operator ?? null,
+        number: l.number ?? null,
+        departAt: l.departAt ?? null,
+        arriveAt: l.arriveAt ?? null,
+        durationMin: l.durationMin ?? null,
+        priceCad: l.priceCad ?? null,
+        bookingRef: l.bookingRef,
+        seat: l.seat,
+        source: l.source ?? null,
+        asOf: l.asOf ?? null,
+        createdAt: now,
+      }));
+      if (homeLegs.length) await db.query(cypher("explorer/home-legs-create", db.dialect), { legs: homeLegs });
       const stays = source.stops.flatMap((s, i) =>
         s.stays.map((st) => ({
           stopId: stopIds[i],
@@ -329,30 +373,16 @@ export function routesRepository(db: GraphClient) {
 
     // --- legs and stays: route-structure writes, guarded by the route version ---
 
-    addLeg: (
-      stopId: string,
-      version: number,
-      leg: {
-        id: string;
-        seq: number;
-        mode: string;
-        status: string;
-        from: string;
-        to: string;
-        operator: string | null;
-        number: string | null;
-        departAt: string | null;
-        arriveAt: string | null;
-        durationMin: number | null;
-        priceCad: number | null;
-        bookingRef: string | null;
-        seat: string | null;
-      },
-      arriveMode: string,
-    ) => guarded("legs/add", { stopId, version, ...leg, arriveMode, now: nowIso(), today: nowIso().slice(0, 10) }),
+    addLeg: (stopId: string, version: number, leg: LegInput, arriveMode: string) =>
+      guarded("legs/add", { stopId, version, ...leg, arriveMode, now: nowIso(), today: nowIso().slice(0, 10) }),
 
-    patchLeg: (legId: string, version: number, params: Record<string, unknown>) =>
-      guarded("legs/patch", { legId, version, ...params }),
+    /** A ticket home after the last stop. */
+    addHomeLeg: (routeId: string, version: number, leg: LegInput) =>
+      guarded("legs/add-home", { routeId, version, ...leg, now: nowIso(), today: nowIso().slice(0, 10) }),
+
+    /** `home` picks the query for a ticket home, which hangs off the route rather than a stop. */
+    patchLeg: (legId: string, version: number, params: Record<string, unknown>, home = false) =>
+      guarded(home ? "legs/patch-home" : "legs/patch", { legId, version, ...params }),
 
     async setLegHub(legId: string, end: "from" | "to", hubId: string) {
       await db.query(q(end === "from" ? "legs/set-from" : "legs/set-to"), { legId, hubId });
@@ -362,8 +392,8 @@ export function routesRepository(db: GraphClient) {
       if (seqs.length) await db.query(q("legs/reseq"), { stopId, seqs });
     },
 
-    deleteLeg: (legId: string, version: number, arriveMode: string | null) =>
-      guarded("legs/delete", { legId, version, arriveMode }),
+    deleteLeg: (legId: string, version: number, arriveMode: string | null, home = false) =>
+      home ? guarded("legs/delete-home", { legId, version }) : guarded("legs/delete", { legId, version, arriveMode }),
 
     async legPrivate(legId: string) {
       const [row] = await db.query<{ id: string; bookingRef: string | null; seat: string | null }>(
@@ -419,6 +449,9 @@ export function routesRepository(db: GraphClient) {
 
     reorder: (routeId: string, version: number, orders: { id: string; order: number }[]) =>
       guarded("stops/reorder", { routeId, version, orders }),
+
+    setNights: (routeId: string, version: number, nights: { stopId: string; nights: number }[]) =>
+      guarded("stops/set-nights", { routeId, version, nights }),
 
     patchStop: (
       stopId: string,

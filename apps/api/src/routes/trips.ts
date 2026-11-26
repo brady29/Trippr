@@ -16,7 +16,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../app";
 import { badRequest, inviteExpired, notFound } from "../errors";
-import { newToken } from "../ids";
+import { draftRoute } from "@trippr/rules";
+import { newId, newToken } from "../ids";
 import { buildRouteView, summarize } from "../services/route-view";
 
 const idParams = z.object({ id: z.string().min(1) });
@@ -32,12 +33,45 @@ export function tripRoutes(app: FastifyInstance, ctx: AppContext) {
 
   app.get("/trips", async (req) => repos.trips.listForUser(ctx.user(req).id));
 
+  /**
+   * A new trip. With must-dos (fixed-date things in cities), the first route is
+   * drafted around them: one stop per city in date order, each must-do added to
+   * its city's ideas and planned at that stop.
+   */
   app.post("/trips", async (req, reply) => {
     const user = ctx.user(req);
     const body = ctx.parse(createTripBody, req.body);
-    const id = await repos.trips.create(user.id, body);
+    const mustDos = body.mustDos ?? [];
+    const unknown = (await Promise.all(mustDos.map(async (m) => ((await repos.cities.get(m.cityCode)) ? null : m.cityCode)))).filter(Boolean);
+    if (unknown.length) throw badRequest(`Unknown city ${unknown.join(", ")}`);
+    const { id, routeId } = await repos.trips.create(user.id, body);
+    const draft = draftRoute(body.startDate, mustDos, body.latestReturn ?? null);
+    let version = 0;
+    const stopIds: string[] = [];
+    for (const [order, stop] of draft.stops.entries()) {
+      const stopId = newId("st");
+      stopIds.push(stopId);
+      const next = await repos.routes.addStop(
+        routeId,
+        version,
+        { id: stopId, cityCode: stop.cityCode, nights: stop.nights, arriveMode: order === 0 ? "flight" : "train", order },
+        stopIds.map((sid, i) => ({ id: sid, order: i })),
+      );
+      if (next === null) break;
+      version = next;
+      for (const m of stop.mustDos) {
+        const activityId = await repos.activities.create(user.id, {
+          tripId: id,
+          cityCode: m.cityCode,
+          title: m.title,
+          tags: ["must-do"],
+          when: m.from === m.to ? { on: m.from } : { from: m.from, to: m.to },
+        });
+        await repos.routes.plan(stopId, activityId);
+      }
+    }
     reply.status(201);
-    return { id };
+    return { id, routeId, missed: draft.missed };
   });
 
   /** Trip, members and routes with summary stats (and a checks level for the badge). */

@@ -28,6 +28,15 @@ export interface PlannedActivity {
   when?: When | null;
 }
 
+/** A ticket as the rules see it; departAt and arriveAt are local ISO 8601 with an offset. */
+export interface RuleLeg {
+  id: string;
+  label?: string;
+  departAt?: string | null;
+  arriveAt?: string | null;
+  status?: string;
+}
+
 /** The minimum a rule needs to know about one stop, in route order. */
 export interface RuleStop {
   id: string;
@@ -37,8 +46,8 @@ export interface RuleStop {
   countryName: string;
   visaRule?: VisaRule | null;
   planned?: PlannedActivity[];
-  /** Ticket segments into this stop; departAt is local ISO 8601 with an offset. */
-  legs?: { id: string; label?: string; departAt?: string | null }[];
+  /** Ticket segments into this stop; departAt and arriveAt are local ISO 8601 with an offset. */
+  legs?: RuleLeg[];
   /** Hotels for this stop; booked ones record the dates they were booked for. */
   stays?: { hotelId: string; name: string; status: string; arrive?: string | null; depart?: string | null }[];
 }
@@ -80,7 +89,9 @@ export type CheckKind =
   | "visa-policy"
   | "event"
   | "leg-day"
-  | "stay-dates";
+  | "stay-dates"
+  | "home-day"
+  | "return-window";
 
 export interface Check {
   id: string;

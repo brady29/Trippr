@@ -183,9 +183,15 @@ export type StayStatus = (typeof STAY_STATUSES)[number];
 export const stayBody = z.object({
   status: z.enum(STAY_STATUSES).default("shortlist"),
   rooms: z.number().int().min(1).max(10).nullish(),
+  /**
+   * The dates a booking was made for (status "booked" only). Left out, a new
+   * booking takes the stop's dates and an existing one keeps its own.
+   */
+  arrive: isoDate.nullish(),
+  depart: isoDate.nullish(),
   /** Stays are route-structure writes, guarded by the route version. */
   version: z.number().int().nonnegative(),
-});
+}).refine((b) => !b.arrive || !b.depart || b.arrive < b.depart, { message: "Check-out has to be after check-in", path: ["depart"] });
 
 /** A hotel as it appears on a stop: shortlisted, chosen or booked. */
 export interface StopStay {
@@ -194,6 +200,9 @@ export interface StopStay {
   hotel: Pick<Hotel, "id" | "name" | "url" | "priceCadPerNight" | "priceBasis" | "sleeps" | "areaId" | "areaName" | "lat" | "lon">;
   /** Per person per night in CAD, after room sharing. */
   perPersonCadPerNight?: number | null;
+  /** Booked stays only: the check-in and check-out the booking was made for. */
+  arrive?: string | null;
+  depart?: string | null;
 }
 
 // --- graph export ---------------------------------------------------------
@@ -405,5 +414,11 @@ export interface BookingsResult {
     arriveMode: string;
     fromCity: { code: string; name: string; countryIso: string } | null;
   }[];
+  /** The trip home, when nothing booked covers it yet: leaving the last stop on the home date. */
+  homeToBook: {
+    date: string;
+    fromCity: { code: string; name: string; countryIso: string };
+    toCity: { code: string; name: string; countryIso: string } | null;
+  } | null;
   totals: { bookedPerPersonCad: number; pendingPerPersonCad: number; bookedGroupCad: number; bookedCount: number; pendingCount: number };
 }

@@ -1,5 +1,5 @@
 import type { Leg, Role, RouteSummary, RouteView, StopStay, StopView } from "@trippr/contracts";
-import { computeBudget, effectiveStopCosts, perPersonNightly, runChecks, type RuleStop } from "@trippr/rules";
+import { computeBudget, effectiveStopCosts, perPersonNightly, runChecks, type RuleLeg, type RuleStop } from "@trippr/rules";
 import type { StoredRoute, StoredStop } from "../repositories";
 import type { StoredLeg, StoredStay } from "../repositories/routes";
 
@@ -26,6 +26,7 @@ export function stopStay(s: StoredStay): StopStay {
     rooms: s.rooms,
     hotel: s.hotel,
     perPersonCadPerNight: perPersonNightly(s.hotel.priceCadPerNight, s.hotel.priceBasis, s.hotel.sleeps),
+    ...(s.status === "booked" ? { arrive: s.arrive, depart: s.depart } : {}),
   };
 }
 
@@ -45,7 +46,7 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     countryName: s.country.name,
     visaRule: s.country.visaRule ?? null,
     planned: s.planned,
-    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, label: legLabel(l) })),
+    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l) })),
     stays: s.stays.map((st) => ({
       hotelId: st.hotel.id,
       name: st.hotel.name,
@@ -55,7 +56,8 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     })),
     stored: s,
   }));
-  const result = runChecks(stored.trip.startDate, input);
+  const home = stored.homeLegs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l) }));
+  const result = runChecks(stored.trip.startDate, input, home, stored.trip.latestReturn);
 
   const stops: StopView[] = result.schedule.stops.map(({ stop, arrive, depart }, i) => ({
     id: stop.id,
@@ -90,6 +92,7 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     trip: stored.trip,
     role,
     stops,
+    homeLegs: stored.homeLegs.map(publicLeg),
     checks: {
       level: result.level,
       totalNights: result.schedule.totalNights,
@@ -102,6 +105,27 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     budget,
   };
 }
+
+/** A built view back in the rules module's shape, for checks that run on what the member sees (the assistant). */
+export function ruleStopsOfView(view: RouteView): RuleStop[] {
+  return view.stops.map((s) => ({
+    id: s.id,
+    nights: s.nights,
+    cityName: s.city.name,
+    countryIso: s.country.iso,
+    countryName: s.country.name,
+    visaRule: s.country.visaRule ?? null,
+    planned: s.planned,
+    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l) })),
+    stays: s.stays.map((st) => ({ hotelId: st.hotel.id, name: st.hotel.name, status: st.status, arrive: st.arrive ?? null, depart: st.depart ?? null })),
+  }));
+}
+
+export function ruleHomeOfView(view: RouteView): RuleLeg[] {
+  return (view.homeLegs ?? []).map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l) }));
+}
+
+const publicLegLabel = (l: Leg) => [MODE_WORD[l.mode] ?? l.mode, [l.operator, l.number].filter(Boolean).join(" ")].filter(Boolean).join(" ");
 
 export function summarize(view: RouteView): RouteSummary {
   const { tripId: _tripId, ...route } = view.route;

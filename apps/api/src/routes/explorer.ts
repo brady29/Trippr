@@ -159,6 +159,37 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
     return view;
   });
 
+  /** A ticket home after the last stop. A booked one fixes the home date. */
+  app.post("/routes/:id/home-legs", async (req, reply): Promise<RouteView> => {
+    const user = ctx.user(req);
+    const { id } = ctx.parse(idParams, req.params);
+    const { role, tripId } = await guards.route(user, id, "editor");
+    const body = ctx.parse(createLegBody, req.body);
+    const stored = await loadOrThrow(id);
+    if (stored.route.version !== body.version) throw versionConflict(stored.route.version);
+    await requireHubs([body.from, body.to]);
+    const maxSeq = stored.homeLegs.reduce((m, l) => Math.max(m, l.seq), -1);
+    const version = await repos.routes.addHomeLeg(id, body.version, {
+      id: newId("lg"),
+      seq: maxSeq + 1,
+      mode: body.mode,
+      status: body.status,
+      from: body.from.id,
+      to: body.to.id,
+      operator: body.operator ?? null,
+      number: body.number ?? null,
+      departAt: body.departAt ?? null,
+      arriveAt: body.arriveAt ?? null,
+      durationMin: body.durationMin ?? null,
+      priceCad: body.priceCad ?? null,
+      bookingRef: body.bookingRef ?? null,
+      seat: body.seat ?? null,
+    });
+    const view = await afterWrite(id, version, role, { tripId, by: user.id });
+    reply.status(201);
+    return view;
+  });
+
   app.patch("/legs/:id", async (req): Promise<RouteView> => {
     const user = ctx.user(req);
     const { id } = ctx.parse(idParams, req.params);
@@ -167,8 +198,9 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
     const refs = [body.from, body.to].filter((r): r is HubRef => r != null);
     if (refs.length) await requireHubs(refs);
     const stored = await loadOrThrow(routeId);
+    const home = stopId === null;
     const stop = stored.stops.find((s) => s.id === stopId);
-    const legs = stop?.legs ?? [];
+    const legs = home ? stored.homeLegs : (stop?.legs ?? []);
     const leg = legs.find((l) => l.id === id);
     const maxSeq = legs.reduce((m, l) => Math.max(m, l.seq), -1);
     const becomesLast = body.seq != null ? body.seq >= maxSeq : leg?.seq === maxSeq;
@@ -187,7 +219,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
       ...flag("priceCad"),
       ...flag("bookingRef"),
       ...flag("seat"),
-    });
+    }, home);
     if (version !== null) {
       if (body.from) await repos.routes.setLegHub(id, "from", body.from.id);
       if (body.to) await repos.routes.setLegHub(id, "to", body.to.id);
@@ -203,7 +235,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
     const stored = await loadOrThrow(routeId);
     const remaining = (stored.stops.find((s) => s.id === stopId)?.legs ?? []).filter((l) => l.id !== id);
     const last = remaining.at(-1);
-    return afterWrite(routeId, await repos.routes.deleteLeg(id, version, last ? arriveModeFor(last.mode) : null), role, {
+    return afterWrite(routeId, await repos.routes.deleteLeg(id, version, last ? arriveModeFor(last.mode) : null, stopId === null), role, {
       tripId,
       by: user.id,
     });
@@ -235,13 +267,18 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
     const stop = stored.stops.find((s) => s.id === id)!;
     if (!hotel) throw notFound("Hotel");
     if (hotel.cityCode !== stop.city.code) throw badRequest(`${hotel.name} is in ${hotel.cityName}, not ${stop.city.name}`);
-    // A booking remembers the dates it was made for, so a later reorder can be flagged.
+    // A booking remembers the dates it was made for: the ones given, else the ones it already had, else the stop's.
+    // Those dates become anchors the route builder works around.
     const dates = buildRouteView(stored, role).stops.find((s) => s.id === id)!;
+    const existing = stop.stays.find((s) => s.hotel.id === hotelId && s.status === "booked");
+    const arrive = body.arrive ?? existing?.arrive ?? dates.arrive;
+    const depart = body.depart ?? existing?.depart ?? dates.depart;
+    if (body.status === "booked" && arrive >= depart) throw badRequest("Check-out has to be after check-in");
     const version = await repos.routes.setStay(id, hotelId, body.version, {
       status: body.status,
       rooms: body.rooms ?? null,
-      arrive: body.status === "booked" ? dates.arrive : null,
-      depart: body.status === "booked" ? dates.depart : null,
+      arrive: body.status === "booked" ? arrive : null,
+      depart: body.status === "booked" ? depart : null,
     });
     if (version !== null && body.status !== "shortlist") await repos.routes.demoteOtherStays(id, hotelId);
     return afterWrite(routeId, version, role, { tripId, by: user.id });

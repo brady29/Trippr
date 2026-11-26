@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activityLinks, hotelLinks, stayLinks, travelLinks } from "../src/booking-links";
+import { activityLinks, homeFlightLinks, hotelLinks, stayLinks, travelLinks } from "../src/booking-links";
 
 const YTO = { code: "YTO", name: "Toronto", countryIso: "CA" };
 const TYO = { code: "TYO", name: "Tokyo", countryIso: "JP" };
@@ -64,5 +64,15 @@ describe("booking links", () => {
     for (const l of stayLinks({ area: "Shibuya", city: TYO }, "2027-05-10", "2027-05-14", 2)) {
       expect(l.url).not.toMatch(/aid=|affiliate|utm_|ref=|rooms\//i);
     }
+  });
+});
+
+describe("flights home", () => {
+  it("offers Trip.com only when both ends have a city code", () => {
+    expect(homeFlightLinks(TYO, YTO, "2027-06-19", 2).map((l) => l.provider)).toEqual(["tripcom", "google-flights"]);
+    const named = homeFlightLinks(TYO, "Toronto", "2027-06-19", 2);
+    expect(named.map((l) => l.provider)).toEqual(["google-flights"]);
+    expect(decodeURIComponent(named[0]!.url)).toContain("Flights from Tokyo to Toronto on 2027-06-19");
+    expect(homeFlightLinks("Toronto", TYO, "2027-05-10", 1).map((l) => l.provider)).toEqual(["google-flights"]);
   });
 });

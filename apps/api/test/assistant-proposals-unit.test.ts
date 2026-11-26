@@ -162,6 +162,31 @@ describe("checking suggestions against the route", () => {
     expect(check({ kind: "set_nights", stopId: "stop-nope", nights: 2 })).toEqual({ reason: 'There is no stop stop-nope on the route "Main" (route-main).' });
   });
 
+  it("protects a booked ticket's date unless the member asked to move it", () => {
+    const booked = {
+      ...view,
+      stops: view.stops.map((s) =>
+        s.id === "stop-osa" ? { ...s, legs: s.legs.map((l) => ({ ...l, status: "booked" as const, arriveAt: "2027-05-13T10:30+09:00" })) } : s,
+      ),
+    } as RouteView;
+    const checkOn = (p: unknown) => {
+      const parsed = parseProposeInput({ proposals: [p] });
+      if ("error" in parsed) throw new Error(parsed.error);
+      return checkProposal(parsed.items[0]!.proposal, { ...facts, view: booked });
+    };
+    const refused = checkOn({ kind: "set_nights", stopId: "stop-tyo", nights: 5 });
+    expect(refused).toHaveProperty("reason");
+    expect((refused as { reason: string }).reason).toContain("Nozomi 1 off its booked dates");
+    expect((refused as { reason: string }).reason).toContain("moveBookings: true");
+    expect(checkOn({ kind: "set_nights", stopId: "stop-tyo", nights: 5, moveBookings: true })).toMatchObject({
+      summary: "Tokyo: 4 → 5 nights (moves High-speed train Nozomi 1 off its booked dates)",
+    });
+    // Osaka comes after the booking, so its nights are free.
+    expect(checkOn({ kind: "set_nights", stopId: "stop-osa", nights: 4 })).toMatchObject({ summary: "Osaka: 3 → 4 nights" });
+    // A new stop before the booking is refused the same way.
+    expect((checkOn({ kind: "add_stop", cityCode: "KYO", afterStopId: "stop-tyo", nights: 2 }) as { reason: string }).reason).toContain("off its booked dates");
+  });
+
   it("plans an activity on a day of the trip, and only in its own city", () => {
     const planned = check({ kind: "plan_activity", stopId: "stop-tyo", activityId: "act-teamlab", day: 3, startTime: "18:30" });
     expect(planned).toMatchObject({

@@ -61,6 +61,9 @@ Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 tra
 | 14 | Graph explorer: the trip as a 2D knowledge graph (Cytoscape) and on a 3D globe, with hotels, areas, stations, airports and legs as nodes | `/trips/:id/graph` |
 | 15 | Bookings: every ticket and hotel in one list, what's still to book, and search links into Trip.com, Google Flights, 12Go, Booking.com and Klook filled in with the trip's cities, dates and group size | `/trips/:id/bookings` |
 | 16 | Trip inbox: forward a booking confirmation or a TikTok, and Claude adds the ticket, hotel or activity idea to the trip | `/trips/:id/inbox` |
+| 17 | Bookings as anchors: booked tickets, hotels and the flight home fix their dates. Changing nights suggests a trade with another stop that keeps every booking, moving a booking has to be chosen on purpose, and every change shows what it did with Undo ([`rules/anchors.ts`](packages/rules/src/anchors.ts), [design notes](docs/redesign/route-builder-anchors.html)) | Route editor |
+| 18 | Building help: problems on the stop card with one-click fixes (visa days, events, bookings off their dates, home-by date), Next to book ranked by risk with "Did you book it?", smart add stop (where it fits, nights, the effect on bookings), a pace meter, a compact view, and an assistant that keeps bookings in place | Route editor |
+| 19 | Trip setup: a date range (start and home-by), where you fly from, and must-dos on fixed dates that draft the first route | My trips → Plan a new trip |
 
 Not built yet: Ask the trip (10) and the full budget layer (12; planned activity cost per route is shown, per-person totals are not). Next up is in [docs/places-map-itinerary-assistant-spec.md](docs/places-map-itinerary-assistant-spec.md): places with map pins, a map tab, a day-by-day itinerary with a calendar feed, and a trip assistant.
 

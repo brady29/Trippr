@@ -43,7 +43,8 @@ export function createGuards(repos: Repositories) {
       return check(await repos.explorer.legRole(legId, user.id), minimum, "Leg") as {
         tripId: string;
         routeId: string;
-        stopId: string;
+        /** Null for a ticket home, which hangs off the route rather than a stop. */
+        stopId: string | null;
         role: Role;
       };
     },

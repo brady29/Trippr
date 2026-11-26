@@ -312,7 +312,13 @@ export function createInbox(ctx: AppContext) {
     const existing = stop.stays.find((st) => st.hotel.id === hotel!.id);
     if (existing?.status === "booked") return `${s.hotelName} is already booked for ${stopLabel(stop)}.`;
     await withVersion(routeId, (version) =>
-      call("PUT", `/stops/${stop.id}/stays/${hotel!.id}`, { status: s.status, ...(s.rooms ? { rooms: s.rooms } : {}), version }),
+      call("PUT", `/stops/${stop.id}/stays/${hotel!.id}`, {
+        status: s.status,
+        ...(s.rooms ? { rooms: s.rooms } : {}),
+        // A booking keeps the dates on the confirmation, so the route builder can work around them.
+        ...(s.status === "booked" && s.checkIn && s.checkOut && s.checkIn < s.checkOut ? { arrive: s.checkIn, depart: s.checkOut } : {}),
+        version,
+      }),
     );
     const dates =
       s.checkIn && s.checkOut && (s.checkIn !== stop.arrive || s.checkOut !== stop.depart)

@@ -65,6 +65,20 @@ export function flightLinks(from: LinkCity, to: LinkCity, date: string | null | 
   ];
 }
 
+/**
+ * Flights to or from home. The trip's home city is free text ("Toronto"), so
+ * either end may be a plain name; Trip.com needs city codes, so it is offered
+ * only when both ends have one (a known city, or three letters like YTO).
+ */
+export function homeFlightLinks(from: LinkCity | string, to: LinkCity | string, date: string | null | undefined, travellers: number): BookingLink[] {
+  const city = (c: LinkCity | string) => (typeof c === "string" ? { code: c, name: c } : c);
+  const a = city(from);
+  const b = city(to);
+  const links = flightLinks(a, b, date, travellers);
+  const coded = (c: LinkCity) => /^[A-Za-z]{3}$/.test(c.code);
+  return coded(a) && coded(b) ? links : links.filter((l) => l.provider !== "tripcom");
+}
+
 export function groundLinks(mode: LinkMode, from: LinkCity, to: LinkCity, date: string | null | undefined, travellers: number): BookingLink[] {
   const d = day(date);
   const links: BookingLink[] = [];

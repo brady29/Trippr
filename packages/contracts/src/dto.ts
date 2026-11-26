@@ -38,6 +38,8 @@ export interface TripRef {
   homeCity?: string | null;
   /** Number of people travelling; 1 when not set. */
   travellers?: number | null;
+  /** The latest the group can be home (trip setup's date range); routes ending later get a check. */
+  latestReturn?: string | null;
 }
 
 export interface TripListItem extends TripRef {
@@ -246,6 +248,8 @@ export interface RouteView {
   trip: TripRef;
   role: Role;
   stops: StopView[];
+  /** Tickets home after the last stop. A booked one fixes the home date. */
+  homeLegs: Leg[];
   checks: RouteChecks;
   /** Kept for compatibility: the planned-activities part of the budget, per person. */
   plannedCostCad: number;

@@ -27,7 +27,7 @@ import type {
   TripDetail,
   TripListItem,
 } from "@trippr/contracts";
-import { computeBudget, effectiveStopCosts, runChecks, worstLevel } from "@trippr/rules";
+import { computeBudget, effectiveStopCosts, runChecks, type RuleLeg, type RuleStop } from "@trippr/rules";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, isConflict } from "./api";
 import { useToast } from "@/components/toast";
@@ -190,40 +190,60 @@ export const usePath = (params: { from: string; to: string; by: string; railOnly
  * Recompute dates and checks in the browser with the same rules module the
  * API uses, so optimistic edits show the right dates immediately.
  */
-export function recompute(view: RouteView, stops: StopView[]): RouteView {
-  const result = runChecks(
-    view.trip.startDate,
-    stops.map((s) => ({
-      id: s.id,
-      nights: s.nights,
-      cityName: s.city.name,
-      countryIso: s.country.iso,
-      countryName: s.country.name,
-      visaRule: s.country.visaRule ?? null,
-      planned: s.planned,
-      legs: (s.legs ?? []).map((l) => ({
-        id: l.id,
-        label: [l.operator, l.number].filter(Boolean).join(" ") || `${l.from.name} → ${l.to.name}`,
-        departAt: l.departAt ?? null,
-      })),
-      view: s,
+/** The rules module's view of a stop: what checks and anchors need, with the StopView kept alongside. */
+export function ruleStops(stops: StopView[]): (RuleStop & { view: StopView })[] {
+  return stops.map((s) => ({
+    id: s.id,
+    nights: s.nights,
+    cityName: s.city.name,
+    countryIso: s.country.iso,
+    countryName: s.country.name,
+    visaRule: s.country.visaRule ?? null,
+    planned: s.planned,
+    legs: (s.legs ?? []).map((l) => ({
+      id: l.id,
+      label: [l.operator, l.number].filter(Boolean).join(" ") || `${l.from.name} → ${l.to.name}`,
+      departAt: l.departAt ?? null,
+      arriveAt: l.arriveAt ?? null,
+      status: l.status,
     })),
-  );
+    stays: (s.stays ?? []).map((st) => ({
+      hotelId: st.hotel.id,
+      name: st.hotel.name,
+      status: st.status,
+      arrive: st.arrive ?? null,
+      depart: st.depart ?? null,
+    })),
+    view: s,
+  }));
+}
+
+/** The tickets home, as the rules see them. */
+export function ruleHome(view: Pick<RouteView, "homeLegs">): RuleLeg[] {
+  return (view.homeLegs ?? []).map((l) => ({
+    id: l.id,
+    label: [l.operator, l.number].filter(Boolean).join(" ") || `${l.from.name} → ${l.to.name}`,
+    departAt: l.departAt ?? null,
+    arriveAt: l.arriveAt ?? null,
+    status: l.status,
+  }));
+}
+
+export function recompute(view: RouteView, stops: StopView[]): RouteView {
+  const result = runChecks(view.trip.startDate, ruleStops(stops), ruleHome(view), view.trip.latestReturn);
   // Chosen hotels and priced legs override the rough estimates, as on the server.
   const budget = computeBudget(
     stops.map((s) => ({ id: s.id, nights: s.nights, planned: s.planned, ...effectiveStopCosts(s) })),
     view.trip.travellers ?? 1,
   );
-  // Only the server knows the dates a hotel was booked for, so keep its stay-date checks until it answers.
-  const stayChecks = view.checks.checks.filter((c) => c.kind === "stay-dates");
-  const checks = [...result.checks, ...stayChecks];
+  const checks = result.checks;
   return {
     ...view,
     stops: result.schedule.stops.map(({ stop, arrive, depart }, i) => ({ ...stop.view, order: i, arrive, depart })),
     budget,
     plannedCostCad: budget.perPerson.activities,
     checks: {
-      level: worstLevel(checks.map((c) => c.level)),
+      level: result.level,
       totalNights: result.schedule.totalNights,
       returnDate: result.schedule.returnDate,
       checks,
@@ -233,10 +253,11 @@ export function recompute(view: RouteView, stops: StopView[]): RouteView {
   };
 }
 
-type RouteEdit =
+export type RouteEdit =
   | { kind: "reorder"; stopIds: string[] }
   | { kind: "addStop"; body: Omit<AddStopBody, "version"> }
   | { kind: "patchStop"; stopId: string; body: Omit<PatchStopBody, "version"> }
+  | { kind: "setNights"; nights: { stopId: string; nights: number }[] }
   | { kind: "deleteStop"; stopId: string }
   | { kind: "patchRoute"; body: { name?: string; tags?: string[]; isCurrent?: true } };
 
@@ -250,6 +271,14 @@ function optimistic(view: RouteView, edit: RouteEdit): RouteView {
       return recompute(
         view,
         view.stops.map((s) => (s.id === edit.stopId ? { ...s, ...edit.body } : s)),
+      );
+    case "setNights":
+      return recompute(
+        view,
+        view.stops.map((s) => {
+          const n = edit.nights.find((x) => x.stopId === s.id);
+          return n ? { ...s, nights: n.nights } : s;
+        }),
       );
     case "deleteStop":
       return recompute(
@@ -279,6 +308,8 @@ function send(routeId: string, version: number, edit: RouteEdit): Promise<RouteV
       return api(`/routes/${routeId}/stops`, { method: "POST", body: { ...edit.body, version } });
     case "patchStop":
       return api(`/stops/${edit.stopId}`, { method: "PATCH", body: { ...edit.body, version } });
+    case "setNights":
+      return api(`/routes/${routeId}/nights`, { method: "PUT", body: { nights: edit.nights, version } });
     case "deleteStop":
       return api(`/stops/${edit.stopId}?version=${version}`, { method: "DELETE" });
     case "patchRoute":

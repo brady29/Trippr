@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Area, GraphJSON, Hotel, Hub, LegPrivate, RouteView } from "@trippr/contracts";
+import type { Area, BookingsResult, GraphJSON, Hotel, Hub, LegPrivate, RouteView } from "@trippr/contracts";
+import { addDays } from "@trippr/rules";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { migrateGraphExplorer } from "../src/db/explorer-migration";
 import { createRepositories } from "../src/repositories";
@@ -252,6 +253,54 @@ describe("areas and hotels", () => {
     expect(view.checks.checks.some((c) => c.kind === "stay-dates")).toBe(false);
   });
 
+  it("keeps the dates a booking was made for, given or already stored", async () => {
+    let view = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body;
+    const tyo = stopIn(view, "TYO");
+    const booked = () => stopIn(view, "TYO").stays.find((s) => s.hotel.id === hotelB)!;
+    expect([booked().arrive, booked().depart]).toEqual([tyo.arrive, tyo.depart]);
+
+    const later = { arrive: addDays(tyo.arrive, 1), depart: addDays(tyo.depart, 1) };
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", ...later, version: view.route.version })).body;
+    expect([booked().arrive, booked().depart]).toEqual([later.arrive, later.depart]);
+    expect(view.checks.checks.find((c) => c.kind === "stay-dates")).toMatchObject({ hotelId: hotelB });
+
+    // Marking it booked again (say, to change the rooms) keeps those dates.
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", rooms: 2, version: view.route.version })).body;
+    expect(booked().arrive).toBe(later.arrive);
+
+    const bad = await editor.api.put(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", arrive: tyo.depart, depart: tyo.arrive, version: view.route.version });
+    expect(bad.status).toBe(400);
+
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", arrive: tyo.arrive, depart: tyo.depart, version: view.route.version })).body;
+    expect(view.checks.checks.some((c) => c.kind === "stay-dates")).toBe(false);
+  });
+
+  it("sets several stops' nights in one versioned write", async () => {
+    let view = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body;
+    const [a, b] = view.stops;
+    const version = view.route.version;
+    const trade = [
+      { stopId: a!.id, nights: a!.nights + 1 },
+      { stopId: b!.id, nights: b!.nights - 1 },
+    ];
+    view = (await editor.api.put<RouteView>(`/routes/${MAIN}/nights`, { nights: trade, version })).body;
+    expect(view.route.version).toBe(version + 1);
+    expect(view.stops.slice(0, 2).map((s) => s.nights)).toEqual([a!.nights + 1, b!.nights - 1]);
+    expect(view.stops[2]!.arrive).toBe(b!.depart);
+    expect((await editor.api.put(`/routes/${MAIN}/nights`, { nights: trade, version })).status).toBe(409);
+    expect((await editor.api.put(`/routes/${MAIN}/nights`, { nights: [{ stopId: "nope", nights: 1 }], version: view.route.version })).status).toBe(400);
+    view = (
+      await editor.api.put<RouteView>(`/routes/${MAIN}/nights`, {
+        nights: [
+          { stopId: a!.id, nights: a!.nights },
+          { stopId: b!.id, nights: b!.nights },
+        ],
+        version: view.route.version,
+      })
+    ).body;
+    expect(view.stops.slice(0, 2).map((s) => s.nights)).toEqual([a!.nights, b!.nights]);
+  });
+
   it("copies legs and stays when a route is duplicated", async () => {
     const source = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body;
     const copy = (await editor.api.post<RouteView>(`/trips/${TRIP}/routes`, { fromRouteId: MAIN, name: "Main with hotels" })).body;
@@ -367,5 +416,57 @@ describe("graph export", () => {
   it("hides the graph from non-members", async () => {
     const stranger = await signIn(h.app, "Stranger");
     expect((await stranger.api.get(`/trips/${TRIP}/graph`)).status).toBe(404);
+  });
+});
+
+describe("the ticket home", () => {
+  it("hangs off the route, fixes the home date, shows in Bookings, copies and goes with the route", async () => {
+    const legsBefore = await count("MATCH (n:Leg) RETURN count(n) AS n");
+    let view = (await editor.api.post<RouteView>(`/trips/${TRIP}/routes`, { fromRouteId: SHANGHAI, name: "Going home" })).body;
+    const routeId = view.route.id;
+    const last = view.stops.at(-1)!;
+    expect(view.homeLegs).toEqual([]);
+
+    let bookings = (await editor.api.get<BookingsResult>(`/trips/${TRIP}/bookings?routeId=${routeId}`)).body;
+    expect(bookings.homeToBook).toMatchObject({ date: view.checks.returnDate, fromCity: { code: last.city.code } });
+
+    const add = await editor.api.post<RouteView>(`/routes/${routeId}/home-legs`, {
+      mode: "flight",
+      from: { kind: "airport", id: "HKG" },
+      to: { kind: "airport", id: "YYZ" },
+      number: "CX 826",
+      departAt: `${view.checks.returnDate}T10:05+08:00`,
+      status: "booked",
+      bookingRef: "HOME-1",
+      version: view.route.version,
+    });
+    expect(add.status).toBe(201);
+    view = add.body;
+    const leg = view.homeLegs[0]!;
+    expect(leg).toMatchObject({ mode: "flight", status: "booked", number: "CX 826", from: { id: "HKG" }, to: { id: "YYZ" } });
+    expect(leg).not.toHaveProperty("bookingRef");
+    expect(view.checks.checks.some((c) => c.kind === "home-day")).toBe(false);
+    expect((await editor.api.get<LegPrivate>(`/legs/${leg.id}/private`)).body.bookingRef).toBe("HOME-1");
+
+    // One more night at the last stop: the ticket home no longer leaves on the home date.
+    view = (await editor.api.put<RouteView>(`/routes/${routeId}/nights`, { nights: [{ stopId: last.id, nights: last.nights + 1 }], version: view.route.version })).body;
+    expect(view.checks.checks.find((c) => c.kind === "home-day")).toMatchObject({ level: "warn", legId: leg.id });
+    view = (await editor.api.patch<RouteView>(`/legs/${leg.id}`, { departAt: `${view.checks.returnDate}T10:05+08:00`, version: view.route.version })).body;
+    expect(view.checks.checks.some((c) => c.kind === "home-day")).toBe(false);
+
+    bookings = (await editor.api.get<BookingsResult>(`/trips/${TRIP}/bookings?routeId=${routeId}`)).body;
+    expect(bookings.homeToBook).toBeNull();
+    expect(bookings.booked.find((b) => b.id === leg.id)).toMatchObject({ kind: "leg", stopId: "home", bookingRef: "HOME-1" });
+
+    const copy = (await editor.api.post<RouteView>(`/trips/${TRIP}/routes`, { fromRouteId: routeId, name: "Going home copy" })).body;
+    expect(copy.homeLegs).toHaveLength(1);
+    expect(copy.homeLegs[0]!.id).not.toBe(leg.id);
+
+    view = (await editor.api.del<RouteView>(`/legs/${leg.id}?version=${view.route.version}`)).body;
+    expect(view.homeLegs).toEqual([]);
+    expect((await viewer.api.post(`/routes/${routeId}/home-legs`, { mode: "flight", from: { kind: "airport", id: "HKG" }, to: { kind: "airport", id: "YYZ" }, version: view.route.version })).status).toBe(403);
+
+    for (const id of [routeId, copy.route.id]) expect((await owner.api.del(`/routes/${id}`)).status).toBe(204);
+    expect(await count("MATCH (n:Leg) RETURN count(n) AS n")).toBe(legsBefore);
   });
 });

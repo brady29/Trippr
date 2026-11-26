@@ -17,19 +17,22 @@ export function tripsRepository(db: GraphClient) {
       return rows.map((r) => ({ ...r.trip, role: r.role, routeCount: num(r.routeCount) }));
     },
 
-    async create(userId: string, input: { name: string; startDate: string; homeCity?: string; travellers?: number }) {
+    /** Returns the trip id and its first (current) route's id. */
+    async create(userId: string, input: { name: string; startDate: string; homeCity?: string; travellers?: number; latestReturn?: string | null }) {
       const id = newId("trip");
+      const routeId = newId("rt");
       await db.query(q("trips/create"), {
         userId,
         id,
-        routeId: newId("rt"),
+        routeId,
         name: input.name,
         startDate: input.startDate,
         homeCity: input.homeCity ?? null,
         travellers: input.travellers ?? 1,
+        latestReturn: input.latestReturn ?? null,
         now: nowIso(),
       });
-      return id;
+      return { id, routeId };
     },
 
     async get(tripId: string): Promise<TripRef | null> {
@@ -37,13 +40,16 @@ export function tripsRepository(db: GraphClient) {
       return row?.trip ?? null;
     },
 
-    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string; travellers?: number }) {
+    /** latestReturn: undefined leaves it, null clears it. */
+    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string; travellers?: number; latestReturn?: string | null }) {
       await db.query(q("trips/patch"), {
         tripId,
         name: input.name ?? null,
         startDate: input.startDate ?? null,
         homeCity: input.homeCity ?? null,
         travellers: input.travellers ?? null,
+        setLatestReturn: input.latestReturn !== undefined,
+        latestReturn: input.latestReturn ?? null,
       });
     },
 
