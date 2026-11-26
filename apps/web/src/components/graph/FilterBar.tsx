@@ -41,7 +41,7 @@ export function FilterBar({
           <legend className="mb-1 w-full text-[11px] font-medium uppercase tracking-wide text-ink-faint lg:mb-0 lg:mr-1 lg:w-auto">Countries</legend>
           {countries.map((c) => (
             <button key={c.id} type="button" aria-pressed={state.countries.includes(c.id)} className={chip(state.countries.includes(c.id))} onClick={() => update({ countries: toggle(state.countries, c.id) })}>
-              <span className="mr-1 inline-block h-2 w-2 rounded-full align-middle" style={{ background: c.style.color ?? "#59626E" }} aria-hidden="true" />
+              <span className="mr-1 inline-block h-2 w-2 rounded-full align-middle" style={{ background: c.style.color ?? "#5B616B" }} aria-hidden="true" />
               {c.label}
             </button>
           ))}

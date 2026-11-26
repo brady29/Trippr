@@ -49,7 +49,7 @@ Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 tra
 |---|---|---|
 | 1 | Sign-in, invite links, owner / editor / viewer roles | Trip home → Invite friends |
 | 2 | Trips and tagged routes: create, duplicate, rename, tag, mark as current | Trip home |
-| 3 | Route editor: drag to reorder, inline nights / travel mode / notes, dates recomputed from the trip start | `/routes/:id` |
+| 3 | Route editor: drag to reorder, inline nights / travel mode / notes, dates recomputed from the trip start | `/trips/:id/routes/:routeId` (old `/routes/:id` links redirect) |
 | 4 | Shared activity library per city, with planned toggles | Activity drawer, Activities page |
 | 5 | Map (solid lines for trains, dashed arcs for flights) and a timeline sized by nights | Route editor |
 | 6 | Checks: China visa-free days per entry against 30, number of entries, policy end date, fixed-date events, return date | Route editor |
@@ -59,7 +59,7 @@ Version one plans the Asia 2027 graduation trip: 11 stops, 40 nights, 5 to 6 tra
 | 11 | Live updates and presence: friends' edits appear without a refresh, and you can see who else is looking | Everywhere |
 | 13 | *Stretch:* export as text and as a calendar (.ics) | Route editor |
 | 14 | Graph explorer: the trip as a 2D knowledge graph (Cytoscape) and on a 3D globe, with hotels, areas, stations, airports and legs as nodes | `/trips/:id/graph` |
-| 15 | Booked: every ticket and hotel in one list, what's still to book, and search links into Trip.com, Google Flights, 12Go, Booking.com and Klook filled in with the trip's cities, dates and group size | `/trips/:id/bookings` |
+| 15 | Bookings: every ticket and hotel in one list, what's still to book, and search links into Trip.com, Google Flights, 12Go, Booking.com and Klook filled in with the trip's cities, dates and group size | `/trips/:id/bookings` |
 | 16 | Trip inbox: forward a booking confirmation or a TikTok, and Claude adds the ticket, hotel or activity idea to the trip | `/trips/:id/inbox` |
 
 Not built yet: Ask the trip (10) and the full budget layer (12; planned activity cost per route is shown, per-person totals are not). Next up is in [docs/places-map-itinerary-assistant-spec.md](docs/places-map-itinerary-assistant-spec.md): places with map pins, a map tab, a day-by-day itinerary with a calendar feed, and a trip assistant.
@@ -99,7 +99,7 @@ The browser never talks to the database. Every read and write goes through the A
 
 | Layer | Choice |
 |---|---|
-| Frontend | Next.js 15 (App Router), TypeScript, Tailwind 4, TanStack Query, MapLibre GL JS, dnd-kit |
+| Frontend | Next.js 15 (App Router), TypeScript, Tailwind 4, TanStack Query, MapLibre GL JS, dnd-kit. A departure-board look in a "Swiss Rail" palette with night mode, and one left menu that folds to icons (see [docs/redesign](docs/redesign/trippr-redesign-directions.html)) |
 | API | Fastify 5 + zod, bundled with tsup, Docker image for Cloud Run |
 | Database | FalkorDB (default, local Docker) or Neo4j; one repository layer for both |
 | Rules | `packages/rules`: pure TypeScript, shared by the API and the browser |

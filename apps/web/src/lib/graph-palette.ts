@@ -2,22 +2,22 @@
  * The Trip Graph Explorer palette, exactly as the spec's colour tables.
  * Node types use shape first and a neutral or brand colour; activity tags
  * use the Okabe–Ito colour-blind-safe palette. Every colour has a variant
- * for light paper (#F4EFE4) and for the dark globe (#0F151D). The same
+ * for light paper (#F1F2F4) and for the dark globe (#1B1C1F). The same
  * values exist as CSS tokens (--node-*, --tag-*) in globals.css.
  */
 import type { GraphNodeType } from "@trippr/contracts";
 
 export type Surface = "paper" | "globe";
 
-export const BACKGROUND: Record<Surface, string> = { paper: "#F4EFE4", globe: "#0F151D" };
+export const BACKGROUND: Record<Surface, string> = { paper: "#F1F2F4", globe: "#1B1C1F" };
 /** Label text, with a halo in the background colour. */
-export const LABEL: Record<Surface, string> = { paper: "#1B222B", globe: "#F4EFE4" };
+export const LABEL: Record<Surface, string> = { paper: "#15171A", globe: "#F1F2F4" };
 /** Outline in the opposite tone so nodes hold their edges on both backgrounds. */
-export const OUTLINE: Record<Surface, string> = { paper: "#FFFDF8", globe: "#0F151D" };
+export const OUTLINE: Record<Surface, string> = { paper: "#FFFFFF", globe: "#1B1C1F" };
 
 export const NODE_FILL: Record<Exclude<GraphNodeType, "activity" | "country">, Record<Surface, string>> = {
-  trip: { paper: "#0F151D", globe: "#FFC23D" },
-  city: { paper: "#1B222B", globe: "#F4EFE4" },
+  trip: { paper: "#1B1C1F", globe: "#FFC23D" },
+  city: { paper: "#15171A", globe: "#F1F2F4" },
   route: { paper: "#FFC23D", globe: "#FFC23D" },
   stop: { paper: "#59626E", globe: "#C9CED6" },
   area: { paper: "#9C7A00", globe: "#F0E442" },

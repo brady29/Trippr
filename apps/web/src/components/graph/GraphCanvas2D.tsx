@@ -31,8 +31,8 @@ import {
 } from "@/lib/graph-palette";
 
 let fcoseRegistered = false;
-const PAPER = "#F4EFE4";
-const CARD = "#FFFDF8";
+const PAPER = "#F1F2F4";
+const CARD = "#FFFFFF";
 
 const SIZE: Record<string, [number, number]> = {
   trip: [44, 44],
@@ -114,7 +114,7 @@ function toElement(n: GraphNode): ElementDefinition {
 }
 
 function edgeElement(e: GraphJSON["edges"][number], byId: Map<string, GraphNode>): ElementDefinition {
-  const data: Record<string, unknown> = { id: e.id, source: e.source, target: e.target, type: e.type, color: "#B9B09C", lineStyle: "solid", opacity: 0.75, width: 1.2 };
+  const data: Record<string, unknown> = { id: e.id, source: e.source, target: e.target, type: e.type, color: "#B4B9C0", lineStyle: "solid", opacity: 0.75, width: 1.2 };
   if (e.type === "FROM" || e.type === "TO") {
     const leg = byId.get(e.source);
     const mode = String(leg?.style.mode ?? "train");
@@ -124,7 +124,7 @@ function edgeElement(e: GraphJSON["edges"][number], byId: Map<string, GraphNode>
     data.width = 2.5;
   }
   if (e.type === "NEXT") {
-    data.color = "#59626E";
+    data.color = "#5B616B";
     data.width = 2;
   }
   return { group: "edges", data };
@@ -174,7 +174,7 @@ const STYLE: StylesheetJson = [
   },
   { selector: "edge[type = 'IN'], edge[type = 'SERVES'], edge[type = 'AT']", style: { "target-arrow-shape": "none", opacity: 0.45 } },
   { selector: ".dim", style: { opacity: 0.25 } },
-  { selector: "node.hl", style: { "underlay-color": "#FFC23D", "underlay-opacity": 0.45, "underlay-padding": 7, "z-index": 20 } as never },
+  { selector: "node.hl", style: { "underlay-color": "#F2B705", "underlay-opacity": 0.45, "underlay-padding": 7, "z-index": 20 } as never },
   { selector: "edge.hl", style: { opacity: 1, width: 3, "z-index": 20 } },
   { selector: "node.journey", style: { "underlay-color": "#3867C8", "underlay-opacity": 0.35, "underlay-padding": 6 } as never },
   { selector: "edge.journey", style: { opacity: 1, width: 4 } },
