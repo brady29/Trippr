@@ -8,7 +8,7 @@ import { MapsLink } from "@/components/maps-link";
 import { PlaceLinks } from "@/components/place-links";
 import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { useToast } from "@/components/toast";
-import { Button, ErrorNote, Panel, Select, Spinner } from "@/components/ui";
+import { Button, ErrorNote, Select, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatLegTime } from "@/lib/explorer";
@@ -193,7 +193,7 @@ function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tri
         {item.appliedBy && item.status === "applied" ? <span>added by {item.appliedBy}</span> : null}
       </div>
       {open && item.kind !== "unknown" ? (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-line pt-3">
           {item.kind === "activity" ? (
             <Select aria-label="City for this idea" value={cityCode} onChange={(e) => setCityCode(e.target.value)} className="h-8 text-xs">
               <option value="">Pick a city</option>
@@ -222,15 +222,15 @@ function ItemCard({ item, tripId, stops, canSeePrivate }: { item: InboxItem; tri
           >
             {accept.isPending ? "Adding…" : "Add to trip"}
           </Button>
-          <button onClick={() => dismiss.mutate()} className="text-xs text-ink-soft hover:underline" disabled={dismiss.isPending}>
-            Dismiss
-          </button>
+          <Button size="sm" variant="ghost" onClick={() => dismiss.mutate()} disabled={dismiss.isPending}>
+            Discard
+          </Button>
         </div>
       ) : open ? (
-        <div className="pt-1">
-          <button onClick={() => dismiss.mutate()} className="text-xs text-ink-soft hover:underline" disabled={dismiss.isPending}>
-            Dismiss
-          </button>
+        <div className="mt-1 border-t border-line pt-3">
+          <Button size="sm" variant="ghost" onClick={() => dismiss.mutate()} disabled={dismiss.isPending}>
+            Discard
+          </Button>
         </div>
       ) : null}
     </li>
@@ -253,24 +253,24 @@ function PasteBox({ tripId }: { tripId: string }) {
   });
   return (
     <form
-      className="space-y-2"
+      className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (text.trim()) paste.mutate();
       }}
     >
-      <label htmlFor="inbox-paste" className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
+      <label htmlFor="inbox-paste" className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
         Paste a confirmation or a link
       </label>
       <textarea
         id="inbox-paste"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        rows={5}
+        rows={4}
         placeholder="Paste a booking confirmation email, a TikTok, Instagram or YouTube link, or a note like “Shibuya Sky in Tokyo looks amazing”."
-        className="w-full rounded-xl border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-faint"
+        className="w-full flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-ink-faint"
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="primary" disabled={paste.isPending || !text.trim()}>
           {paste.isPending ? "Reading…" : "Read it"}
         </Button>
@@ -291,44 +291,42 @@ function AddressPanel({ tripId, data, isOwner }: { tripId: string; data: InboxRe
     },
   });
   return (
-    <Panel title="Trip email address">
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Forward to the trip</div>
       {data.address ? (
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded bg-paper-2 px-2 py-1 font-mono text-xs select-all" data-testid="inbox-address">
+        <>
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-paper p-2 pl-3">
+            <code className="min-w-0 flex-1 truncate font-mono text-sm font-medium select-all" data-testid="inbox-address">
               {data.address}
             </code>
-            <button
-              className="text-xs font-medium text-sky hover:underline"
-              onClick={() => void navigator.clipboard?.writeText(data.address!).then(() => toast("Copied", "ok"))}
-            >
+            <Button size="sm" variant="primary" onClick={() => void navigator.clipboard?.writeText(data.address!).then(() => toast("Address copied", "ok"))}>
               Copy
-            </button>
+            </Button>
           </div>
-          <p className="text-xs text-ink-soft">
-            Forward booking confirmations here, or send links to TikToks, Reels and YouTube videos. Mail from the email address on your Trippr account is
-            added straight away; anything else waits here for an editor.
+          <p className="text-sm text-ink-soft">
+            Forward booking confirmations, or send links to TikToks, Reels and YouTube videos. Mail from the email address on your Trippr account is added
+            straight away; anything else waits below for an editor.
           </p>
           {isOwner ? (
             <button
-              className="text-xs text-ink-soft hover:underline"
+              className="self-start text-xs text-ink-soft hover:underline"
               onClick={() => window.confirm("Make a new address? The current one will stop working.") && rotate.mutate()}
             >
               Make a new address
             </button>
           ) : null}
-        </div>
+        </>
       ) : (
-        <p className="text-sm text-ink-soft">Email isn&apos;t set up on this deployment yet. Paste confirmations and links on the left instead.</p>
+        <p className="text-sm text-ink-soft">Email isn&apos;t set up on this deployment yet. Paste confirmations and links instead.</p>
       )}
-      <p className="mt-3 border-t border-line pt-2 text-xs text-ink-faint">
+      <p className="mt-auto border-t border-line pt-2 text-xs text-ink-faint">
         {data.reader === "claude"
           ? data.lookup
             ? "Claude reads each message for tickets, hotels and places to go, then looks up each place's website, tickets and pin."
             : "Claude reads each message for tickets, hotels and places to go."
           : "Links are turned into activity ideas. Reading tickets and hotels from confirmations needs Claude to be set up."}
       </p>
-    </Panel>
+    </div>
   );
 }
 
@@ -348,9 +346,17 @@ function Inbox({ tripId }: { tripId: string }) {
 
   if (trip.data && !canEdit) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10 text-center text-sm text-ink-soft">
-        The inbox is for editors: it holds the booking emails people forward. Ask the trip owner to make you an editor.
-      </main>
+      <>
+        <BoardHeader eyebrow={`${trip.data.trip.name} · inbox`} title="Inbox" width="max-w-5xl" />
+        <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6">
+          <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center">
+            <p className="font-semibold">The inbox is for editors</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-ink-soft">
+              It holds the booking emails and links people forward to the trip. Ask the trip owner to make you an editor to see it.
+            </p>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -363,31 +369,41 @@ function Inbox({ tripId }: { tripId: string }) {
   );
 
   const body = (stops: StopView[]) => (
-    <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="space-y-6">
+    <main className="mx-auto max-w-5xl space-y-7 px-4 py-5 sm:px-6">
+      {/* Two ways in, side by side. */}
+      <section className="grid gap-4 lg:grid-cols-2" aria-label="Send things to the trip">
+        {q.data ? <AddressPanel tripId={tripId} data={q.data} isOwner={trip.data?.role === "owner"} /> : null}
         <PasteBox tripId={tripId} />
-        {q.isPending ? <Spinner /> : null}
-        {q.error ? <ErrorNote error={q.error} /> : null}
-        {q.data ? (
-          <>
-            <div>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">Waiting ({waiting.length})</h2>
-              {waiting.length ? (
-                list(stops, waiting)
-              ) : (
-                <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-ink-soft">Nothing waiting. New messages show up here.</p>
-              )}
-            </div>
-            {done.length ? (
-              <div>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">Done</h2>
-                {list(stops, done)}
-              </div>
-            ) : null}
-          </>
-        ) : null}
       </section>
-      <aside className="space-y-4">{q.data ? <AddressPanel tripId={tripId} data={q.data} isOwner={trip.data?.role === "owner"} /> : null}</aside>
+      {q.isPending ? <Spinner /> : null}
+      {q.error ? <ErrorNote error={q.error} /> : null}
+      {q.data ? (
+        <>
+          <section aria-labelledby="inbox-waiting">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 id="inbox-waiting" className="text-sm font-semibold">
+                Needs a look · {waiting.length}
+              </h2>
+              {waiting.length ? <span className="text-xs text-ink-soft">Check the stop or city, then add it or discard it.</span> : null}
+            </div>
+            {waiting.length ? (
+              list(stops, waiting)
+            ) : (
+              <p className="rounded-2xl border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-ink-soft">
+                Nothing waiting. New messages show up here.
+              </p>
+            )}
+          </section>
+          {done.length ? (
+            <section aria-labelledby="inbox-done">
+              <h2 id="inbox-done" className="mb-3 text-sm font-semibold">
+                Done · {done.length}
+              </h2>
+              {list(stops, done)}
+            </section>
+          ) : null}
+        </>
+      ) : null}
     </main>
   );
 
@@ -396,6 +412,7 @@ function Inbox({ tripId }: { tripId: string }) {
       <BoardHeader
         eyebrow={`${trip.data?.trip.name ?? "Trip"} · inbox`}
         title="Inbox"
+        width="max-w-5xl"
         meta={
           q.data ? (
             <>
@@ -414,10 +431,8 @@ function Inbox({ tripId }: { tripId: string }) {
 export default function InboxPage() {
   const { tripId } = useParams<{ tripId: string }>();
   return (
-    <>
-      <RequireAuth>
-        <Inbox tripId={tripId} />
-      </RequireAuth>
-    </>
+    <RequireAuth>
+      <Inbox tripId={tripId} />
+    </RequireAuth>
   );
 }
