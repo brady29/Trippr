@@ -8,7 +8,8 @@ import { Suspense } from "react";
 import { BoardHeader, RequireAuth } from "@/components/shell";
 import { cad } from "@/components/budget-panel";
 import { ChecksBadge, ErrorNote, Panel, Select, Spinner } from "@/components/ui";
-import { useCompare, useTrip } from "@/lib/queries";
+import { LineMap } from "@/components/line-map";
+import { useCompare, useRoute, useTrip } from "@/lib/queries";
 import { routeHref } from "@/lib/routes";
 
 function SideBadge({ side }: { side: "A" | "B" }) {
@@ -194,6 +195,8 @@ function Compare({ tripId }: { tripId: string }) {
   const a = params.get("a") ?? routes.find((r) => r.isCurrent)?.id ?? routes[0]?.id ?? "";
   const b = params.get("b") ?? routes.find((r) => r.id !== a)?.id ?? "";
   const compare = useCompare(a, b);
+  const viewA = useRoute(a);
+  const viewB = useRoute(b);
   const pick = (side: "a" | "b", id: string) => {
     const next = new URLSearchParams({ a, b, [side]: id });
     router.replace(`/trips/${tripId}/compare?${next.toString()}`);
@@ -253,6 +256,32 @@ function Compare({ tripId }: { tripId: string }) {
         {a === b && a ? <p className="text-sm text-ink-soft">Pick two different routes.</p> : null}
         {compare.isFetching && !compare.data ? <Spinner /> : null}
         {compare.error ? <ErrorNote error={compare.error} /> : null}
+        {viewA.data && viewB.data && a !== b ? (
+          <section className="rounded-2xl border border-line bg-card p-4" aria-label="Both routes on one line map" data-testid="compare-line-map">
+            <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-soft">
+              <span className="font-semibold text-ink">Both routes, one map</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-1.5 w-6 rounded-full bg-ink" /> A · {viewA.data.route.name}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2 w-6 rounded-full bg-mark" /> B · {viewB.data.route.name}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-3 w-4 rounded-full border-2 border-ink bg-card" /> on both
+              </span>
+            </div>
+            <LineMap
+              lines={[
+                { stops: viewA.data.stops, color: "var(--color-ink)", name: `A, ${viewA.data.route.name}` },
+                { stops: viewB.data.stops, color: "var(--color-mark)", name: `B, ${viewB.data.route.name}` },
+              ]}
+              width={640}
+              height={380}
+              playKey={`${a}-${b}`}
+              label="Both routes"
+            />
+          </section>
+        ) : null}
         {compare.data ? <CompareView data={compare.data} /> : null}
       </main>
     </>

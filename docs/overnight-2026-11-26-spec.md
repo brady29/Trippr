@@ -234,10 +234,10 @@ Steps 3 to 5 can happen before the bot code is merged. The deploy only maps the 
 | 2. Swipe to vote | done | batch 1 | /trips/:id/swipe, keyboard, drag, undo, must do plans the idea |
 | P5. Group taste | done | batch 1 | Consensus chart and taste radar from vote counts only |
 | 1. Telegram bot | done | batch 2 (#52) | Off until the token and variables are set; the Inbox panel says so. Tested against a fake Telegram API |
-| P1. Trip strip | built | batch 3 | Drag or arrow keys between stops; booked dates ask first; weekends, busy holidays, events, pins and pace |
-| P6. Cancellation deadlines | built | batch 3 | Free cancellation on tickets and hotels; refundable wording; deadline items top Next to book |
-| P2. Line map | not started | | |
-| P3. Better order | not started | | |
+| P1. Trip strip | done | batch 3 (#53) | Drag or arrow keys between stops; booked dates ask first; weekends, busy holidays, events, pins and pace |
+| P6. Cancellation deadlines | done | batch 3 (#53) | Free cancellation on tickets and hotels; refundable wording; deadline items top Next to book |
+| P2. Line map | built | batch 4 | Map/Line toggle in the route sidebar (remembered); Compare draws both routes with shared stations |
+| P3. Better order | built | batch 4 | Exact up to 8 stops, 2-opt above; orders that move a booking are skipped; preview over the old line, apply with Undo |
 | P4. Budget flow | not started | | |
 | Q1. Accessibility | not started | | |
 | Q2. Performance | not started | | |

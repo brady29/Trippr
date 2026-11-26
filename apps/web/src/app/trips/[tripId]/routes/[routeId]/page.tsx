@@ -32,7 +32,6 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -40,6 +39,7 @@ import { ActivityDrawer } from "@/components/activity-drawer";
 import { AddStop } from "@/components/add-stop";
 import { ChangeBar, GuardDialog, impactParts, impactSentences, IssueStrip, nightsMessage, today, TradePanel, type Change, type Guard } from "@/components/anchors";
 import { HomeCard } from "@/components/home-card";
+import { BetterOrder, MapOrLine } from "@/components/route-views";
 import { BookedPrompt, NextToBook, useBookedPrompt } from "@/components/next-to-book";
 import { BudgetPanel } from "@/components/budget-panel";
 import { ChecksPanel } from "@/components/checks-panel";
@@ -55,11 +55,6 @@ import { ActionMenu, Button, ErrorNote, Spinner, Tag } from "@/components/ui";
 import { download } from "@/lib/api";
 import { useTripFlightPrices } from "@/lib/flights";
 import { ruleHome, ruleStops, useCitySearch, useRoute, useRouteEdit, useRouteLibrary, type RouteEdit } from "@/lib/queries";
-
-const RouteMap = dynamic(() => import("@/components/route-map"), {
-  ssr: false,
-  loading: () => <div className="h-56 animate-pulse rounded-2xl border border-line bg-paper-2" />,
-});
 
 function Editor({ view }: { view: RouteView }) {
   const routeId = view.route.id;
@@ -463,7 +458,8 @@ function Editor({ view }: { view: RouteView }) {
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto lg:pb-1" aria-label="Route summary">
-          <RouteMap stops={view.stops} className="h-56" />
+          <MapOrLine view={view} pinned={new Set(anchors.anchors.filter((a) => a.strength === "booked").map((a) => a.stopId))} />
+          <BetterOrder view={view} rules={rules} home={home} canEdit={canEdit} onApply={(ids, label) => reorderTo(ids, label)} />
           <NextToBook items={nextItems} view={view} homeCity={homeCity} canEdit={canEdit} onSearch={prompt.opened} onMark={markBooked} />
           <ChecksPanel view={view} />
           <BudgetPanel view={view} />
