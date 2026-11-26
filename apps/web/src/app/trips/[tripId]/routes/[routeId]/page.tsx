@@ -29,14 +29,14 @@ import { TravelOptions } from "@/components/travel-options";
 import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
 import { Timeline } from "@/components/timeline";
 import { useToast } from "@/components/toast";
-import { Button, ErrorNote, Spinner, Tag } from "@/components/ui";
+import { ActionMenu, Button, ErrorNote, Spinner, Tag } from "@/components/ui";
 import { download } from "@/lib/api";
 import { useTripFlightPrices } from "@/lib/flights";
 import { useRoute, useRouteEdit, useRouteLibrary } from "@/lib/queries";
 
 const RouteMap = dynamic(() => import("@/components/route-map"), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse rounded-2xl border border-line bg-paper-2 sm:h-80" />,
+  loading: () => <div className="h-56 animate-pulse rounded-2xl border border-line bg-paper-2" />,
 });
 
 function Editor({ view }: { view: RouteView }) {
@@ -70,6 +70,7 @@ function Editor({ view }: { view: RouteView }) {
       <BoardHeader
         eyebrow={`${view.trip.name} · route`}
         title={view.route.name}
+        below={<Timeline view={view} variant="board" />}
         badges={
           <>
             {view.route.isCurrent ? <Tag tone="board">current</Tag> : null}
@@ -102,25 +103,29 @@ function Editor({ view }: { view: RouteView }) {
             <Link href={`/trips/${view.trip.id}/graph?scope=route&route=${routeId}`}>
               <Button size="sm" variant="board">View as graph</Button>
             </Link>
-            <Button size="sm" variant="board" onClick={() => void download(`/routes/${routeId}/export.txt`, "itinerary.txt").catch((e) => toast(String(e.message), "error"))}>
-              Export text
-            </Button>
-            <Button size="sm" variant="board" onClick={() => void download(`/routes/${routeId}/export.ics`, "itinerary.ics").catch((e) => toast(String(e.message), "error"))}>
-              Export calendar
-            </Button>
+            <ActionMenu
+              label="Export"
+              text="Export"
+              onBoard
+              actions={[
+                {
+                  label: "As text (.txt)",
+                  onSelect: () => void download(`/routes/${routeId}/export.txt`, "itinerary.txt").catch((e) => toast(String(e.message), "error")),
+                },
+                {
+                  label: "As a calendar (.ics)",
+                  onSelect: () => void download(`/routes/${routeId}/export.ics`, "itinerary.ics").catch((e) => toast(String(e.message), "error")),
+                },
+              ]}
+            />
           </>
         }
       />
-      <main className="mx-auto grid grid-cols-1 max-w-6xl gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="space-y-4 lg:col-start-2 lg:row-start-1">
-          <RouteMap stops={view.stops} />
-          <Timeline view={view} />
-        </div>
-
-        <section className="space-y-3 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="Stops">
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0 space-y-3" aria-label="Stops">
           {view.route.isCurrent ? <FlightNotices tripId={view.trip.id} /> : null}
           {!canEdit ? (
-            <p className="rounded-lg bg-paper-2 px-3 py-2 text-sm text-ink-soft">
+            <p className="rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink-soft">
               You&apos;re a viewer on this trip: you can vote and comment on activities, but not change the route.
             </p>
           ) : null}
@@ -149,27 +154,37 @@ function Editor({ view }: { view: RouteView }) {
                       },
                       onOpenActivities: () => setDrawerStop(stop.id),
                     }}
-                  >
-                    <StopLegs routeId={routeId} stop={stop} prevCityCode={view.stops[i - 1]?.city.code} canEdit={canEdit} pricesOn={flightPrices.data?.enabled === true} />
-                    <TravelOptions
-                      stop={stop}
-                      prev={view.stops[i - 1]}
-                      travellers={view.trip.travellers ?? 1}
-                      canEdit={canEdit}
-                      onUse={(o) =>
-                        edit.mutate({
-                          kind: "patchStop",
-                          stopId: stop.id,
-                          body: {
-                            arriveMode: o.arriveMode,
-                            arriveCostCad: o.costPerPersonCad,
-                            ...(stop.arriveNote ? {} : { arriveNote: o.mode === "car" ? "Rental car" : o.mode === "bus" ? "Bus" : o.label }),
-                          },
-                        })
-                      }
-                    />
-                    <StaySummary stop={stop} onOpen={() => setHotelStop(stop.id)} />
-                  </StopCard>
+                    getHere={(lead) => (
+                      <>
+                        <StopLegs
+                          routeId={routeId}
+                          stop={stop}
+                          prevCityCode={view.stops[i - 1]?.city.code}
+                          canEdit={canEdit}
+                          pricesOn={flightPrices.data?.enabled === true}
+                          lead={lead}
+                        />
+                        <TravelOptions
+                          stop={stop}
+                          prev={view.stops[i - 1]}
+                          travellers={view.trip.travellers ?? 1}
+                          canEdit={canEdit}
+                          onUse={(o) =>
+                            edit.mutate({
+                              kind: "patchStop",
+                              stopId: stop.id,
+                              body: {
+                                arriveMode: o.arriveMode,
+                                arriveCostCad: o.costPerPersonCad,
+                                ...(stop.arriveNote ? {} : { arriveNote: o.mode === "car" ? "Rental car" : o.mode === "bus" ? "Bus" : o.label }),
+                              },
+                            })
+                          }
+                        />
+                      </>
+                    )}
+                    stay={<StaySummary stop={stop} onOpen={() => setHotelStop(stop.id)} />}
+                  />
                 ))}
               </ol>
             </SortableContext>
@@ -188,12 +203,11 @@ function Editor({ view }: { view: RouteView }) {
           ) : null}
         </section>
 
-        <div className="lg:col-start-2 lg:row-start-2">
-          <div className="space-y-4">
-            <ChecksPanel view={view} />
-            <BudgetPanel view={view} />
-          </div>
-        </div>
+        <aside className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto lg:pb-1" aria-label="Route summary">
+          <RouteMap stops={view.stops} className="h-56" />
+          <ChecksPanel view={view} />
+          <BudgetPanel view={view} />
+        </aside>
       </main>
       {hotelDrawer ? (
         <HotelDrawer

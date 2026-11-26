@@ -1,7 +1,7 @@
 "use client";
 
 import { LEG_MODES, LEG_STATUSES, type Hub, type HubKind, type Leg, type LegMode, type LegStatus, type StopView } from "@trippr/contracts";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import {
   defaultOffset,
   formatLegTime,
@@ -271,6 +271,7 @@ export function StopLegs({
   prevCityCode,
   canEdit,
   pricesOn = false,
+  lead,
 }: {
   routeId: string;
   stop: StopView;
@@ -278,6 +279,8 @@ export function StopLegs({
   canEdit: boolean;
   /** Flight price tracking is on: flights between airports get a "Prices" button. */
   pricesOn?: boolean;
+  /** Shown at the head of the list in place of the "Getting here" label (the stop card's travel-mode row). */
+  lead?: ReactNode;
 }) {
   const write = useRouteWrite(routeId);
   const [editing, setEditing] = useState<string | "new" | null>(null);
@@ -286,16 +289,16 @@ export function StopLegs({
 
   return (
     <div className="space-y-1.5" data-testid="stop-legs">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Getting here</span>
+      <div className="flex items-center justify-between gap-3">
+        {lead ?? <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Getting here</span>}
         {canEdit && editing === null ? (
-          <button onClick={() => setEditing("new")} className="inline-flex items-center gap-1 text-xs font-medium text-sky hover:underline">
+          <button onClick={() => setEditing("new")} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-sky hover:underline">
             <PlusIcon className="h-3.5 w-3.5" /> Add leg
           </button>
         ) : null}
       </div>
-      {legs.length === 0 && editing === null ? (
-        <p className="text-xs text-ink-faint">No tickets yet.{canEdit ? " Add the flight or train that gets you here." : ""}</p>
+      {legs.length === 0 && editing === null && canEdit ? (
+        <p className="text-xs text-ink-faint">No tickets yet. Add the flight or train that gets you here.</p>
       ) : null}
       <ol className="space-y-1">
         {legs.map((leg) =>
