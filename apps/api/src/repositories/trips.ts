@@ -41,7 +41,7 @@ export function tripsRepository(db: GraphClient) {
     },
 
     /** latestReturn: undefined leaves it, null clears it. */
-    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string; travellers?: number; latestReturn?: string | null }) {
+    async patch(tripId: string, input: { name?: string; startDate?: string; homeCity?: string; travellers?: number; latestReturn?: string | null; budgetPerPerson?: number | null }) {
       await db.query(q("trips/patch"), {
         tripId,
         name: input.name ?? null,
@@ -50,6 +50,8 @@ export function tripsRepository(db: GraphClient) {
         travellers: input.travellers ?? null,
         setLatestReturn: input.latestReturn !== undefined,
         latestReturn: input.latestReturn ?? null,
+        setBudget: input.budgetPerPerson !== undefined,
+        budgetPerPerson: input.budgetPerPerson ?? null,
       });
     },
 

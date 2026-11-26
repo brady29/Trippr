@@ -3,5 +3,6 @@ SET t.name = coalesce($name, t.name),
     t.startDate = coalesce($startDate, t.startDate),
     t.homeCity = coalesce($homeCity, t.homeCity),
     t.travellers = coalesce($travellers, t.travellers),
-    t.latestReturn = CASE WHEN $setLatestReturn THEN $latestReturn ELSE t.latestReturn END
+    t.latestReturn = CASE WHEN $setLatestReturn THEN $latestReturn ELSE t.latestReturn END,
+    t.budgetPerPerson = CASE WHEN $setBudget THEN $budgetPerPerson ELSE t.budgetPerPerson END
 RETURN t.id AS id

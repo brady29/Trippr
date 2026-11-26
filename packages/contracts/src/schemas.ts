@@ -85,6 +85,8 @@ export const patchTripBody = z.object({
   travellers: z.number().int().min(1).max(20).optional(),
   /** The latest the group can be home; null clears it. */
   latestReturn: isoDate.nullable().optional(),
+  /** Budget per person in CAD; null clears it. */
+  budgetPerPerson: z.number().positive().max(1_000_000).nullable().optional(),
 });
 
 export const createInviteBody = z.object({
