@@ -407,7 +407,12 @@ describe("shared activity library", () => {
     expect(up.body).toMatchObject({ votes: 1, myVote: 1 });
     await editor.api.put("/activities/act-liziba/vote", { value: 1 });
     const changed = await viewer.api.put<LibraryActivity>("/activities/act-liziba/vote", { value: -1 });
-    expect(changed.body).toMatchObject({ votes: 0, myVote: -1 });
+    expect(changed.body).toMatchObject({ votes: 0, myVote: -1, ups: 1, downs: 1 });
+    // Swipe to vote asks for the ideas this member hasn't voted on yet.
+    const unvoted = await viewer.api.get<{ items: LibraryActivity[] }>(`/trips/${TRIP}/activities/page?city=CKG&unvoted=true&limit=100`);
+    expect(unvoted.body.items.map((a) => a.id)).not.toContain("act-liziba");
+    const all = await viewer.api.get<{ items: LibraryActivity[] }>(`/trips/${TRIP}/activities/page?city=CKG&limit=100`);
+    expect(all.body.items.map((a) => a.id)).toContain("act-liziba");
     const cleared = await viewer.api.put<LibraryActivity>("/activities/act-liziba/vote", { value: 0 });
     expect(cleared.body).toMatchObject({ votes: 1, myVote: 0 });
 

@@ -12,6 +12,7 @@ import { routeHref, tripContext, tripTile } from "@/lib/routes";
 import { applyTheme, readTheme, type ThemeChoice } from "@/lib/theme";
 import {
   CalendarIcon,
+  CardsIcon,
   ChatIcon,
   CheckIcon,
   CompareIcon,
@@ -296,6 +297,7 @@ function TripLinks({ tripId, routeId, path, open }: { tripId: string; routeId?: 
       </Group>
       <Group label="Ideas" open={open}>
         <NavItem href={`${base}/library`} icon={StarIcon} label="Activities" active={at("library")} open={open} />
+        <NavItem href={`${base}/swipe`} icon={CardsIcon} label="Swipe ideas" active={at("swipe")} open={open} />
         <NavItem href={`${base}/inbox`} icon={InboxIcon} label="Inbox" active={at("inbox")} open={open} />
       </Group>
       <Group label="Book" open={open}>

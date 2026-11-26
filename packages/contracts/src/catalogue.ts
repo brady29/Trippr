@@ -229,6 +229,8 @@ export const activityPageQuery = z.object({
   durationMax: optional(z.coerce.number().int().min(5).max(1440)),
   /** Enrichment: exactly this price level. */
   priceLevel: optional(z.enum(PRICE_LEVELS)),
+  /** Only ideas the current member hasn't voted on yet (swipe to vote). */
+  unvoted: z.preprocess((v) => v === "true" || v === "1" || v === true, z.boolean()).default(false),
   sort: z.enum(ACTIVITY_SORTS).default("relevance"),
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
   limit: z.coerce.number().int().min(1).max(100).default(PAGE_SIZE),

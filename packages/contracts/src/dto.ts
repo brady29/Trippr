@@ -146,6 +146,9 @@ export interface Activity extends ActivityRef {
   address?: string | null;
   placeStatus?: PlaceStatus;
   votes: number;
+  /** How many members said yes and no. Counts only: who voted what is never shared. */
+  ups?: number;
+  downs?: number;
   myVote: -1 | 0 | 1;
   commentCount: number;
   /** True for places loaded from the data pipeline's catalogue rather than written by the group. */

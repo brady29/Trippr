@@ -7,6 +7,7 @@
 //   $indoor    true = indoor places, false = outdoor places (places the enrichment could not tell are left out)
 //   $durationMax  places that take at most this many minutes (needs a duration)
 //   $priceLevel   free | $ | $$ | $$$, exactly
+//   $unvoted   true = only ideas the member $userId hasn't voted on (swipe to vote)
 //   $sort      relevance (votes, then own ideas, then score) | score | title
 MATCH (a:Activity)-[:FOR]->(:Trip {id: $tripId}), (a)-[:IN]->(c:City)
 WHERE coalesce(a.hidden, false) = false
@@ -23,6 +24,9 @@ WHERE coalesce(a.hidden, false) = false
   AND ($indoor IS NULL OR a.indoor = $indoor)
   AND ($durationMax IS NULL OR a.durationMin <= $durationMax)
   AND ($priceLevel IS NULL OR a.priceLevel = $priceLevel)
+OPTIONAL MATCH (me:User {id: $userId})-[mine:VOTED]->(a)
+WITH a, mine
+WHERE $unvoted = false OR mine IS NULL
 OPTIONAL MATCH (:User)-[v:VOTED]->(a)
 WITH a, sum(coalesce(v.value, 0)) AS votes, count(v) AS voters
 OPTIONAL MATCH (:Stop)-[p:PLANS]->(a)
