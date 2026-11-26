@@ -144,6 +144,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
         priceCad: body.priceCad ?? null,
         bookingRef: body.bookingRef ?? null,
         seat: body.seat ?? null,
+        freeCancelUntil: body.freeCancelUntil ?? null,
       },
       isLast ? arriveModeFor(body.mode) : stop.arriveMode,
     );
@@ -184,6 +185,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
       priceCad: body.priceCad ?? null,
       bookingRef: body.bookingRef ?? null,
       seat: body.seat ?? null,
+      freeCancelUntil: body.freeCancelUntil ?? null,
     });
     const view = await afterWrite(id, version, role, { tripId, by: user.id });
     reply.status(201);
@@ -219,6 +221,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
       ...flag("priceCad"),
       ...flag("bookingRef"),
       ...flag("seat"),
+      ...flag("freeCancelUntil"),
     }, home);
     if (version !== null) {
       if (body.from) await repos.routes.setLegHub(id, "from", body.from.id);
@@ -279,6 +282,7 @@ export function explorerRoutes(app: FastifyInstance, ctx: AppContext) {
       rooms: body.rooms ?? null,
       arrive: body.status === "booked" ? arrive : null,
       depart: body.status === "booked" ? depart : null,
+      freeCancelUntil: body.status === "booked" ? (body.freeCancelUntil !== undefined ? (body.freeCancelUntil ?? null) : (existing?.freeCancelUntil ?? null)) : null,
     });
     if (version !== null && body.status !== "shortlist") await repos.routes.demoteOtherStays(id, hotelId);
     return afterWrite(routeId, version, role, { tripId, by: user.id });

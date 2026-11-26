@@ -48,6 +48,7 @@ export interface StoredStay {
   rooms: number | null;
   arrive: string | null;
   depart: string | null;
+  freeCancelUntil: string | null;
   hotel: StopStay["hotel"];
 }
 
@@ -99,6 +100,7 @@ function toStoredLeg(row: LegRow): StoredLeg {
     priceSource: str(l.priceSource),
     bookingRef: str(l.bookingRef),
     seat: str(l.seat),
+    freeCancelUntil: str(l.freeCancelUntil),
     from: toHub(row.fromHub),
     to: toHub(row.toHub),
   };
@@ -119,6 +121,7 @@ type LegInput = {
   priceCad: number | null;
   bookingRef: string | null;
   seat: string | null;
+  freeCancelUntil: string | null;
 };
 
 type RawStop = {
@@ -157,6 +160,7 @@ export function routesRepository(db: GraphClient) {
           rooms: unknown;
           arrive: string | null;
           depart: string | null;
+          freeCancelUntil: string | null;
           hotel: Record<string, unknown>;
           areaId: string;
           areaName: string;
@@ -178,6 +182,7 @@ export function routesRepository(db: GraphClient) {
           rooms: optNum(row.rooms),
           arrive: str(row.arrive),
           depart: str(row.depart),
+          freeCancelUntil: str(row.freeCancelUntil),
           hotel: {
             id: String(h.id),
             name: String(h.name),
@@ -329,6 +334,7 @@ export function routesRepository(db: GraphClient) {
           priceCad: l.priceCad ?? null,
           bookingRef: l.bookingRef,
           seat: l.seat,
+          freeCancelUntil: l.freeCancelUntil ?? null,
           source: l.source ?? null,
           asOf: l.asOf ?? null,
           createdAt: now,
@@ -351,6 +357,7 @@ export function routesRepository(db: GraphClient) {
         priceCad: l.priceCad ?? null,
         bookingRef: l.bookingRef,
         seat: l.seat,
+        freeCancelUntil: l.freeCancelUntil ?? null,
         source: l.source ?? null,
         asOf: l.asOf ?? null,
         createdAt: now,
@@ -364,6 +371,7 @@ export function routesRepository(db: GraphClient) {
           rooms: st.rooms,
           arrive: st.arrive,
           depart: st.depart,
+          freeCancelUntil: st.freeCancelUntil,
           at: now,
         })),
       );
@@ -408,7 +416,7 @@ export function routesRepository(db: GraphClient) {
       stopId: string,
       hotelId: string,
       version: number,
-      stay: { status: string; rooms: number | null; arrive: string | null; depart: string | null },
+      stay: { status: string; rooms: number | null; arrive: string | null; depart: string | null; freeCancelUntil: string | null },
     ) => guarded("stays/set", { stopId, hotelId, version, ...stay, now: nowIso() }),
 
     async demoteOtherStays(stopId: string, hotelId: string) {

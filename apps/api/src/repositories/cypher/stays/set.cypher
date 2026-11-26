@@ -4,5 +4,5 @@ WHERE r.version = $version
 MATCH (h:Hotel {id: $hotelId})-[:FOR]->(t)
 SET r.version = r.version + 1
 MERGE (s)-[st:STAYS_AT]->(h)
-SET st.status = $status, st.rooms = $rooms, st.at = $now, st.arrive = $arrive, st.depart = $depart
+SET st.status = $status, st.rooms = $rooms, st.at = $now, st.arrive = $arrive, st.depart = $depart, st.freeCancelUntil = $freeCancelUntil
 RETURN r.id AS routeId, r.version AS version

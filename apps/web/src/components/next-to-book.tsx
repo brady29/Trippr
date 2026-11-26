@@ -11,6 +11,7 @@ export function linksFor(item: NextToBookItem, view: RouteView, homeCity: City |
   const travellers = view.trip.travellers ?? 1;
   const city = (s: RouteView["stops"][number]) => ({ code: s.city.code, name: s.city.name, countryIso: s.city.countryIso });
   const homeName = view.trip.homeCity?.trim();
+  if (item.kind === "deadline") return [];
   if (item.kind === "home") {
     const last = view.stops.at(-1);
     const to = homeCity ?? homeName;
@@ -51,7 +52,7 @@ export function NextToBook({
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [all, setAll] = useState(false);
-  const key = (i: NextToBookItem) => `${i.kind}:${i.stopId ?? "home"}`;
+  const key = (i: NextToBookItem) => `${i.kind}:${i.stopId ?? "home"}:${i.title}`;
   const shown = all ? items : items.slice(0, 3);
   if (!items.length) {
     return (
@@ -69,7 +70,7 @@ export function NextToBook({
           const links = linksFor(item, view, homeCity);
           const isOpen = open === key(item);
           return (
-            <li key={key(item)} className="rounded-xl bg-paper p-2.5" data-testid="next-item" data-kind={item.kind}>
+            <li key={key(item)} className={`rounded-xl p-2.5 ${item.kind === "deadline" ? "bg-mark/20" : "bg-paper"}`} data-testid="next-item" data-kind={item.kind}>
               <div className="flex items-start gap-2.5">
                 <span className="mt-0.5 font-mono text-xs font-semibold text-ink-faint">{n + 1}</span>
                 <div className="min-w-0 flex-1">
@@ -85,7 +86,11 @@ export function NextToBook({
                     Search
                   </Button>
                 ) : null}
-                {canEdit ? (
+                {item.kind === "deadline" ? (
+                  <Button size="sm" variant="ghost" onClick={() => onMark(item)}>
+                    Review it
+                  </Button>
+                ) : canEdit ? (
                   <Button size="sm" variant="ghost" onClick={() => onMark(item)}>
                     I booked it
                   </Button>

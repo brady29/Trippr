@@ -76,7 +76,7 @@ type RouteWrite =
   | { kind: "addHomeLeg"; body: Omit<CreateLegBody, "version"> }
   | { kind: "patchLeg"; legId: string; body: Omit<PatchLegBody, "version"> }
   | { kind: "deleteLeg"; legId: string }
-  | { kind: "setStay"; stopId: string; hotelId: string; status: StayStatus; rooms?: number | null; arrive?: string; depart?: string }
+  | { kind: "setStay"; stopId: string; hotelId: string; status: StayStatus; rooms?: number | null; arrive?: string; depart?: string; freeCancelUntil?: string | null }
   | { kind: "removeStay"; stopId: string; hotelId: string };
 
 function sendWrite(routeId: string, version: number, w: RouteWrite): Promise<RouteView> {
@@ -96,6 +96,7 @@ function sendWrite(routeId: string, version: number, w: RouteWrite): Promise<Rou
           status: w.status,
           ...(w.rooms != null ? { rooms: w.rooms } : {}),
           ...(w.arrive && w.depart ? { arrive: w.arrive, depart: w.depart } : {}),
+          ...(w.freeCancelUntil !== undefined ? { freeCancelUntil: w.freeCancelUntil } : {}),
           version,
         },
       });

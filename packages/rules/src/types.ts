@@ -35,6 +35,8 @@ export interface RuleLeg {
   departAt?: string | null;
   arriveAt?: string | null;
   status?: string;
+  /** The last day it can be cancelled for free (booked tickets). */
+  freeCancelUntil?: string | null;
 }
 
 /** The minimum a rule needs to know about one stop, in route order. */
@@ -49,7 +51,7 @@ export interface RuleStop {
   /** Ticket segments into this stop; departAt and arriveAt are local ISO 8601 with an offset. */
   legs?: RuleLeg[];
   /** Hotels for this stop; booked ones record the dates they were booked for. */
-  stays?: { hotelId: string; name: string; status: string; arrive?: string | null; depart?: string | null }[];
+  stays?: { hotelId: string; name: string; status: string; arrive?: string | null; depart?: string | null; freeCancelUntil?: string | null }[];
 }
 
 export interface ScheduledStop<S extends RuleStop = RuleStop> {

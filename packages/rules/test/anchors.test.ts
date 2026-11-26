@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeAnchors, describeNights, editImpact, fixesFor, planInsert, planNights, routeAnchors, runChecks, searchNights, type RuleLeg, type RuleStop } from "../src";
+import { allRefundable, describeAnchors, describeNights, editImpact, fixesFor, planInsert, planNights, routeAnchors, runChecks, searchNights, type RuleLeg, type RuleStop } from "../src";
 
 const START = "2027-05-10";
 const jp = { countryIso: "JP", countryName: "Japan", visaRule: null };
@@ -254,5 +254,17 @@ describe("editImpact", () => {
     stops[0]!.nights = 5;
     const fixed = stops.map((s) => (s.id === "tyo" ? { ...s, nights: 4 } : s));
     expect(editImpact(START, stops, fixed).fixes).toHaveLength(4);
+  });
+});
+
+describe("refundable bookings", () => {
+  it("carry their free-cancellation date, and allRefundable checks it against today", () => {
+    const stops = route();
+    stops[2] = { ...stops[2]!, stays: [{ hotelId: "h-ryo", name: "Ryokan Yachiyo", status: "booked", arrive: "2027-05-15", depart: "2027-05-18", freeCancelUntil: "2027-04-01" }], legs: [] };
+    const anchors = routeAnchors(stops).filter((a) => a.hotelId === "h-ryo");
+    expect(anchors.map((a) => a.refundableUntil)).toEqual(["2027-04-01", "2027-04-01"]);
+    expect(allRefundable(anchors, "2027-03-15")).toBe(true);
+    expect(allRefundable(anchors, "2027-04-02")).toBe(false);
+    expect(allRefundable(routeAnchors(route()).filter((a) => a.legId === "l-cx"), "2027-03-15")).toBe(false);
   });
 });

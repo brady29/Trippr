@@ -26,7 +26,7 @@ export function stopStay(s: StoredStay): StopStay {
     rooms: s.rooms,
     hotel: s.hotel,
     perPersonCadPerNight: perPersonNightly(s.hotel.priceCadPerNight, s.hotel.priceBasis, s.hotel.sleeps),
-    ...(s.status === "booked" ? { arrive: s.arrive, depart: s.depart } : {}),
+    ...(s.status === "booked" ? { arrive: s.arrive, depart: s.depart, freeCancelUntil: s.freeCancelUntil } : {}),
   };
 }
 
@@ -46,17 +46,18 @@ export function buildRouteView(stored: StoredRoute, role: Role): RouteView {
     countryName: s.country.name,
     visaRule: s.country.visaRule ?? null,
     planned: s.planned,
-    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l) })),
+    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l), freeCancelUntil: l.freeCancelUntil })),
     stays: s.stays.map((st) => ({
       hotelId: st.hotel.id,
       name: st.hotel.name,
       status: st.status,
       arrive: st.arrive,
       depart: st.depart,
+      freeCancelUntil: st.freeCancelUntil,
     })),
     stored: s,
   }));
-  const home = stored.homeLegs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l) }));
+  const home = stored.homeLegs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: legLabel(l), freeCancelUntil: l.freeCancelUntil }));
   const result = runChecks(stored.trip.startDate, input, home, stored.trip.latestReturn);
 
   const stops: StopView[] = result.schedule.stops.map(({ stop, arrive, depart }, i) => ({
@@ -116,13 +117,13 @@ export function ruleStopsOfView(view: RouteView): RuleStop[] {
     countryName: s.country.name,
     visaRule: s.country.visaRule ?? null,
     planned: s.planned,
-    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l) })),
-    stays: s.stays.map((st) => ({ hotelId: st.hotel.id, name: st.hotel.name, status: st.status, arrive: st.arrive ?? null, depart: st.depart ?? null })),
+    legs: s.legs.map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l), freeCancelUntil: l.freeCancelUntil ?? null })),
+    stays: s.stays.map((st) => ({ hotelId: st.hotel.id, name: st.hotel.name, status: st.status, arrive: st.arrive ?? null, depart: st.depart ?? null, freeCancelUntil: st.freeCancelUntil ?? null })),
   }));
 }
 
 export function ruleHomeOfView(view: RouteView): RuleLeg[] {
-  return (view.homeLegs ?? []).map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l) }));
+  return (view.homeLegs ?? []).map((l) => ({ id: l.id, departAt: l.departAt, arriveAt: l.arriveAt, status: l.status, label: publicLegLabel(l), freeCancelUntil: l.freeCancelUntil ?? null }));
 }
 
 const publicLegLabel = (l: Leg) => [MODE_WORD[l.mode] ?? l.mode, [l.operator, l.number].filter(Boolean).join(" ")].filter(Boolean).join(" ");

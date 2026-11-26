@@ -1,4 +1,4 @@
-import { addDays, shortDate, weekday } from "./dates";
+import { addDays, daysBetween, shortDate, weekday } from "./dates";
 import { computeSchedule } from "./schedule";
 import type { RuleLeg, RuleStop, When } from "./types";
 
@@ -14,7 +14,8 @@ export interface NextStop extends RuleStop {
 }
 
 export interface NextToBookItem {
-  kind: "transport" | "stay" | "home";
+  /** "deadline": a booking whose free cancellation ends soon, so decide now. */
+  kind: "transport" | "stay" | "home" | "deadline";
   /** The stop it's for; absent for the trip home. */
   stopId?: string;
   /** "Flight to Beijing", "Hotel in Kyoto", "Flight home". */
@@ -32,6 +33,10 @@ export interface NextToBookInput {
   home?: readonly RuleLeg[];
   /** The price tracker's advice per stop's flight in: "buy" pushes it up. */
   fareVerdicts?: Record<string, "buy" | "wait" | "watch" | null | undefined>;
+  /** Today, YYYY-MM-DD, for cancellation deadlines (left out: none are shown). */
+  today?: string;
+  /** How far ahead a deadline counts as soon, in days. */
+  deadlineDays?: number;
 }
 
 const MODE_NOUN: Record<string, string> = { flight: "Flight", hsr: "Train", train: "Train", road: "Transport", boat: "Ferry" };
@@ -47,7 +52,7 @@ function fixedEventIn(stop: RuleStop, arrive: string, depart: string): string | 
   return null;
 }
 
-export function nextToBook({ startDate, stops, home = [], fareVerdicts = {} }: NextToBookInput): NextToBookItem[] {
+export function nextToBook({ startDate, stops, home = [], fareVerdicts = {}, today, deadlineDays = 14 }: NextToBookInput): NextToBookItem[] {
   const schedule = computeSchedule(startDate, stops);
   const items: NextToBookItem[] = [];
 
@@ -110,6 +115,28 @@ export function nextToBook({ startDate, stops, home = [], fareVerdicts = {} }: N
       reasons.unshift("Held: it only needs confirming");
     }
     items.push({ kind: "home", title: "Flight home", reasons, date: schedule.returnDate, score });
+  }
+
+  // Free cancellation that ends soon: decide whether to keep the booking before it becomes final.
+  if (today) {
+    const soon = addDays(today, deadlineDays);
+    const deadline = (name: string, until: string | null | undefined, stopId?: string) => {
+      if (!until || until < today || until > soon) return;
+      const left = daysBetween(today, until);
+      items.push({
+        kind: "deadline",
+        ...(stopId ? { stopId } : {}),
+        title: `Free cancellation on ${name} ends`,
+        reasons: [left === 0 ? "Last day to cancel for free" : `${left} day${left === 1 ? "" : "s"} left to cancel for free, then it's final`],
+        date: until,
+        score: 80 - left,
+      });
+    };
+    for (const s of stops) {
+      for (const l of s.legs ?? []) if (l.status === "booked") deadline(l.label ?? `the ticket to ${s.cityName}`, l.freeCancelUntil, s.id);
+      for (const st of s.stays ?? []) if (st.status === "booked") deadline(st.name, st.freeCancelUntil, s.id);
+    }
+    for (const l of home) if (l.status === "booked") deadline(l.label ?? "the flight home", l.freeCancelUntil);
   }
 
   return items.sort((a, b) => b.score - a.score || a.date.localeCompare(b.date));

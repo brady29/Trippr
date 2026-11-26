@@ -206,6 +206,7 @@ export function ruleStops(stops: StopView[]): (RuleStop & { view: StopView })[] 
       departAt: l.departAt ?? null,
       arriveAt: l.arriveAt ?? null,
       status: l.status,
+      freeCancelUntil: l.freeCancelUntil ?? null,
     })),
     stays: (s.stays ?? []).map((st) => ({
       hotelId: st.hotel.id,
@@ -213,6 +214,7 @@ export function ruleStops(stops: StopView[]): (RuleStop & { view: StopView })[] 
       status: st.status,
       arrive: st.arrive ?? null,
       depart: st.depart ?? null,
+      freeCancelUntil: st.freeCancelUntil ?? null,
     })),
     view: s,
   }));
@@ -226,6 +228,7 @@ export function ruleHome(view: Pick<RouteView, "homeLegs">): RuleLeg[] {
     departAt: l.departAt ?? null,
     arriveAt: l.arriveAt ?? null,
     status: l.status,
+    freeCancelUntil: l.freeCancelUntil ?? null,
   }));
 }
 

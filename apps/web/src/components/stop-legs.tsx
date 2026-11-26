@@ -168,6 +168,7 @@ function LegForm({
     priceCad: number | null;
     status: LegStatus;
     bookingRef?: string | null;
+    freeCancelUntil?: string | null;
   }) => void;
   onCancel: () => void;
 }) {
@@ -180,6 +181,7 @@ function LegForm({
   const [arriveAt, setArriveAt] = useState<string | null>(initial?.arriveAt ?? null);
   const [price, setPrice] = useState(initial?.priceCad != null ? String(initial.priceCad) : "");
   const [status, setStatus] = useState<LegStatus>(initial?.status ?? "idea");
+  const [freeCancel, setFreeCancel] = useState(initial?.freeCancelUntil ?? "");
   const priv = useLegPrivate(initial?.id ?? "", Boolean(initial && canSeePrivate));
   const [bookingRef, setBookingRef] = useState<string | undefined>(undefined);
   const kind = hubKindFor(mode);
@@ -200,6 +202,7 @@ function LegForm({
           arriveAt,
           priceCad: price ? Number(price) : null,
           status,
+          freeCancelUntil: status === "booked" && freeCancel ? freeCancel : null,
           ...(canSeePrivate && bookingRef !== undefined ? { bookingRef: bookingRef.trim() || null } : {}),
         });
       }}
@@ -246,6 +249,12 @@ function LegForm({
         <DateTimeField label="Departs (local time)" value={departAt} onChange={setDepartAt} cityCode={from?.cityCode ?? prevCityCode} />
         <DateTimeField label="Arrives (local time)" value={arriveAt} onChange={setArriveAt} cityCode={to?.cityCode ?? toCityCode} />
       </div>
+      {status === "booked" ? (
+        <div className="sm:w-1/2">
+          <Label htmlFor={`leg-cancel-${formId}`}>Free cancellation until (optional)</Label>
+          <Input id={`leg-cancel-${formId}`} type="date" value={freeCancel} onChange={(e) => setFreeCancel(e.target.value)} />
+        </div>
+      ) : null}
       {canSeePrivate ? (
         <div>
           <Label htmlFor={`leg-ref-${formId}`}>Booking reference (editors only)</Label>

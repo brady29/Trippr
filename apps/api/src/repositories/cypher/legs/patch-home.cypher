@@ -12,5 +12,6 @@ SET r.version = r.version + 1,
     l.durationMin = CASE WHEN $setDurationMin THEN $durationMin ELSE l.durationMin END,
     l.priceCad = CASE WHEN $setPriceCad THEN $priceCad ELSE l.priceCad END,
     l.bookingRef = CASE WHEN $setBookingRef THEN $bookingRef ELSE l.bookingRef END,
-    l.seat = CASE WHEN $setSeat THEN $seat ELSE l.seat END
+    l.seat = CASE WHEN $setSeat THEN $seat ELSE l.seat END,
+    l.freeCancelUntil = CASE WHEN $setFreeCancelUntil THEN $freeCancelUntil ELSE l.freeCancelUntil END
 RETURN r.id AS routeId, r.version AS version
