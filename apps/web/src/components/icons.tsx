@@ -214,6 +214,12 @@ export const LockIcon = (p: P) => (
     <path d="M8 11V8a4 4 0 0 1 8 0v3" />
   </svg>
 );
+export const CardsIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="7" y="4" width="12" height="16" rx="2" transform="rotate(8 13 12)" />
+    <rect x="4" y="5" width="12" height="16" rx="2" transform="rotate(-6 10 13)" />
+  </svg>
+);
 export const UndoIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M9 14 4 9l5-5" />

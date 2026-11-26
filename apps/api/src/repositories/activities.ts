@@ -126,6 +126,8 @@ type Row = {
   cityName: string;
   countryIso: string | null;
   votes: number;
+  ups: number;
+  downs: number;
   myVote: number;
   tags: string[];
   commentCount: number;
@@ -153,6 +155,8 @@ export function activitiesRepository(db: GraphClient) {
       cityName: r.cityName,
       countryIso: r.countryIso ?? null,
       votes: num(r.votes),
+      ups: num(r.ups),
+      downs: num(r.downs),
       myVote: Math.sign(num(r.myVote)) as -1 | 0 | 1,
       commentCount: num(r.commentCount),
       plannedIn: (r.plannedIn ?? [])
@@ -167,6 +171,8 @@ export function activitiesRepository(db: GraphClient) {
       q("activities/page-ids"),
       {
         tripId,
+        userId,
+        unvoted: query.unvoted ?? false,
         scope: query.scope,
         cityCode: query.city ?? null,
         tag: query.tag ?? null,

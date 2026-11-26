@@ -8,6 +8,7 @@ import { ActivityItem, NewActivityForm } from "@/components/activity";
 import { CatalogueFooter, humanize } from "@/components/catalogue-footer";
 import { DownIcon } from "@/components/icons";
 import { SemanticSearch } from "@/components/semantic-search";
+import { GroupTaste } from "@/components/group-taste";
 import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
 import { Button, ErrorNote, Input, Select, Spinner, Tag } from "@/components/ui";
 import { BEST_TIME_LABEL, PRICE_LABEL, durationMaxLabel } from "@/lib/enrichment";
@@ -127,6 +128,7 @@ function AddIdea({ canEdit, tripId, city, cityName }: { canEdit: boolean; tripId
 
 function Library({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId);
+  const [showTaste, setShowTaste] = useState(false);
   const own = useTripActivities(tripId); // the group's own ideas, for "Find places"
   const facets = useActivityFacets(tripId);
   const [scope, setScope] = useState<keyof typeof SCOPE_LABEL>("all");
@@ -205,7 +207,24 @@ function Library({ tripId }: { tripId: string }) {
             <BoardStat label="On the map" value={f?.totals.onMap ?? 0} />
           </>
         }
+        actions={
+          <>
+            <Button size="sm" variant="board" onClick={() => setShowTaste((v) => !v)} aria-expanded={showTaste} data-testid="taste-toggle">
+              {showTaste ? "Hide group taste" : "Group taste"}
+            </Button>
+            <Link href={`/trips/${tripId}/swipe`}>
+              <Button size="sm" variant="board">
+                Swipe ideas
+              </Button>
+            </Link>
+          </>
+        }
       />
+      {showTaste ? (
+        <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
+          <GroupTaste tripId={tripId} />
+        </div>
+      ) : null}
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Filters: a rail on wide screens; on phones, search and city with the rest behind a button. */}
         <aside className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
