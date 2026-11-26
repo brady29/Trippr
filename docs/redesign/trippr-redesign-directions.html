@@ -1,0 +1,615 @@
+<title>Trippr Redesign Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a working review sheet. Option picker, then one live mock (desktop + phone), then IA and the screen plan. */
+:root {
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --fg: #1a1c1f;
+  --fg-soft: #5d636c;
+  --fg-faint: #8b9099;
+  --rule: #dfe1e4;
+  --focus: #3867c8;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111214; --surface: #1a1b1e; --fg: #eceef1; --fg-soft: #a3a8b0; --fg-faint: #757a83; --rule: #2c2e33; --focus: #7aa2f7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111214; --surface: #1a1b1e; --fg: #eceef1; --fg-soft: #a3a8b0; --fg-faint: #757a83; --rule: #2c2e33; --focus: #7aa2f7;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: 15px; line-height: 1.55;
+}
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+  display: grid; gap: 48px;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--fg-faint); }
+
+/* ---------- intro ---------- */
+.intro { display: grid; gap: 12px; max-width: 70ch; }
+.intro h1 { font-size: clamp(26px, 4vw, 36px); font-weight: 600; letter-spacing: -.01em; }
+.intro p { color: var(--fg-soft); }
+
+/* ---------- picker ---------- */
+.picker { display: grid; gap: 16px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.opt {
+  all: unset; cursor: pointer; display: grid; gap: 10px; padding: 14px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--rule); color: var(--fg);
+}
+.opt:hover { border-color: var(--fg-faint); }
+.opt[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg); }
+.opt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.opt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.opt-name { font-weight: 600; }
+.opt-letter { font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
+.opt-desc { font-size: 13px; color: var(--fg-soft); line-height: 1.45; }
+.sw { display: flex; height: 22px; border-radius: 6px; overflow: hidden; border: 1px solid var(--rule); }
+.sw span { flex: 1; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; background: var(--surface); }
+.seg button { all: unset; cursor: pointer; padding: 5px 14px; border-radius: 999px; font-size: 13px; color: var(--fg-soft); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.note { font-size: 13px; color: var(--fg-faint); }
+
+/* ---------- stage ---------- */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+@media (max-width: 1080px) { .stage { grid-template-columns: minmax(0, 1fr); } .phone-frame { justify-self: center; } }
+.frame-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 8px; }
+.desk-frame, .phone-frame { min-width: 0; }
+.phone-frame { width: 100%; max-width: 360px; }
+.desk-frame .mock { border-radius: 12px; height: 720px; }
+.phone-frame .mock { border-radius: 28px; height: 720px; border: 6px solid var(--fg); }
+
+/* =========================================================
+   MOCK: tokens per direction and mode
+   ========================================================= */
+.mock {
+  container-type: inline-size;
+  overflow: hidden; position: relative;
+  background: var(--m-paper); color: var(--m-ink);
+  border: 1px solid var(--rule);
+  font-size: 13px; line-height: 1.45;
+}
+/* Current (for reference) */
+.mock[data-opt="cur"] {
+  --m-paper:#f4efe4; --m-card:#fffdf8; --m-ink:#1b222b; --m-soft:#59626e; --m-faint:#8c939c; --m-line:#d9d0bd;
+  --m-board:#0f151d; --m-board2:#19222e; --m-board3:#243042; --m-flap:#ffc23d; --m-btext:#f5d58a;
+  --m-accent:#0f151d; --m-on-accent:#ffc23d; --m-ok:#2e7a59; --m-warn:#b97c0c; --m-err:#c4452a; --m-sky:#3867c8;
+}
+/* A: Night Train */
+.mock[data-opt="a"] {
+  --m-paper:#eceee8; --m-card:#fafbf8; --m-ink:#18211d; --m-soft:#56635c; --m-faint:#86928b; --m-line:#d3d9d1;
+  --m-board:#12271f; --m-board2:#183429; --m-board3:#214337; --m-flap:#e8c47e; --m-btext:#cfe0d4;
+  --m-accent:#b4532a; --m-on-accent:#fff7ef; --m-ok:#2f7d57; --m-warn:#a8740b; --m-err:#b8432b; --m-sky:#33679f;
+}
+.mock[data-opt="a"][data-mode="night"] {
+  --m-paper:#0c1512; --m-card:#13201b; --m-ink:#e3ebe6; --m-soft:#9aaba2; --m-faint:#6c7d74; --m-line:#24362e;
+  --m-board:#07100c; --m-board2:#10201a; --m-board3:#1a3027; --m-flap:#f0cd85; --m-btext:#b9cfc1;
+  --m-accent:#e07a4b; --m-on-accent:#1a0d06; --m-ok:#5cc28f; --m-warn:#e2b04a; --m-err:#ef7a5f; --m-sky:#7aa8dc;
+}
+/* B: Swiss Rail */
+.mock[data-opt="b"] {
+  --m-paper:#f1f2f4; --m-card:#ffffff; --m-ink:#15171a; --m-soft:#5b616b; --m-faint:#8d929a; --m-line:#dadde2;
+  --m-board:#1b1c1f; --m-board2:#26282c; --m-board3:#34373c; --m-flap:#ffffff; --m-btext:#c9ccd2;
+  --m-accent:#d52b1e; --m-on-accent:#ffffff; --m-ok:#1f7a4d; --m-warn:#b46f00; --m-err:#a3133a; --m-sky:#2c5fb3;
+}
+.mock[data-opt="b"][data-mode="night"] {
+  --m-paper:#0f1012; --m-card:#18191c; --m-ink:#ebedf0; --m-soft:#9ba1aa; --m-faint:#6d727a; --m-line:#2a2c31;
+  --m-board:#050506; --m-board2:#141518; --m-board3:#222428; --m-flap:#f5f5f5; --m-btext:#a9adb4;
+  --m-accent:#ff4a3d; --m-on-accent:#ffffff; --m-ok:#4cc38a; --m-warn:#f0b34a; --m-err:#ff6b8a; --m-sky:#7aa2f7;
+}
+/* C: Riviera */
+.mock[data-opt="c"] {
+  --m-paper:#f6f0ee; --m-card:#fffaf8; --m-ink:#241a26; --m-soft:#6a5a6b; --m-faint:#9a8a9a; --m-line:#e5d6d3;
+  --m-board:#2a1631; --m-board2:#382041; --m-board3:#482b52; --m-flap:#ff9f7a; --m-btext:#f3cfc4;
+  --m-accent:#1d7f7a; --m-on-accent:#f2fffd; --m-ok:#2b7d5a; --m-warn:#b5730c; --m-err:#c43d3d; --m-sky:#3b62b8;
+}
+.mock[data-opt="c"][data-mode="night"] {
+  --m-paper:#150d17; --m-card:#1f1522; --m-ink:#f1e6ee; --m-soft:#b39fb2; --m-faint:#7f6c80; --m-line:#3a2a3e;
+  --m-board:#0d060f; --m-board2:#1d1021; --m-board3:#2c1a31; --m-flap:#ffab8a; --m-btext:#d9b5ad;
+  --m-accent:#4cc7bf; --m-on-accent:#062321; --m-ok:#5cc28f; --m-warn:#e8b04f; --m-err:#ff7c7c; --m-sky:#8fa8ff;
+}
+
+/* ---------- mock layout ---------- */
+.m-app { display: grid; grid-template-columns: 200px minmax(0, 1fr); height: 100%; transition: grid-template-columns .22s ease; }
+.m-app[data-fold="in"] { grid-template-columns: 56px minmax(0, 1fr); }
+.m-side {
+  background: var(--m-board); color: var(--m-btext); display: flex; flex-direction: column; gap: 12px;
+  padding: 12px 8px; min-height: 0; overflow-x: hidden; overflow-y: auto;
+}
+.m-side-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.m-logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-weight: 600; letter-spacing: .2em; font-size: 12px; color: var(--m-flap); padding: 0 4px; white-space: nowrap; }
+.m-logo i { flex: none; font-style: normal; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; background: var(--m-flap); color: var(--m-board); letter-spacing: 0; }
+.m-fold { all: unset; cursor: pointer; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; color: var(--m-btext); }
+.m-fold:hover { background: var(--m-board3); color: var(--m-flap); }
+.m-fold:focus-visible { outline: 2px solid var(--m-flap); outline-offset: 1px; }
+.m-fold svg { width: 18px; height: 18px; transition: transform .22s ease; }
+.m-app[data-fold="in"] .m-fold svg { transform: scaleX(-1); }
+.m-switch { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 8px; background: var(--m-board2); border: 1px solid var(--m-board3); min-width: 0; white-space: nowrap; cursor: pointer; }
+.m-tile { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 5px; background: var(--m-board3); color: var(--m-flap); font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; }
+.m-switch .lbl { display: grid; min-width: 0; }
+.m-switch small { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; opacity: .6; }
+.m-switch b { font-weight: 600; color: var(--m-flap); }
+.m-group { display: grid; gap: 1px; }
+.m-group-h { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; opacity: .5; padding: 0 9px 4px; white-space: nowrap; }
+.m-nav { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 7px; color: var(--m-btext); opacity: .82; white-space: nowrap; cursor: pointer; }
+.m-nav:hover { background: var(--m-board2); opacity: 1; }
+.m-nav svg, .m-ask svg { width: 18px; height: 18px; flex: none; }
+.m-nav .lbl { flex: 1; min-width: 0; }
+.m-nav.on { background: var(--m-board3); color: var(--m-flap); opacity: 1; font-weight: 500; box-shadow: inset 2px 0 0 var(--m-accent); }
+.m-nav em { font-style: normal; font-family: var(--font-mono); font-size: 10px; opacity: .7; }
+.m-side-foot { margin-top: auto; display: grid; gap: 10px; }
+.m-ask { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 8px; background: var(--m-flap); color: var(--m-board); font-weight: 600; white-space: nowrap; cursor: pointer; }
+.m-people { display: flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 11px; white-space: nowrap; }
+/* folded: icons only */
+.m-app[data-fold="in"] .lbl, .m-app[data-fold="in"] .m-nav em { display: none; }
+.m-app[data-fold="in"] .m-side-top { flex-direction: column; }
+.m-app[data-fold="in"] .m-group-h { height: 1px; padding: 0; margin: 2px 8px 6px; background: var(--m-btext); opacity: .2; }
+.m-app[data-fold="in"] .m-switch { justify-content: center; padding: 6px 0; }
+.m-app[data-fold="in"] .m-nav, .m-app[data-fold="in"] .m-ask { justify-content: center; padding: 8px 0; }
+.m-app[data-fold="in"] .m-people { justify-content: center; padding: 0; }
+.m-scrim { display: none; }
+.m-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--m-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-ok) 30%, transparent); }
+.m-av { display: flex; }
+.m-av span { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; background: var(--m-btext); color: var(--m-board); box-shadow: 0 0 0 2px var(--m-board); margin-left: -5px; }
+.m-av span:first-child { margin-left: 0; }
+
+.m-main { min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.m-head { background: var(--m-board); color: var(--m-btext); padding: 12px 18px 12px; display: grid; gap: 8px; }
+.m-head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.m-crumb { font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; opacity: .6; }
+.m-title { display: flex; align-items: center; gap: 10px; }
+.flaps { display: inline-flex; }
+.flap {
+  display: inline-grid; place-items: center; min-width: 1.15em; padding: .06em .1em; margin-right: .07em; border-radius: 3px;
+  background: linear-gradient(to bottom, var(--m-board3) 0 49%, var(--m-board) 49% 51%, var(--m-board2) 51% 100%);
+  color: var(--m-flap); font-family: var(--font-mono); font-weight: 600; line-height: 1.1;
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / .45);
+}
+.m-title .flaps { font-size: 22px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+.pill-board { border: 1px solid color-mix(in srgb, var(--m-flap) 50%, transparent); color: var(--m-flap); }
+.m-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.m-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.m-btn-board { border: 1px solid var(--m-board3); color: var(--m-btext); background: var(--m-board2); }
+.m-btn-primary { background: var(--m-accent); color: var(--m-on-accent); }
+.m-stats { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); font-size: 11px; }
+.m-stats span { opacity: .55; margin-right: 5px; font-size: 9.5px; letter-spacing: .16em; }
+.m-stats b { font-weight: 500; color: var(--m-flap); }
+
+/* timeline spine */
+.m-spine { display: flex; gap: 2px; padding: 8px 18px; background: var(--m-board2); }
+.m-seg { min-width: 0; padding: 3px 0 2px; border-radius: 3px; background: var(--m-board3); color: var(--m-btext); font-family: var(--font-mono); font-size: 9.5px; text-align: center; line-height: 1.15; overflow: hidden; }
+.m-seg b { display: block; font-weight: 600; color: var(--m-flap); font-size: 10px; }
+.m-seg.china { box-shadow: inset 0 -2px 0 var(--m-warn); }
+.m-seg.here { background: var(--m-flap); color: var(--m-board); }
+.m-seg.here b { color: var(--m-board); }
+
+.m-body { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 14px; padding: 14px 18px 18px; align-content: start; }
+.m-stops { display: grid; gap: 10px; min-width: 0; }
+
+/* stop card */
+.stop { background: var(--m-card); border: 1px solid var(--m-line); border-radius: 12px; display: grid; grid-template-columns: 74px minmax(0, 1fr); overflow: hidden; }
+.stop-stub { border-right: 2px dashed var(--m-line); padding: 10px 8px; display: grid; align-content: start; gap: 4px; justify-items: start; }
+.stop-n { font-family: var(--font-mono); font-size: 10px; color: var(--m-faint); }
+.stop-code .flaps { font-size: 14px; }
+.stop-city { font-weight: 600; font-size: 12.5px; line-height: 1.2; }
+.stop-country { font-size: 10.5px; color: var(--m-soft); }
+.stop-main { padding: 10px 12px; display: grid; gap: 8px; min-width: 0; }
+.stop-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.stop-dates { font-family: var(--font-mono); font-size: 11.5px; }
+.nights { display: inline-flex; align-items: center; border: 1px solid var(--m-line); border-radius: 999px; font-size: 11px; }
+.nights i { font-style: normal; width: 22px; text-align: center; color: var(--m-soft); }
+.nights b { font-weight: 600; padding: 0 2px; }
+.leg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border-radius: 8px; background: color-mix(in srgb, var(--m-paper) 70%, var(--m-card)); border: 1px solid var(--m-line); font-size: 11.5px; }
+.leg-route { font-family: var(--font-mono); font-weight: 600; }
+.leg-meta { color: var(--m-soft); min-width: 0; }
+.leg .pill { margin-left: auto; }
+.pill-ok { background: color-mix(in srgb, var(--m-ok) 14%, transparent); color: var(--m-ok); }
+.pill-warn { background: color-mix(in srgb, var(--m-warn) 16%, transparent); color: var(--m-warn); }
+.pill-idea { background: color-mix(in srgb, var(--m-sky) 14%, transparent); color: var(--m-sky); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { padding: 2px 8px; border-radius: 999px; font-size: 10.5px; border: 1px solid var(--m-line); color: var(--m-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.chip-event { border-color: color-mix(in srgb, var(--m-err) 40%, transparent); }
+.chip-event::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--m-err); margin-right: 5px; vertical-align: 1px; }
+.stop-foot { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; padding-top: 6px; border-top: 1px solid var(--m-line); }
+.stop-foot a { color: var(--m-sky); text-decoration: none; }
+.stop-foot span { color: var(--m-soft); }
+.stop.collapsed .stop-main { gap: 4px; }
+
+/* rail */
+.m-rail { display: grid; gap: 10px; align-content: start; }
+.card { background: var(--m-card); border: 1px solid var(--m-line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--m-soft); }
+.meter { height: 6px; border-radius: 99px; background: var(--m-line); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--m-warn); }
+.check { display: grid; gap: 2px; font-size: 11.5px; }
+.check small { color: var(--m-soft); font-size: 10.5px; }
+.big { font-family: var(--font-mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kv { display: flex; justify-content: space-between; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.kv span { color: var(--m-soft); }
+
+/* phone: the rail stays folded beside the content and slides out over it */
+@container (max-width: 720px) {
+  .m-app, .m-app[data-fold="in"] { grid-template-columns: 56px minmax(0, 1fr); }
+  .m-side { position: relative; z-index: 6; width: 56px; transition: width .22s ease, box-shadow .22s ease; }
+  .m-app[data-fold="out"] .m-side { width: 224px; box-shadow: 14px 0 32px rgb(0 0 0 / .35); }
+  .m-scrim { display: block; position: absolute; inset: 0; z-index: 5; background: rgb(0 0 0 / .45); opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+  .m-app[data-fold="out"] .m-scrim { opacity: 1; pointer-events: auto; }
+  .m-head { padding: 10px 12px; }
+  .m-title .flaps { font-size: 18px; }
+  .m-actions { display: none; }
+  .m-spine { padding: 6px 12px; overflow: hidden; }
+  .m-seg { font-size: 0; }
+  .m-seg b { font-size: 8px; }
+  .m-body { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .m-rail { order: -1; grid-template-columns: minmax(0, 1fr); }
+  .m-rail .card.budget-full, .m-rail .card.book-card { display: none; }
+  .stop { grid-template-columns: 58px minmax(0, 1fr); }
+  .stop-stub { padding: 10px 6px; }
+  .stop-code .flaps { font-size: 12px; }
+}
+
+/* ---------- sections below ---------- */
+.section { display: grid; gap: 18px; }
+.section > header { display: grid; gap: 6px; max-width: 70ch; }
+.section h2 { font-size: 22px; font-weight: 600; }
+.section > header p { color: var(--fg-soft); }
+
+.ia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .ia { grid-template-columns: minmax(0, 1fr); } }
+.ia-box { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ia-box h3 { font-size: 15px; font-weight: 600; }
+.old-nav { display: flex; gap: 4px; overflow-x: auto; padding: 8px; border-radius: 8px; background: #0f151d; color: #f5d58a; font-size: 12px; white-space: nowrap; }
+.old-nav span { padding: 3px 8px; border-radius: 5px; opacity: .85; }
+.old-nav span.on { background: #243042; color: #ffc23d; opacity: 1; }
+.old-nav span.ask { background: #ffc23d; color: #0f151d; font-weight: 600; opacity: 1; }
+.ia ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--fg-soft); font-size: 14px; }
+.ia ul b { color: var(--fg); font-weight: 600; }
+.tree { display: grid; gap: 10px; font-size: 14px; }
+.tree-g { display: grid; gap: 3px; }
+.tree-g > div:first-child { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-faint); }
+.tree-g div + div { padding-left: 12px; border-left: 2px solid var(--rule); }
+.tree-g code { font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
+
+.plan { border: 1px solid var(--rule); border-radius: 12px; overflow-x: auto; background: var(--surface); }
+.plan table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 14px; }
+.plan th, .plan td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--rule); }
+.plan tr:last-child td { border-bottom: 0; }
+.plan th { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); font-weight: 500; }
+.plan td:first-child { font-weight: 600; white-space: nowrap; }
+.plan td:nth-child(2) { color: var(--fg-soft); }
+.stage-n { font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <section class="intro">
+    <div class="eyebrow">Trippr · redesign · for review</div>
+    <h1>Swiss Rail, with a folding icon menu</h1>
+    <p>You picked Swiss Rail. The phone's bottom tab bar is gone: navigation now lives in one menu on the left at every screen size, with an icon for each page. Use the fold button at the top of the menu to switch between icons only and icons with labels. On a phone the folded rail stays beside the content and slides out over it. The other directions are still here for comparison.</p>
+  </section>
+
+  <section class="picker" aria-label="Choose a direction">
+    <div class="opts" id="opts">
+      <button class="opt" data-opt="a" aria-pressed="true">
+        <div class="opt-head"><span class="opt-name">Night Train</span><span class="opt-letter">A</span></div>
+        <div class="sw"><span style="background:#12271f"></span><span style="background:#214337"></span><span style="background:#e8c47e"></span><span style="background:#b4532a"></span><span style="background:#eceee8"></span></div>
+        <p class="opt-desc">Bottle-green board with brass lettering, like an old sleeper carriage. Rust for actions, sage-grey paper. Warm but calm.</p>
+      </button>
+      <button class="opt" data-opt="b" aria-pressed="false">
+        <div class="opt-head"><span class="opt-name">Swiss Rail</span><span class="opt-letter">B</span></div>
+        <div class="sw"><span style="background:#1b1c1f"></span><span style="background:#34373c"></span><span style="background:#ffffff"></span><span style="background:#d52b1e"></span><span style="background:#f1f2f4"></span></div>
+        <p class="opt-desc">Graphite board, white flaps, signal red for actions. Station-clock clarity. The most neutral and modern of the three.</p>
+      </button>
+      <button class="opt" data-opt="c" aria-pressed="false">
+        <div class="opt-head"><span class="opt-name">Riviera</span><span class="opt-letter">C</span></div>
+        <div class="sw"><span style="background:#2a1631"></span><span style="background:#482b52"></span><span style="background:#ff9f7a"></span><span style="background:#1d7f7a"></span><span style="background:#f6f0ee"></span></div>
+        <p class="opt-desc">Aubergine board with coral flaps, teal for actions. Feels like a holiday poster. The most playful of the three.</p>
+      </button>
+      <button class="opt" data-opt="cur" aria-pressed="false">
+        <div class="opt-head"><span class="opt-name">Today's colours</span><span class="opt-letter">ref</span></div>
+        <div class="sw"><span style="background:#0f151d"></span><span style="background:#243042"></span><span style="background:#ffc23d"></span><span style="background:#0f151d"></span><span style="background:#f4efe4"></span></div>
+        <p class="opt-desc">The current navy and amber on cream, shown with the new layout so you can compare layout and colour separately.</p>
+      </button>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Mode">
+        <button data-mode="paper" aria-pressed="true">Day</button>
+        <button data-mode="night" aria-pressed="false">Night</button>
+      </div>
+      <span class="note" id="mode-note">Night mode is new in every direction.</span>
+    </div>
+  </section>
+
+  <section class="stage" aria-label="Mock of the redesigned route screen">
+    <div class="desk-frame">
+      <div class="frame-label">Route screen · desktop</div>
+      <div class="mock" data-opt="a" data-mode="paper" id="mock-desk"></div>
+    </div>
+    <div class="phone-frame">
+      <div class="frame-label">Same screen · phone</div>
+      <div class="mock" data-opt="a" data-mode="paper" id="mock-phone"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <div class="eyebrow">Navigation</div>
+      <h2>Ten flat tabs become four groups</h2>
+      <p>Today every tool sits in one row that scrolls sideways even on a laptop, and the route editor lives outside the trip. The new structure groups pages by what the group is doing and keeps the chosen route in view.</p>
+    </header>
+    <div class="ia">
+      <div class="ia-box">
+        <h3>Today</h3>
+        <div class="old-nav" aria-label="Current navigation"><span class="on">Asia 2027</span><span>Activities</span><span>Itinerary</span><span>Compare</span><span>Graph</span><span>Map</span><span>Booked</span><span>Inbox</span><span>Paths</span><span>Data</span><span class="ask">Ask</span></div>
+        <ul>
+          <li>Ten items with equal weight. Planning, booking and analysis are mixed together.</li>
+          <li>The route editor is at <b>/routes/:id</b>, so no tab is highlighted while you edit a route.</li>
+          <li>The public Data page sits in the middle of the trip's tabs.</li>
+          <li>The board header takes about 200px on every page; on the route page, stop #1 starts 40% of the way down the screen.</li>
+          <li>On phones the row scrolls, so Ask and presence get pushed off the edge.</li>
+        </ul>
+      </div>
+      <div class="ia-box">
+        <h3>Proposed</h3>
+        <div class="tree">
+          <div class="tree-g"><div>Trip switcher</div><div>Asia 2027 ▾ · route: Main ▾ <code>chosen route sets context for Route, Itinerary, Map, Bookings</code></div></div>
+          <div class="tree-g"><div>Plan</div><div>Overview</div><div>Route <code>/trips/:id/routes/:routeId</code></div><div>Itinerary</div><div>Map</div></div>
+          <div class="tree-g"><div>Ideas</div><div>Activities</div><div>Inbox</div></div>
+          <div class="tree-g"><div>Book</div><div>Bookings <code>was "Booked"; shows 1 of 11 legs booked</code></div></div>
+          <div class="tree-g"><div>Explore</div><div>Compare routes</div><div>Find a path <code>was "Paths"</code></div><div>Graph</div></div>
+          <div class="tree-g"><div>Always there</div><div>Ask (side panel), who's here, account menu with About the data</div></div>
+        </div>
+        <ul>
+          <li>One left menu at every size. It <b>folds to an icon rail</b> (56px) and unfolds to show labels. The app remembers your choice. On phones it starts folded and slides out over the page.</li>
+          <li>Old <b>/routes/:id</b> links redirect, so shared links keep working.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <div class="eyebrow">Screen by screen</div>
+      <h2>What changes on each screen</h2>
+      <p>I'd build it in this order. Every stage ships on its own and keeps the existing API, so the app works after each one.</p>
+    </header>
+    <div class="plan">
+      <table>
+        <thead><tr><th>Screen</th><th>Main problem today</th><th>Redesign</th><th>Stage</th></tr></thead>
+        <tbody>
+          <tr><td>Foundation</td><td>Colours hard-coded to one theme; no night mode</td><td>New colour tokens for the chosen direction, day and night; shared components (buttons, pills, cards, empty states) restyled once</td><td class="stage-n">1</td></tr>
+          <tr><td>App shell</td><td>10 flat tabs, tall header</td><td>Grouped left menu with icons that folds to a rail, with trip and route switchers; compact board header; Ask as a slide-over on every page</td><td class="stage-n">1</td></tr>
+          <tr><td>Sign-in · My trips</td><td>One card on an empty page</td><td>Departure-board list of trips with "Departs in 166 days", the current route and a Continue button; new-trip form behind a button</td><td class="stage-n">2</td></tr>
+          <tr><td>Trip overview</td><td>Route cards repeat the whole stop list</td><td>Current route up top with its timeline; other routes as comparable rows (nights, home date, per person, booked legs); travellers and invites in one panel</td><td class="stage-n">2</td></tr>
+          <tr><td>Route editor</td><td>Dense stop cards, every field the same weight</td><td>Moves inside the trip; timeline becomes jump navigation; stop cards lead with dates, nights and getting there, with costs and notes on demand; checks and budget in a sticky side rail</td><td class="stage-n">2</td></tr>
+          <tr><td>Activities</td><td>Filters and results compete</td><td>Filter rail plus city tabs; cards with clear Plan and Vote actions; AI labels and sources kept but quieter</td><td class="stage-n">3</td></tr>
+          <tr><td>Itinerary</td><td>Long single list</td><td>Day-by-day with sticky day headers, city changes marked, calendar feed in the header</td><td class="stage-n">3</td></tr>
+          <tr><td>Map</td><td>Map boxed inside the page</td><td>Full-bleed map with a floating layers panel and stop list</td><td class="stage-n">3</td></tr>
+          <tr><td>Bookings</td><td>Booked and to-book mixed</td><td>Progress at the top, what's still to book first, search links grouped by leg</td><td class="stage-n">4</td></tr>
+          <tr><td>Inbox</td><td>Forwarding address easy to miss</td><td>Address with a copy button up top; items as a review queue with Accept and Discard</td><td class="stage-n">4</td></tr>
+          <tr><td>Compare routes</td><td>Stacked tables</td><td>Side-by-side columns with shared stops lined up and differences highlighted</td><td class="stage-n">4</td></tr>
+          <tr><td>Find a path</td><td>Form-first</td><td>A sentence form ("From Xi'an to Hong Kong by train"), with the answer as a ticket-style journey</td><td class="stage-n">4</td></tr>
+          <tr><td>Graph</td><td>Panels crowd the canvas</td><td>Full-bleed canvas, floating search, filters and details</td><td class="stage-n">5</td></tr>
+          <tr><td>Data</td><td>Lives in the trip nav</td><td>Moves to the account menu and footer; same visual system as the app</td><td class="stage-n">5</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<template id="mock-tpl">
+  <div class="m-app">
+    <aside class="m-side">
+      <div class="m-side-top">
+        <div class="m-logo"><i>T</i><span class="lbl">TRIPPR</span></div>
+        <button class="m-fold" type="button" aria-label="Fold menu" aria-expanded="true"><span data-icon="fold"></span></button>
+      </div>
+      <div class="m-switch" title="Trip: Asia 2027"><span class="m-tile">A27</span><span class="lbl"><small>Trip</small><b>Asia 2027 ▾</b></span></div>
+      <div class="m-group">
+        <div class="m-group-h"><span class="lbl">Plan</span></div>
+        <div class="m-nav" title="Overview"><span data-icon="home"></span><span class="lbl">Overview</span></div>
+        <div class="m-nav on" title="Route: Main"><span data-icon="route"></span><span class="lbl">Route · Main</span><em>▾</em></div>
+        <div class="m-nav" title="Itinerary"><span data-icon="calendar"></span><span class="lbl">Itinerary</span></div>
+        <div class="m-nav" title="Map"><span data-icon="map"></span><span class="lbl">Map</span></div>
+      </div>
+      <div class="m-group">
+        <div class="m-group-h"><span class="lbl">Ideas</span></div>
+        <div class="m-nav" title="Activities"><span data-icon="star"></span><span class="lbl">Activities</span></div>
+        <div class="m-nav" title="Inbox"><span data-icon="inbox"></span><span class="lbl">Inbox</span></div>
+      </div>
+      <div class="m-group">
+        <div class="m-group-h"><span class="lbl">Book</span></div>
+        <div class="m-nav" title="Bookings: 1 of 11 legs booked"><span data-icon="ticket"></span><span class="lbl">Bookings</span><em>1/11</em></div>
+      </div>
+      <div class="m-group">
+        <div class="m-group-h"><span class="lbl">Explore</span></div>
+        <div class="m-nav" title="Compare routes"><span data-icon="compare"></span><span class="lbl">Compare routes</span></div>
+        <div class="m-nav" title="Find a path"><span data-icon="sign"></span><span class="lbl">Find a path</span></div>
+        <div class="m-nav" title="Graph"><span data-icon="graph"></span><span class="lbl">Graph</span></div>
+      </div>
+      <div class="m-side-foot">
+        <div class="m-people" title="Here now: BW, MD, TM"><span class="m-dot"></span><span class="m-av lbl"><span>BW</span><span>MD</span><span>TM</span></span><span class="lbl">here now</span></div>
+        <div class="m-ask" title="Ask about this trip"><span data-icon="ask"></span><span class="lbl">Ask about this trip</span></div>
+      </div>
+    </aside>
+    <div class="m-scrim"></div>
+
+    <div class="m-main">
+      <div class="m-head">
+        <div class="m-head-row">
+          <div class="m-crumb">Asia 2027 · Route</div>
+          <div class="m-actions"><span class="m-btn m-btn-board">Compare</span><span class="m-btn m-btn-board">Export ▾</span><span class="m-btn m-btn-primary">+ Add stop</span></div>
+        </div>
+        <div class="m-title"><span class="flaps" aria-label="Main"><span class="flap">M</span><span class="flap">A</span><span class="flap">I</span><span class="flap">N</span></span><span class="pill pill-board">current</span></div>
+        <div class="m-stats"><div><span>DEPARTS</span><b>May 10</b></div><div><span>HOME</span><b>Jun 19</b></div><div><span>NIGHTS</span><b>40</b></div><div><span>STOPS</span><b>11</b></div><div><span>CHINA</span><b>20/30d</b></div></div>
+      </div>
+      <div class="m-spine" aria-label="Timeline, sized by nights">
+        <div class="m-seg here" style="flex:4"><b>TYO</b>4</div>
+        <div class="m-seg china" style="flex:5"><b>BJS</b>5</div>
+        <div class="m-seg china" style="flex:3"><b>SIA</b>3</div>
+        <div class="m-seg china" style="flex:4"><b>CKG</b>4</div>
+        <div class="m-seg china" style="flex:3"><b>CAN</b>3</div>
+        <div class="m-seg china" style="flex:4"><b>SZX</b>4</div>
+        <div class="m-seg" style="flex:3"><b>HKG</b>3</div>
+        <div class="m-seg" style="flex:4"><b>HAN</b>4</div>
+        <div class="m-seg" style="flex:3"><b>SGN</b>3</div>
+        <div class="m-seg" style="flex:3"><b>KOM</b>3</div>
+        <div class="m-seg" style="flex:4"><b>DPS</b>4</div>
+      </div>
+
+      <div class="m-body">
+        <div class="m-stops">
+          <article class="stop">
+            <div class="stop-stub">
+              <span class="stop-n">01</span>
+              <span class="stop-code"><span class="flaps" aria-label="TYO"><span class="flap">T</span><span class="flap">Y</span><span class="flap">O</span></span></span>
+              <span class="stop-city">Tokyo</span><span class="stop-country">Japan</span>
+            </div>
+            <div class="stop-main">
+              <div class="stop-top"><span class="stop-dates">Mon May 10 → Fri May 14</span><span class="nights"><i>−</i><b>4 nights</b><i>+</i></span></div>
+              <div class="leg"><span>✈</span><span class="leg-route">YYZ → HND</span><span class="leg-meta">Air Philippines · Sun May 9, 01:50 · $800</span><span class="pill pill-ok">Booked</span></div>
+              <div class="chips"><span class="chip chip-event">NPB: BayStars vs Giants · Thu May 13</span><span class="chip chip-event">Sumo May tournament · May 9 to 23</span></div>
+              <div class="stop-foot"><a href="#">Activities · 6</a><span>Stay: not picked · <a href="#">Where to stay</a></span><a href="#">Costs</a></div>
+            </div>
+          </article>
+          <article class="stop">
+            <div class="stop-stub">
+              <span class="stop-n">02</span>
+              <span class="stop-code"><span class="flaps" aria-label="BJS"><span class="flap">B</span><span class="flap">J</span><span class="flap">S</span></span></span>
+              <span class="stop-city">Beijing</span><span class="stop-country">China</span>
+            </div>
+            <div class="stop-main">
+              <div class="stop-top"><span class="stop-dates">Fri May 14 → Wed May 19</span><span class="nights"><i>−</i><b>5 nights</b><i>+</i></span></div>
+              <div class="leg"><span>✈</span><span class="leg-route">HND → PEK</span><span class="leg-meta">about $395 · <a href="#" style="color:var(--m-sky);text-decoration:none">Best way here from Tokyo</a></span><span class="pill pill-idea">Idea</span></div>
+              <div class="chips"><span class="chip">Great Wall at Mutianyu</span><span class="chip">Xiaomi EV factory tour</span></div>
+              <div class="stop-foot"><a href="#">Activities · 5</a><span>Stay: not picked · <a href="#">Where to stay</a></span><a href="#">Costs</a></div>
+            </div>
+          </article>
+          <article class="stop">
+            <div class="stop-stub">
+              <span class="stop-n">03</span>
+              <span class="stop-code"><span class="flaps" aria-label="SIA"><span class="flap">S</span><span class="flap">I</span><span class="flap">A</span></span></span>
+              <span class="stop-city">Xi'an</span><span class="stop-country">China</span>
+            </div>
+            <div class="stop-main">
+              <div class="stop-top"><span class="stop-dates">Wed May 19 → Sat May 22</span><span class="nights"><i>−</i><b>3 nights</b><i>+</i></span></div>
+              <div class="leg"><span>🚄</span><span class="leg-route">Beijing West → Xi'an North</span><span class="leg-meta">about 4.5 h</span><span class="pill pill-idea">Idea</span></div>
+              <div class="chips"><span class="chip">Terracotta Army</span></div>
+              <div class="stop-foot"><a href="#">Activities · 3</a><span>Stay: not picked · <a href="#">Where to stay</a></span><a href="#">Costs</a></div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="m-rail">
+          <div class="card">
+            <div class="card-h">Checks <span class="pill pill-warn">Needs a look</span></div>
+            <div class="check"><b>China visa-free</b><small>1 entry · May 14 to Jun 2</small></div>
+            <div class="meter" aria-label="20 of 30 days"><i style="width:66.7%"></i></div>
+            <div class="kv"><span>Days used</span><b>20 / 30</b></div>
+            <div class="check"><small>Policy ends Dec 31, 2026, before this entry. Check whether it has been extended.</small></div>
+          </div>
+          <div class="card budget-full">
+            <div class="card-h">Per person · CAD</div>
+            <div class="big">$1,958</div>
+            <div class="kv"><span>Getting around</span><b>$1,305</b></div>
+            <div class="kv"><span>Activities</span><b>$653</b></div>
+            <div class="kv"><span>Stays</span><b>not set</b></div>
+          </div>
+          <div class="card book-card">
+            <div class="card-h">Bookings</div>
+            <div class="kv"><span>Legs booked</span><b>1 of 11</b></div>
+            <div class="meter"><i style="width:9%;background:var(--m-ok)"></i></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+(function () {
+  var ICONS = {
+    fold: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15.5 10l-2 2 2 2"/>',
+    home: '<path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>',
+    route: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 010 6H9a3 3 0 000 6h6.5"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    map: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    star: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
+    inbox: '<path d="M3 13l3-8h12l3 8v6a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M3 13h5l1 2h6l1-2h5"/>',
+    ticket: '<path d="M4 6h16v4a2 2 0 000 4v4H4v-4a2 2 0 000-4z"/><path d="M14 7v10" stroke-dasharray="2 2.5"/>',
+    compare: '<rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/>',
+    sign: '<path d="M12 3v18"/><path d="M5 6h11l3 2.5L16 11H5z"/><path d="M19 13H8l-3 2.5L8 18h11z"/>',
+    graph: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4l7.2 1.2M6.8 8.4l2.4 7.2M16.6 10.1l-5 6"/>',
+    ask: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>'
+  };
+  var tpl = document.getElementById("mock-tpl");
+  var mocks = [document.getElementById("mock-desk"), document.getElementById("mock-phone")];
+  mocks.forEach(function (m, i) {
+    m.appendChild(tpl.content.cloneNode(true));
+    m.querySelectorAll("[data-icon]").forEach(function (s) {
+      s.outerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[s.dataset.icon] + "</svg>";
+    });
+    var app = m.querySelector(".m-app");
+    var btn = m.querySelector(".m-fold");
+    function setFold(v) {
+      app.dataset.fold = v;
+      btn.setAttribute("aria-expanded", String(v === "out"));
+      btn.setAttribute("aria-label", v === "out" ? "Fold menu" : "Unfold menu");
+    }
+    setFold(i === 0 ? "out" : "in");
+    btn.addEventListener("click", function () { setFold(app.dataset.fold === "out" ? "in" : "out"); });
+    m.querySelector(".m-scrim").addEventListener("click", function () { setFold("in"); });
+    if (i === 1) m.querySelectorAll(".m-nav").forEach(function (n) { n.addEventListener("click", function () { setFold("in"); }); });
+  });
+
+  var state = { opt: "b", mode: "paper" };
+  try {
+    var saved = JSON.parse(localStorage.getItem("trippr-redesign-v2") || "null");
+    if (saved && saved.opt) state = saved;
+  } catch (e) {}
+
+  var note = document.getElementById("mode-note");
+  function render() {
+    mocks.forEach(function (m) { m.dataset.opt = state.opt; m.dataset.mode = state.mode; });
+    document.querySelectorAll("#opts .opt").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.opt === state.opt)); });
+    document.querySelectorAll(".seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)); });
+    note.textContent = state.opt === "cur"
+      ? "Today's app has no night mode, so the reference always shows day colours."
+      : "Night mode is new in every direction.";
+    try { localStorage.setItem("trippr-redesign-v2", JSON.stringify(state)); } catch (e) {}
+  }
+  document.getElementById("opts").addEventListener("click", function (e) {
+    var b = e.target.closest(".opt"); if (!b) return;
+    state.opt = b.dataset.opt; render();
+  });
+  document.querySelector(".seg").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    state.mode = b.dataset.mode; render();
+  });
+  document.querySelectorAll(".mock a").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); }); });
+  render();
+})();
+</script>
