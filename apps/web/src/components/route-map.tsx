@@ -11,7 +11,7 @@ import { addRouteLayers, createMap, fitTo, stopMarker } from "./map/base";
  * The route on a real map: solid lines for trains, dashed arcs for flights,
  * dotted lines for boats and roads. Markers jump to the matching stop card.
  */
-export default function RouteMap({ stops }: { stops: StopView[] }) {
+export default function RouteMap({ stops, className = "h-64 sm:h-80" }: { stops: StopView[]; className?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
@@ -51,7 +51,7 @@ export default function RouteMap({ stops }: { stops: StopView[] }) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-line bg-paper-2">
-      <div ref={container} className="h-64 w-full sm:h-80" role="region" aria-label="Map of the route" />
+      <div ref={container} className={`w-full ${className}`} role="region" aria-label="Map of the route" />
       <div className="pointer-events-none absolute bottom-2 left-2 flex gap-3 rounded-md bg-card/90 px-2 py-1 text-[11px] text-ink-soft">
         <span className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-5 bg-rail" /> train

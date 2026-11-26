@@ -56,7 +56,8 @@ test("reorder stops and see the dates move", async ({ page }) => {
 test("duplicate a route", async ({ page }) => {
   await page.goto("/trips/asia-2027");
   const main = page.getByTestId("route-card").filter({ has: page.getByRole("link", { name: "Main", exact: true }) });
-  await main.getByRole("button", { name: "Duplicate" }).click();
+  await main.getByRole("button", { name: "More actions for Main" }).click();
+  await main.getByRole("menuitem", { name: "Duplicate" }).click();
   await expect(page.getByRole("link", { name: "Main copy" })).toBeVisible();
 });
 

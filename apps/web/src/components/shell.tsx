@@ -29,9 +29,12 @@ export function BoardHeader({
   meta,
   actions,
   below,
+  width = "max-w-6xl",
 }: {
   eyebrow: string;
   title: string;
+  /** Match the page's content width so the header lines up with it. */
+  width?: string;
   /** Small tags beside the title, e.g. "current". */
   badges?: ReactNode;
   meta?: ReactNode;
@@ -41,7 +44,7 @@ export function BoardHeader({
 }) {
   return (
     <div className="bg-board text-amber-soft">
-      <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
+      <div className={`mx-auto ${width} px-4 py-3 sm:px-6`}>
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
             <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-soft/60">{eyebrow}</div>

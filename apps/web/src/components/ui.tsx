@@ -1,7 +1,16 @@
 "use client";
 
 import type { CheckLevel } from "@trippr/rules";
-import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from "react";
 import { AlertIcon, CheckIcon, InfoIcon } from "./icons";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -112,6 +121,91 @@ export function ErrorNote({ error }: { error: unknown }) {
   return (
     <div role="alert" className="rounded-lg border border-err/30 bg-err/5 px-4 py-3 text-sm text-err">
       {error instanceof Error ? error.message : "Something went wrong"}
+    </div>
+  );
+}
+
+export interface MenuAction {
+  label: string;
+  onSelect: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}
+
+/** A "⋯" button (or a labelled one) that opens a short list of actions under it. */
+export function ActionMenu({
+  label,
+  actions,
+  text,
+  onBoard = false,
+}: {
+  label: string;
+  actions: MenuAction[];
+  /** Show a labelled button instead of "⋯". */
+  text?: string;
+  /** The button sits on the dark departure board. */
+  onBoard?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  if (actions.length === 0) return null;
+  return (
+    <div ref={wrap} className="relative">
+      {text ? (
+        <Button size="sm" variant={onBoard ? "board" : "secondary"} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {text}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </Button>
+      ) : (
+        <button
+          aria-label={label}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="grid h-8 w-8 place-items-center rounded-lg text-ink-soft hover:bg-paper-2 hover:text-ink"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <circle cx="5" cy="12" r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="19" cy="12" r="1.8" />
+          </svg>
+        </button>
+      )}
+      {open ? (
+        <div role="menu" aria-label={label} className="absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-line bg-card p-1 shadow-xl">
+          {actions.map((a) => (
+            <button
+              key={a.label}
+              role="menuitem"
+              disabled={a.disabled}
+              onClick={() => {
+                setOpen(false);
+                a.onSelect();
+              }}
+              className={`block w-full rounded-lg px-3 py-2 text-left text-sm disabled:opacity-50 ${a.danger ? "text-err hover:bg-err/10" : "hover:bg-paper-2"}`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
