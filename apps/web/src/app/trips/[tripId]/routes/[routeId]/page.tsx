@@ -38,7 +38,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityDrawer } from "@/components/activity-drawer";
 import { AddStop } from "@/components/add-stop";
-import { ChangeBar, GuardDialog, impactParts, impactSentences, IssueStrip, nightsMessage, TradePanel, type Change, type Guard } from "@/components/anchors";
+import { ChangeBar, GuardDialog, impactParts, impactSentences, IssueStrip, nightsMessage, today, TradePanel, type Change, type Guard } from "@/components/anchors";
 import { HomeCard } from "@/components/home-card";
 import { BookedPrompt, NextToBook, useBookedPrompt } from "@/components/next-to-book";
 import { BudgetPanel } from "@/components/budget-panel";
@@ -49,7 +49,7 @@ import { StopCard } from "@/components/stop-card";
 import { StopLegs } from "@/components/stop-legs";
 import { TravelOptions } from "@/components/travel-options";
 import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
-import { Timeline } from "@/components/timeline";
+import { TripStrip } from "@/components/trip-strip";
 import { useToast } from "@/components/toast";
 import { ActionMenu, Button, ErrorNote, Spinner, Tag } from "@/components/ui";
 import { download } from "@/lib/api";
@@ -99,6 +99,7 @@ function Editor({ view }: { view: RouteView }) {
         startDate: start,
         stops: rules.map((r) => ({ ...r, arriveMode: r.view.arriveMode })),
         home,
+        today: today(),
         fareVerdicts:
           view.route.isCurrent && flightPricesData?.enabled ? Object.fromEntries(flightPricesData.items.map((i) => [i.stopId, i.verdict])) : {},
       }),
@@ -130,6 +131,10 @@ function Editor({ view }: { view: RouteView }) {
   /** "I booked it": open the place to record it, the hotel drawer or the leg form. */
   const markBooked = (item: NextToBookItem) => {
     prompt.dismiss();
+    if (item.kind === "deadline") {
+      document.getElementById(item.stopId ? `stop-${item.stopId}` : "home-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     if (item.kind === "stay" && item.stopId) return setHotelStop(item.stopId);
     const target = item.kind === "home" ? HOME : item.stopId!;
     setOpenLeg({ stopId: target, n: Date.now() });
@@ -246,7 +251,19 @@ function Editor({ view }: { view: RouteView }) {
       <BoardHeader
         eyebrow={`${view.trip.name} · route`}
         title={view.route.name}
-        below={<Timeline view={view} variant="board" />}
+        below={
+          <TripStrip
+            view={view}
+            rules={rules}
+            home={home}
+            anchors={anchors}
+            canEdit={canEdit}
+            onChange={(changes, impact) => setNights(changes, impact)}
+            onBlocked={(changes, impact, label) =>
+              setGuard({ title: `${label}?`, body: impactSentences(impact), confirmLabel: "Move it anyway", onConfirm: () => setNights(changes, impact) })
+            }
+          />
+        }
         badges={
           <>
             {view.route.isCurrent ? <Tag tone="board">current</Tag> : null}

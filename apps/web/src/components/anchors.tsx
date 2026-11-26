@@ -6,6 +6,7 @@
  */
 import type { StopView } from "@trippr/contracts";
 import {
+  allRefundable,
   bookingNames,
   listNames,
   shortDate,
@@ -23,6 +24,10 @@ import { LockIcon, UndoIcon, XIcon } from "./icons";
 import { Button, LevelIcon } from "./ui";
 
 const nightsWord = (n: number) => `${n} night${n === 1 ? "" : "s"}`;
+/** Today in the traveller's time zone, YYYY-MM-DD. */
+export const today = () => new Date().toLocaleDateString("en-CA");
+/** The soonest free-cancellation deadline among some anchors. */
+const freeUntil = (anchors: readonly AnchorState[]) => anchors.map((a) => a.refundableUntil).filter((d): d is string => Boolean(d)).sort()[0];
 const range = (from: string, to: string) => (from === to ? shortDate(from) : `${shortDate(from)} to ${shortDate(to)}`);
 
 /** What an edit did, for the change bar: nights, the home date, and the bookings it moved or put back. */
@@ -83,6 +88,7 @@ export function PinRow({ pins, lock }: { pins: AnchorState[]; lock: StopLock }) 
           <>
             {p.strength === "soft" ? "Held · " : ""}
             {p.label} <span className="font-mono">{verb} {shortDate(p.from)}</span>
+            {p.refundableUntil && p.refundableUntil >= today() ? <span className="opacity-80"> · free to cancel until {shortDate(p.refundableUntil)}</span> : null}
           </>,
           p.holds ? undefined : `plan says ${shortDate(p.planDate)}`,
         );
@@ -97,6 +103,7 @@ export function PinRow({ pins, lock }: { pins: AnchorState[]; lock: StopLock }) 
           false,
           <>
             {pair[0]!.booking} <span className="font-mono">{inn && out ? `${shortDate(inn.from)} → ${shortDate(out.from)}` : range(pair[0]!.from, pair[0]!.to)}</span>
+            {pair[0]!.refundableUntil && pair[0]!.refundableUntil >= today() ? <span className="opacity-80"> · free to cancel until {shortDate(pair[0]!.refundableUntil)}</span> : null}
           </>,
           holds ? undefined : `plan says ${inn ? shortDate(inn.planDate) : ""}${out ? ` → ${shortDate(out.planDate)}` : ""}`,
         );
@@ -195,7 +202,10 @@ export function TradePanel({
         >
           <span className="text-sm font-semibold text-err">Move the dates anyway</span>
           <span className="text-xs text-ink-soft">
-            Everything after {city} moves a day {delta > 0 ? "later" : "earlier"}. {listNames(blocking)} would need changing.
+            Everything after {city} moves a day {delta > 0 ? "later" : "earlier"}.{" "}
+            {allRefundable(plan.shift.impact.breaks, today())
+              ? `You can still change ${listNames(blocking)} for free, until ${shortDate(freeUntil(plan.shift.impact.breaks)!)}.`
+              : `${listNames(blocking)} would need changing.`}
           </span>
         </button>
       </div>
@@ -342,7 +352,9 @@ export function impactSentences(impact: EditImpact): ReactNode[] {
         <span className="font-medium text-err">
           {listNames(broken, 4)} would no longer match {broken.length === 1 ? "its" : "their"} booked dates.
         </span>{" "}
-        You&apos;d need to change {broken.length === 1 ? "that booking" : "those bookings"}.
+        {allRefundable(impact.breaks, today())
+          ? `You can still change ${broken.length === 1 ? "it" : "them"} for free, until ${shortDate(freeUntil(impact.breaks)!)}.`
+          : `You'd need to change ${broken.length === 1 ? "that booking" : "those bookings"}.`}
       </p>,
     );
   }

@@ -70,6 +70,8 @@ export const createLegBody = z.object({
   status: z.enum(LEG_STATUSES).default("idea"),
   bookingRef: text(80).nullish(),
   seat: text(40).nullish(),
+  /** The last day the booking can be cancelled for free; until then it's a softer, refundable anchor. */
+  freeCancelUntil: isoDate.nullish(),
   /** Position among this stop's chained legs; appended when omitted. */
   seq: z.number().int().min(0).max(20).optional(),
   version: z.number().int().nonnegative(),
@@ -90,6 +92,8 @@ export interface Leg {
   durationMin?: number | null;
   priceCad?: number | null;
   status: LegStatus;
+  /** The last day the ticket can be cancelled for free. */
+  freeCancelUntil?: string | null;
   source?: string | null;
   asOf?: string | null;
   /** Set when the daily flight snapshot filled in priceCad (idea flights only): the snapshot day and the provider. */
@@ -189,6 +193,8 @@ export const stayBody = z.object({
    */
   arrive: isoDate.nullish(),
   depart: isoDate.nullish(),
+  /** The last day the booking can be cancelled for free (status "booked" only). */
+  freeCancelUntil: isoDate.nullish(),
   /** Stays are route-structure writes, guarded by the route version. */
   version: z.number().int().nonnegative(),
 }).refine((b) => !b.arrive || !b.depart || b.arrive < b.depart, { message: "Check-out has to be after check-in", path: ["depart"] });
@@ -203,6 +209,8 @@ export interface StopStay {
   /** Booked stays only: the check-in and check-out the booking was made for. */
   arrive?: string | null;
   depart?: string | null;
+  /** Booked stays only: the last day it can be cancelled for free. */
+  freeCancelUntil?: string | null;
 }
 
 // --- graph export ---------------------------------------------------------

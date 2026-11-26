@@ -42,3 +42,17 @@ describe("nextToBook", () => {
     expect(items.some((i) => i.kind === "home")).toBe(false);
   });
 });
+
+describe("cancellation deadlines", () => {
+  it("puts a booking whose free cancellation ends soon at the top", () => {
+    const withDeadline: NextStop[] = stops.map((s) =>
+      s.id === "osa" ? { ...s, stays: [{ hotelId: "h", name: "Hotel Kansai", status: "booked", arrive: "2027-05-17", depart: "2027-05-19", freeCancelUntil: "2027-03-05" }] } : s,
+    );
+    const items = nextToBook({ startDate: "2027-05-10", stops: withDeadline, today: "2027-03-01" });
+    expect(items[0]).toMatchObject({ kind: "deadline", stopId: "osa", title: "Free cancellation on Hotel Kansai ends", date: "2027-03-05" });
+    expect(items[0]!.reasons[0]).toBe("4 days left to cancel for free, then it's final");
+    // Far off, or already past: not a deadline item.
+    expect(nextToBook({ startDate: "2027-05-10", stops: withDeadline, today: "2027-01-01" }).some((i) => i.kind === "deadline")).toBe(false);
+    expect(nextToBook({ startDate: "2027-05-10", stops: withDeadline, today: "2027-03-06" }).some((i) => i.kind === "deadline")).toBe(false);
+  });
+});

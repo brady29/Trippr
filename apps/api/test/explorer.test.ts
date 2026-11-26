@@ -275,6 +275,24 @@ describe("areas and hotels", () => {
     expect(view.checks.checks.some((c) => c.kind === "stay-dates")).toBe(false);
   });
 
+  it("keeps a booking's free-cancellation date on hotels and tickets", async () => {
+    let view = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body;
+    const tyo = stopIn(view, "TYO");
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", freeCancelUntil: "2027-04-01", version: view.route.version })).body;
+    expect(stopIn(view, "TYO").stays.find((s) => s.hotel.id === hotelB)).toMatchObject({ status: "booked", freeCancelUntil: "2027-04-01" });
+    // Re-marking it booked without the field keeps it; null clears it.
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", rooms: 2, version: view.route.version })).body;
+    expect(stopIn(view, "TYO").stays.find((s) => s.hotel.id === hotelB)!.freeCancelUntil).toBe("2027-04-01");
+    view = (await editor.api.put<RouteView>(`/stops/${tyo.id}/stays/${hotelB}`, { status: "booked", freeCancelUntil: null, version: view.route.version })).body;
+    expect(stopIn(view, "TYO").stays.find((s) => s.hotel.id === hotelB)!.freeCancelUntil ?? null).toBeNull();
+
+    const leg = stopIn(view, "TYO").legs[0]!;
+    view = (await editor.api.patch<RouteView>(`/legs/${leg.id}`, { freeCancelUntil: "2027-03-20", version: view.route.version })).body;
+    expect(stopIn(view, "TYO").legs[0]!.freeCancelUntil).toBe("2027-03-20");
+    view = (await editor.api.patch<RouteView>(`/legs/${leg.id}`, { freeCancelUntil: null, version: view.route.version })).body;
+    expect(stopIn(view, "TYO").legs[0]!.freeCancelUntil ?? null).toBeNull();
+  });
+
   it("sets several stops' nights in one versioned write", async () => {
     let view = (await editor.api.get<RouteView>(`/routes/${MAIN}`)).body;
     const [a, b] = view.stops;

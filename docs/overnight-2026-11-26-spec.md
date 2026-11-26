@@ -233,9 +233,9 @@ Steps 3 to 5 can happen before the bot code is merged. The deploy only maps the 
 | A. Animated boards | done | batch 1 (#51), fix in batch 2 | Titles and board stats turn like split flaps; static under reduced motion. Batch 2: boards in a background tab land at once instead of sitting blank |
 | 2. Swipe to vote | done | batch 1 | /trips/:id/swipe, keyboard, drag, undo, must do plans the idea |
 | P5. Group taste | done | batch 1 | Consensus chart and taste radar from vote counts only |
-| 1. Telegram bot | built | batch 2 | Off until the token and variables are set; the Inbox panel says so. Tested against a fake Telegram API |
-| P1. Trip strip | not started | | |
-| P6. Cancellation deadlines | not started | | |
+| 1. Telegram bot | done | batch 2 (#52) | Off until the token and variables are set; the Inbox panel says so. Tested against a fake Telegram API |
+| P1. Trip strip | built | batch 3 | Drag or arrow keys between stops; booked dates ask first; weekends, busy holidays, events, pins and pace |
+| P6. Cancellation deadlines | built | batch 3 | Free cancellation on tickets and hotels; refundable wording; deadline items top Next to book |
 | P2. Line map | not started | | |
 | P3. Better order | not started | | |
 | P4. Budget flow | not started | | |

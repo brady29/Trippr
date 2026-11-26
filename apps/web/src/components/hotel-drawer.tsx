@@ -27,6 +27,7 @@ function BookingDates({
   hotelName,
   arrive,
   depart,
+  freeCancelUntil,
   pending,
   onSave,
   onCancel,
@@ -34,12 +35,14 @@ function BookingDates({
   hotelName: string;
   arrive: string;
   depart: string;
+  freeCancelUntil?: string | null;
   pending: boolean;
-  onSave: (arrive: string, depart: string) => void;
+  onSave: (arrive: string, depart: string, freeCancelUntil: string | null) => void;
   onCancel: () => void;
 }) {
   const [from, setFrom] = useState(arrive);
   const [to, setTo] = useState(depart);
+  const [cancel, setCancel] = useState(freeCancelUntil ?? "");
   const valid = Boolean(from && to && from < to);
   return (
     <form
@@ -47,7 +50,7 @@ function BookingDates({
       data-testid="booking-dates"
       onSubmit={(e) => {
         e.preventDefault();
-        if (valid) onSave(from, to);
+        if (valid) onSave(from, to, cancel || null);
       }}
     >
       <p className="text-ink-soft">Which dates is {hotelName} booked for? The route keeps them fixed when you change the plan.</p>
@@ -59,6 +62,10 @@ function BookingDates({
         <label className="grid gap-0.5">
           <span className="text-ink-faint">Check out</span>
           <Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} aria-label={`Check-out at ${hotelName}`} className="h-8 text-xs" />
+        </label>
+        <label className="grid gap-0.5">
+          <span className="text-ink-faint">Free cancellation until (optional)</span>
+          <Input type="date" value={cancel} max={from || undefined} onChange={(e) => setCancel(e.target.value)} aria-label={`Free cancellation at ${hotelName} until`} className="h-8 text-xs" />
         </label>
         <Button size="sm" type="submit" disabled={!valid || pending}>
           Save booking
@@ -352,6 +359,7 @@ export function HotelDrawer({
                     {bookedDates(h.id)?.arrive && booking !== h.id ? (
                       <p className="mt-1.5 text-xs text-ink-soft" data-testid="booked-dates">
                         Booked <span className="font-mono text-ink">{dayDate(bookedDates(h.id)!.arrive!)} → {dayDate(bookedDates(h.id)!.depart!)}</span>
+                        {bookedDates(h.id)!.freeCancelUntil ? <span> · free cancellation until {dayDate(bookedDates(h.id)!.freeCancelUntil!)}</span> : null}
                         {canEdit ? (
                           <button onClick={() => setBooking(h.id)} className="ml-2 font-medium text-sky hover:underline">
                             Change dates
@@ -364,10 +372,11 @@ export function HotelDrawer({
                         hotelName={h.name}
                         arrive={bookedDates(h.id)?.arrive ?? stop.arrive}
                         depart={bookedDates(h.id)?.depart ?? stop.depart}
+                        freeCancelUntil={bookedDates(h.id)?.freeCancelUntil ?? null}
                         pending={write.isPending}
                         onCancel={() => setBooking(null)}
-                        onSave={(arrive, depart) =>
-                          write.mutate({ kind: "setStay", stopId: stop.id, hotelId: h.id, status: "booked", arrive, depart }, { onSuccess: () => setBooking(null) })
+                        onSave={(arrive, depart, freeCancelUntil) =>
+                          write.mutate({ kind: "setStay", stopId: stop.id, hotelId: h.id, status: "booked", arrive, depart, freeCancelUntil }, { onSuccess: () => setBooking(null) })
                         }
                       />
                     ) : null}

@@ -41,6 +41,8 @@ export interface Anchor {
   legId?: string;
   hotelId?: string;
   activityId?: string;
+  /** The last day the booking can be cancelled for free. Before then it can still move, at no cost. */
+  refundableUntil?: string | null;
 }
 
 export interface AnchorState extends Anchor {
@@ -73,11 +75,11 @@ export function routeAnchors(stops: readonly RuleStop[], home: readonly RuleLeg[
       // An overnight journey with no arrival time can land the next day, as the leg-day check allows.
       const range = arrive ? { from: arrive, to: arrive } : depart ? { from: depart, to: addDays(depart, 1) } : null;
       if (!range) continue;
-      out.push({ id: `leg-${leg.id}`, kind: "leg", strength, side: "arrive", stopId: stop.id, ...range, label, booking: label, legId: leg.id });
+      out.push({ id: `leg-${leg.id}`, kind: "leg", strength, side: "arrive", stopId: stop.id, ...range, label, booking: label, legId: leg.id, refundableUntil: leg.freeCancelUntil ?? null });
     }
     for (const stay of stop.stays ?? []) {
       if (stay.status !== "booked" || !stay.arrive || !stay.depart) continue;
-      const base = { strength: "booked" as const, stopId: stop.id, hotelId: stay.hotelId, booking: stay.name };
+      const base = { strength: "booked" as const, stopId: stop.id, hotelId: stay.hotelId, booking: stay.name, refundableUntil: stay.freeCancelUntil ?? null };
       out.push({ ...base, id: `stay-in-${stop.id}-${stay.hotelId}`, kind: "stay-in", side: "arrive", from: stay.arrive, to: stay.arrive, label: `${stay.name} check-in` });
       out.push({ ...base, id: `stay-out-${stop.id}-${stay.hotelId}`, kind: "stay-out", side: "depart", from: stay.depart, to: stay.depart, label: `${stay.name} check-out` });
     }
@@ -95,7 +97,7 @@ export function routeAnchors(stops: readonly RuleStop[], home: readonly RuleLeg[
     // With only an arrival time, an overnight flight may have left the day before.
     const range = depart ? { from: depart, to: depart } : { from: addDays(arrive!, -1), to: arrive! };
     const label = first.label ?? "The ticket home";
-    out.push({ id: `home-${first.id}`, kind: "home", strength: legStrength(first)!, side: "home", stopId: HOME, ...range, label, booking: label, legId: first.id });
+    out.push({ id: `home-${first.id}`, kind: "home", strength: legStrength(first)!, side: "home", stopId: HOME, ...range, label, booking: label, legId: first.id, refundableUntil: first.freeCancelUntil ?? null });
   }
   return out;
 }
@@ -350,6 +352,11 @@ export function searchNights<S extends RuleStop>(
 /** "Shinkansen Hikari 509 (May 15)" for a sentence. */
 export function anchorPhrase(a: Anchor): string {
   return `${a.label} (${a.from === a.to ? shortDate(a.from) : `${shortDate(a.from)} to ${shortDate(a.to)}`})`;
+}
+
+/** True when every one of these anchors can still be changed for free on `today`. */
+export function allRefundable(anchors: readonly Anchor[], today: string): boolean {
+  return anchors.length > 0 && anchors.every((a) => Boolean(a.refundableUntil && a.refundableUntil >= today));
 }
 
 /** The distinct bookings behind some anchors: a hotel's check-in and check-out count once. */
