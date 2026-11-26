@@ -36,8 +36,10 @@ function useFlapBoard(target: string): { ch: string; turn: number }[] {
   const current = useRef<string[]>([...target].map(() => " "));
   useEffect(() => {
     const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // A background tab gets no animation frames, so a board there would sit blank: show the text at once.
+    const hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
     const [from, to] = alignBoard(current.current.join(""), target);
-    if (reduce) {
+    if (reduce || hidden) {
       current.current = [...to];
       setTiles([...to].map((ch) => ({ ch, turn: 0 })));
       return;
@@ -62,8 +64,18 @@ function useFlapBoard(target: string): { ch: string; turn: number }[] {
       else current.current = [...to];
     };
     frame = requestAnimationFrame(tick);
+    // If frames stop (the tab goes to the background mid-turn), land on the text anyway.
+    const longest = Math.max(0, ...plans.map((seq, i) => i * STAGGER_MS + seq.length * STEP_MS));
+    const safety = window.setTimeout(() => {
+      cancelAnimationFrame(frame);
+      current.current = [...to];
+      setTiles([...to].map((ch) => ({ ch, turn: 0 })));
+    }, longest + 400);
     // If interrupted, the next run turns on from whatever the tiles show now.
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(safety);
+    };
   }, [target]);
   return tiles;
 }

@@ -10,3 +10,4 @@ export * from "./catalogue";
 export * from "./search";
 export * from "./stay";
 export * from "./recommend";
+export * from "./telegram";

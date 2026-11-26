@@ -13,6 +13,7 @@ import { recommendRepository } from "./recommend";
 import { routesRepository } from "./routes";
 import { searchRepository } from "./search";
 import { stayRepository } from "./stay";
+import { telegramRepository } from "./telegram";
 import { tripsRepository } from "./trips";
 import { accessRepository, usersRepository } from "./users";
 
@@ -36,6 +37,7 @@ export function createRepositories(db: GraphClient) {
     search: searchRepository(db),
     recommend: recommendRepository(db),
     stay: stayRepository(db),
+    telegram: telegramRepository(db),
   };
 }
 
