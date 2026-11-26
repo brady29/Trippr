@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { DownIcon } from "@/components/icons";
 import { ShapeGlyph } from "@/components/map/glyph";
 import type { Bounds } from "@/components/map/trip-map";
 import { PlaceEditor } from "@/components/place-editor";
@@ -199,7 +200,12 @@ function MapTab({ tripId }: { tripId: string }) {
   const [unavailable, setUnavailable] = useState<string | null>(null);
   const [stayOn, setStayOn] = useState(false);
   const [stayCell, setStayCell] = useState<StayFeatureProps | null>(null);
+  const [layersOpen, setLayersOpen] = useState(true);
   const card = useRef<HTMLDivElement>(null);
+  // The layer list sits above the map on narrow screens, so start it folded there.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 1023px)").matches) setLayersOpen(false);
+  }, []);
 
   const setParams = (patch: Record<string, string | null>) => {
     const q = new URLSearchParams(params.toString());
@@ -268,10 +274,11 @@ function MapTab({ tripId }: { tripId: string }) {
   const heat = useStayHeat(tripId, stayOn, view ?? stopView);
 
   return (
-    <>
+    <div className="lg:flex lg:h-dvh lg:flex-col">
       <BoardHeader
         eyebrow={`${trip.data?.trip.name ?? "Trip"} · map`}
         title={route.data?.route.name ?? "Map"}
+        width="max-w-none"
         meta={
           <>
             <BoardStat label="Stops" value={stops.length} />
@@ -280,11 +287,14 @@ function MapTab({ tripId }: { tripId: string }) {
           </>
         }
       />
-      <main className="mx-auto max-w-6xl space-y-3 px-4 py-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <main className="grid gap-3 px-4 py-4 sm:px-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-0 lg:p-0">
+        <div className="relative min-w-0 space-y-3 lg:h-full lg:space-y-0">
+        {/* Controls: above the map on phones, floating over it on wide screens. */}
+        <div className="space-y-2.5 rounded-xl border border-line bg-card p-3 lg:absolute lg:left-3 lg:top-3 lg:z-10 lg:max-h-[calc(100%-1.5rem)] lg:w-[22rem] lg:overflow-y-auto lg:bg-card/95 lg:shadow-xl lg:backdrop-blur">
+        <div className="grid grid-cols-2 gap-2">
           <Select
             aria-label="Route"
-            className="max-w-full"
+            className="w-full"
             value={routeId}
             onChange={(e) => {
               setSelected(null);
@@ -298,7 +308,7 @@ function MapTab({ tripId }: { tripId: string }) {
               </option>
             ))}
           </Select>
-          <Select aria-label="Day" className="max-w-full" value={scopeDay ? day ?? "" : ""} onChange={(e) => setParams({ day: e.target.value || null })}>
+          <Select aria-label="Day" className="w-full" value={scopeDay ? day ?? "" : ""} onChange={(e) => setParams({ day: e.target.value || null })}>
             <option value="">All days</option>
             {days.map((d) => (
               <option key={d.date} value={d.date}>
@@ -306,17 +316,28 @@ function MapTab({ tripId }: { tripId: string }) {
               </option>
             ))}
           </Select>
+        </div>
           <Input
             type="search"
             aria-label="Search the map"
             placeholder="Search places"
-            className="w-full sm:w-56"
+            className="w-full"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
 
-        <fieldset className="flex flex-wrap gap-x-3 gap-y-1.5 text-sm" data-testid="map-layers">
+        <button
+          type="button"
+          onClick={() => setLayersOpen((o) => !o)}
+          aria-expanded={layersOpen}
+          className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint hover:text-ink"
+        >
+          Layers and key
+          <DownIcon className={`h-3.5 w-3.5 transition-transform ${layersOpen ? "rotate-180" : ""}`} />
+        </button>
+        {layersOpen ? (
+          <>
+        <fieldset className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm" data-testid="map-layers">
           <legend className="sr-only">Layers</legend>
           {MAP_LAYERS.map((layer) => (
             <label key={layer} className="inline-flex cursor-pointer items-center gap-1.5">
@@ -346,6 +367,8 @@ function MapTab({ tripId }: { tripId: string }) {
           ))}
           <span>· size is votes · hotels filled when booked or chosen</span>
         </p>
+          </>
+        ) : null}
 
         {focus ? (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stamp/40 bg-stamp/5 px-3 py-2 text-sm" data-testid="map-focus-bar" role="status">
@@ -380,10 +403,10 @@ function MapTab({ tripId }: { tripId: string }) {
         ) : null}
         {graph.error ? <ErrorNote error={graph.error} /> : null}
         {route.error ? <ErrorNote error={route.error} /> : null}
+        </div>
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div
-            className="relative h-80 min-w-0 overflow-hidden rounded-2xl border border-line bg-paper-2 sm:h-[28rem] lg:h-[calc(100vh-14rem)] lg:min-h-[30rem]"
+            className="relative h-[60dvh] min-h-80 min-w-0 overflow-hidden rounded-2xl border border-line bg-paper-2 lg:h-full lg:min-h-0 lg:rounded-none lg:border-0"
             role="region"
             aria-label="Map of the trip"
             data-testid="map-region"
@@ -405,13 +428,14 @@ function MapTab({ tripId }: { tripId: string }) {
               />
             )}
             {!ready && !unavailable ? (
-              <div className="absolute left-2 top-2 rounded-md bg-card/90 px-2 py-1">
+              <div className="absolute bottom-3 left-3 rounded-md bg-card/90 px-2 py-1 lg:bottom-auto lg:left-auto lg:right-14 lg:top-3">
                 <Spinner />
               </div>
             ) : null}
           </div>
+        </div>
 
-          <aside className="min-w-0 space-y-3 lg:max-h-[calc(100vh-14rem)] lg:min-h-[30rem] lg:overflow-y-auto">
+          <aside className="min-w-0 space-y-3 lg:h-full lg:overflow-y-auto lg:border-l lg:border-line lg:bg-paper lg:p-3">
             {stayOn && stayCell ? (
               <StayCellCard cell={stayCell} cityName={heat.data?.cities.find((c) => c.cityCode === stayCell.city)?.cityName} onClose={() => setStayCell(null)} />
             ) : null}
@@ -485,21 +509,18 @@ function MapTab({ tripId }: { tripId: string }) {
               )}
             </section>
           </aside>
-        </div>
       </main>
-    </>
+    </div>
   );
 }
 
 export default function MapPage() {
   const { tripId } = useParams<{ tripId: string }>();
   return (
-    <>
-      <RequireAuth>
-        <Suspense fallback={<Spinner />}>
-          <MapTab tripId={tripId} />
-        </Suspense>
-      </RequireAuth>
-    </>
+    <RequireAuth>
+      <Suspense fallback={<Spinner />}>
+        <MapTab tripId={tripId} />
+      </Suspense>
+    </RequireAuth>
   );
 }

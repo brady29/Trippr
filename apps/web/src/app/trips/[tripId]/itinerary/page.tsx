@@ -8,7 +8,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { CalendarFeedPanel } from "@/components/calendar-feed";
 import { CalendarIcon, ModeIcon } from "@/components/icons";
-import { BoardHeader, BoardStat, RequireAuth } from "@/components/shell";
+import { BoardHeader, BoardStat, Flaps, RequireAuth } from "@/components/shell";
 import { useToast } from "@/components/toast";
 import { Button, ErrorNote, Select, Spinner } from "@/components/ui";
 import { usePlanDay, useRoute, useTrip } from "@/lib/queries";
@@ -144,51 +144,82 @@ function DayCard({
   const drop = useDroppable({ id: `day:${day.date}`, data: { stopId: day.stopId, stopDay: day.stopDay }, disabled: !day.stopId });
   const stop = day.stopId ? stops.get(day.stopId) : undefined;
   const firstDayOfStop = stop && day.stopDay === 1;
+  const [weekday, ...rest] = dayDate(day.date).split(" ");
   return (
     <section
       ref={drop.setNodeRef}
-      className={`rounded-2xl border bg-paper p-3 transition-colors ${drop.isOver ? "border-sky bg-sky/5" : "border-line"}`}
+      className={`grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 rounded-xl border bg-card p-3 transition-colors sm:grid-cols-[4.5rem_minmax(0,1fr)] ${
+        drop.isOver ? "border-sky bg-sky/5" : "border-line"
+      }`}
       data-testid="itinerary-day"
       data-date={day.date}
       data-kind={day.kind}
       aria-label={`Day ${day.index}, ${dayDate(day.date)}`}
     >
-      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="font-mono text-xs font-semibold text-ink-soft">Day {day.index}</span>
-        <h2 className="font-semibold">{dayDate(day.date)}</h2>
-        <span className="text-sm text-ink-soft">{day.cityName ?? "Heading home"}</span>
-        <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${KIND_STYLE[day.kind]}`}>{KIND_LABEL[day.kind]}</span>
-      </header>
-      {day.stay ? (
-        <p className="mt-1 text-xs text-ink-soft">
-          Sleeping at {day.stay.name}
-          {day.stay.status === "booked" ? " (booked)" : ""}
-        </p>
-      ) : null}
-      {day.legs.length ? <ul className="mt-2 space-y-1">{day.legs.map((l) => <LegRow key={l.id} leg={l} />)}</ul> : null}
-      {day.items.length ? (
-        <ul className="mt-2 space-y-1.5">
-          {day.items.map((it) => (
-            <ItemRow key={it.activityId} item={it} stop={stops.get(it.stopId)} canEdit={canEdit} plan={plan} />
-          ))}
-        </ul>
-      ) : day.kind === "free" ? (
-        <p className="mt-2 text-sm text-ink-faint">Nothing planned yet.{canEdit ? " Drag an activity here." : ""}</p>
-      ) : null}
-      {firstDayOfStop && (stop.unscheduled.length || stop.needsNewDay.length) ? (
-        <div className="mt-3 rounded-xl border border-dashed border-line p-2.5" data-testid="unscheduled">
-          <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
-            Planned in {stop.cityName}, not on a day yet
-          </div>
-          <ul className="space-y-1.5">
-            {[...stop.needsNewDay, ...stop.unscheduled].map((it) => (
-              <ItemRow key={it.activityId} item={it} stop={stop} canEdit={canEdit} plan={plan} />
+      {/* Date column, like the date on a ticket. */}
+      <div className="border-r-2 border-dashed border-line pr-2 text-center">
+        <div className="text-[9px] uppercase tracking-[0.18em] text-ink-faint">Day</div>
+        <div className="font-mono text-2xl font-semibold leading-tight">{day.index}</div>
+        <h2 className="mt-0.5 text-[11px] leading-tight text-ink-soft">
+          <span className="block font-semibold text-ink">{weekday}</span>
+          {rest.join(" ")}
+          <span className="sr-only">, {day.cityName ?? "heading home"}</span>
+        </h2>
+      </div>
+      <div className="min-w-0">
+        <header className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${KIND_STYLE[day.kind]}`}>{KIND_LABEL[day.kind]}</span>
+          {day.stay ? (
+            <span className="truncate text-xs text-ink-soft">
+              Sleeping at {day.stay.name}
+              {day.stay.status === "booked" ? " (booked)" : ""}
+            </span>
+          ) : null}
+        </header>
+        {day.legs.length ? <ul className="mt-2 space-y-1">{day.legs.map((l) => <LegRow key={l.id} leg={l} />)}</ul> : null}
+        {day.items.length ? (
+          <ul className="mt-2 space-y-1.5">
+            {day.items.map((it) => (
+              <ItemRow key={it.activityId} item={it} stop={stops.get(it.stopId)} canEdit={canEdit} plan={plan} />
             ))}
           </ul>
-        </div>
-      ) : null}
+        ) : day.kind === "free" ? (
+          <p className="mt-2 text-sm text-ink-faint">Nothing planned yet.{canEdit ? " Drag an activity here." : ""}</p>
+        ) : null}
+        {firstDayOfStop && (stop.unscheduled.length || stop.needsNewDay.length) ? (
+          <div className="mt-3 rounded-xl border border-dashed border-line bg-paper p-2.5" data-testid="unscheduled">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+              Planned in {stop.cityName}, not on a day yet
+            </div>
+            <ul className="space-y-1.5">
+              {[...stop.needsNewDay, ...stop.unscheduled].map((it) => (
+                <ItemRow key={it.activityId} item={it} stop={stop} canEdit={canEdit} plan={plan} />
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
+}
+
+interface StopGroup {
+  key: string;
+  cityName: string;
+  code: string | null;
+  days: ItineraryDay[];
+}
+
+/** Consecutive days in the same place, so each city gets one sticky header. */
+function groupByStop(days: ItineraryDay[], codes: Map<string, string>): StopGroup[] {
+  const groups: StopGroup[] = [];
+  for (const d of days) {
+    const key = d.stopId ?? "home";
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.days.push(d);
+    else groups.push({ key, cityName: d.cityName ?? "Heading home", code: d.stopId ? (codes.get(d.stopId) ?? null) : null, days: [d] });
+  }
+  return groups;
 }
 
 function Itinerary({ tripId }: { tripId: string }) {
@@ -222,8 +253,10 @@ function Itinerary({ tripId }: { tripId: string }) {
     plan.mutate({ stopId: item.stopId, activityId: item.activityId, body: { day: target.stopDay } });
   };
 
-  const days = itinerary?.days ?? [];
+  const days = useMemo(() => itinerary?.days ?? [], [itinerary]);
   const clashes = days.reduce((n, d) => n + d.items.filter((i) => i.conflicts.length).length, 0);
+  const codes = useMemo(() => new Map((route.data?.stops ?? []).map((s) => [s.id, s.city.code])), [route.data]);
+  const groups = useMemo(() => groupByStop(days, codes), [days, codes]);
   return (
     <>
       <BoardHeader
@@ -237,40 +270,78 @@ function Itinerary({ tripId }: { tripId: string }) {
             <BoardStat label="Clashes" value={clashes} />
           </>
         }
+        actions={
+          <>
+            <select
+              aria-label="Route"
+              value={routeId}
+              onChange={(e) => router.replace(`/trips/${tripId}/itinerary?route=${encodeURIComponent(e.target.value)}`)}
+              className="h-8 max-w-[14rem] rounded-lg border border-board-3 bg-board-2 px-2 text-xs font-medium text-amber-soft focus:outline-none"
+            >
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                  {r.isCurrent ? " (current)" : ""}
+                </option>
+              ))}
+            </select>
+            <Button size="sm" variant="board" onClick={() => setCalendarOpen((o) => !o)} aria-expanded={calendarOpen}>
+              <CalendarIcon className="h-3.5 w-3.5" />
+              Add to calendar
+            </Button>
+          </>
+        }
       />
-      <main className="mx-auto max-w-3xl space-y-3 px-4 py-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            aria-label="Route"
-            value={routeId}
-            onChange={(e) => router.replace(`/trips/${tripId}/itinerary?route=${encodeURIComponent(e.target.value)}`)}
-          >
-            {routes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-                {r.isCurrent ? " (current)" : ""}
-              </option>
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+        {/* Stops down the side on wide screens, to jump through a long trip. */}
+        <nav aria-label="Jump to a stop" className="hidden lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
+          <ol className="space-y-0.5 border-l-2 border-line">
+            {groups.map((g) => (
+              <li key={g.key}>
+                <a href={`#stop-days-${g.key}`} className="-ml-0.5 flex items-baseline gap-2 border-l-2 border-transparent py-1 pl-3 text-sm hover:border-accent">
+                  <span className="w-8 shrink-0 font-mono text-[11px] font-semibold text-ink-soft">{g.code ?? "—"}</span>
+                  <span className="min-w-0 flex-1 truncate">{g.cityName}</span>
+                  <span className="font-mono text-[11px] text-ink-faint">{g.days.length}d</span>
+                </a>
+              </li>
             ))}
-          </Select>
+          </ol>
           {routeId ? (
-            <Link href={routeHref(tripId, routeId)} className="text-sm text-sky hover:underline">
+            <Link href={routeHref(tripId, routeId)} className="mt-3 inline-block pl-3 text-xs font-medium text-sky hover:underline">
               Edit this route
             </Link>
           ) : null}
-          <Button size="sm" className="ml-auto" onClick={() => setCalendarOpen((o) => !o)} aria-expanded={calendarOpen}>
-            <CalendarIcon className="h-3.5 w-3.5" />
-            Add to calendar
-          </Button>
+        </nav>
+
+        <div className="min-w-0 space-y-4">
+          {calendarOpen ? <CalendarFeedPanel tripId={tripId} onClose={() => setCalendarOpen(false)} /> : null}
+          {canEdit ? <p className="text-xs text-ink-faint">Drag activities between the days of their stop.</p> : null}
+          {trip.isPending || route.isPending ? <Spinner /> : null}
+          {route.error ? <ErrorNote error={route.error} /> : null}
+          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+            {groups.map((g) => (
+              <section key={g.key} id={`stop-days-${g.key}`} className="scroll-mt-2" aria-label={g.cityName}>
+                <header className="sticky top-0 z-10 -mx-1 mb-2 flex items-center gap-2.5 bg-paper/95 px-1 py-2 backdrop-blur">
+                  {g.code ? (
+                    <span className="flaps-outlined text-[13px]" aria-hidden>
+                      <Flaps text={g.code} />
+                    </span>
+                  ) : null}
+                  <h2 className="font-semibold">{g.cityName}</h2>
+                  <span className="font-mono text-xs text-ink-soft">
+                    {dayDate(g.days[0]!.date)}
+                    {g.days.length > 1 ? ` → ${dayDate(g.days[g.days.length - 1]!.date)}` : ""}
+                  </span>
+                </header>
+                <div className="space-y-2">
+                  {g.days.map((d) => (
+                    <DayCard key={d.date} day={d} stops={stops} canEdit={canEdit} plan={plan} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </DndContext>
         </div>
-        {canEdit ? <p className="text-xs text-ink-faint">Drag activities between the days of their stop.</p> : null}
-        {calendarOpen ? <CalendarFeedPanel tripId={tripId} onClose={() => setCalendarOpen(false)} /> : null}
-        {trip.isPending || route.isPending ? <Spinner /> : null}
-        {route.error ? <ErrorNote error={route.error} /> : null}
-        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          {days.map((d) => (
-            <DayCard key={d.date} day={d} stops={stops} canEdit={canEdit} plan={plan} />
-          ))}
-        </DndContext>
       </main>
     </>
   );
@@ -279,12 +350,10 @@ function Itinerary({ tripId }: { tripId: string }) {
 export default function ItineraryPage() {
   const { tripId } = useParams<{ tripId: string }>();
   return (
-    <>
-      <RequireAuth>
-        <Suspense fallback={<Spinner />}>
-          <Itinerary tripId={tripId} />
-        </Suspense>
-      </RequireAuth>
-    </>
+    <RequireAuth>
+      <Suspense fallback={<Spinner />}>
+        <Itinerary tripId={tripId} />
+      </Suspense>
+    </RequireAuth>
   );
 }
