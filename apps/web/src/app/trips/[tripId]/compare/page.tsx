@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompareResult, RouteSummary } from "@trippr/contracts";
+import type { CompareResult } from "@trippr/contracts";
 import { shortDate } from "@trippr/rules";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -11,26 +11,11 @@ import { ChecksBadge, ErrorNote, Panel, Select, Spinner } from "@/components/ui"
 import { useCompare, useTrip } from "@/lib/queries";
 import { routeHref } from "@/lib/routes";
 
-function RouteHead({ route, side }: { route: RouteSummary; side: "A" | "B" }) {
-  const { tripId } = useParams<{ tripId: string }>();
+function SideBadge({ side }: { side: "A" | "B" }) {
   return (
-    <div className="ticket p-4">
-      <div className="flex items-center gap-2">
-        <span className={`grid h-6 w-6 place-items-center rounded font-mono text-xs font-bold ${side === "A" ? "bg-board text-amber" : "bg-sky text-white"}`}>
-          {side}
-        </span>
-        <Link href={routeHref(tripId, route.id)} className="truncate text-lg font-semibold hover:underline">
-          {route.name}
-        </Link>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-xs text-ink-soft">
-        <span>{route.totalNights} nights</span>
-        <span>home {shortDate(route.returnDate)}</span>
-        <span>{route.stopCount} stops</span>
-        <span>{cad(route.perPersonCad)} pp</span>
-        <ChecksBadge level={route.checksLevel} />
-      </div>
-    </div>
+    <span className={`inline-grid h-6 w-6 shrink-0 place-items-center rounded font-mono text-xs font-bold ${side === "A" ? "bg-board text-amber" : "bg-sky text-white"}`}>
+      {side}
+    </span>
   );
 }
 
@@ -53,62 +38,105 @@ function CityList({ title, cities, tone }: { title: string; cities: string[]; to
   );
 }
 
+/** B against A: "+$120", "−3", or nothing when they match. */
+function delta(a: number, b: number, money = false) {
+  const d = Math.round(b - a);
+  if (d === 0) return null;
+  const abs = money ? cad(Math.abs(d)) : String(Math.abs(d));
+  return `${d > 0 ? "+" : "−"}${abs}`;
+}
+
 function CompareView({ data }: { data: CompareResult }) {
   const max = Math.max(1, ...data.nightsByCountry.flatMap((n) => [n.a, n.b]));
+  const rows: { label: string; a: string; b: string; diff: string | null; total?: boolean }[] = [
+    { label: "Nights", a: String(data.a.totalNights), b: String(data.b.totalNights), diff: delta(data.a.totalNights, data.b.totalNights) },
+    { label: "Stops", a: String(data.a.stopCount), b: String(data.b.stopCount), diff: delta(data.a.stopCount, data.b.stopCount) },
+    { label: "Home", a: shortDate(data.a.returnDate), b: shortDate(data.b.returnDate), diff: null },
+    ...(
+      [
+        ["Stays", "stay"],
+        ["Getting around", "travel"],
+        ["Planned activities", "activities"],
+        ["Total per person", "total"],
+      ] as const
+    ).map(([label, key]) => ({
+      label,
+      a: cad(data.budget.a.perPerson[key]),
+      b: cad(data.budget.b.perPerson[key]),
+      diff: delta(data.budget.a.perPerson[key], data.budget.b.perPerson[key], true),
+      total: key === "total",
+    })),
+  ];
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <RouteHead route={data.a} side="A" />
-        <RouteHead route={data.b} side="B" />
-      </div>
-      <Panel title="Stops">
-        <div className="space-y-4">
-          <CityList title="In both" cities={data.shared} tone="shared" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <CityList title={`Only in ${data.a.name}`} cities={data.onlyA} tone="a" />
-            <CityList title={`Only in ${data.b.name}`} cities={data.onlyB} tone="b" />
-          </div>
-        </div>
-      </Panel>
-      <Panel title="Budget per person (CAD)">
-        <table className="w-full text-sm" data-testid="compare-budget">
+    <div className="space-y-5">
+      <section className="overflow-x-auto rounded-2xl border border-line bg-card" aria-label="The two routes in numbers">
+        <table className="w-full min-w-[30rem] text-sm" data-testid="compare-budget">
           <thead>
-            <tr className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-              <th className="pb-1 text-left font-medium" scope="col">
-                <span className="sr-only">Category</span>
+            <tr className="border-b border-line text-left">
+              <th scope="col" className="px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">
+                <span className="sr-only">Measure</span>
               </th>
-              <th className="pb-1 text-right font-medium" scope="col">
-                A: {data.a.name}
+              <th scope="col" className="px-4 py-2.5 text-right">
+                <SideBadge side="A" /> <span className="ml-1 font-semibold">{data.a.name}</span>
               </th>
-              <th className="pb-1 text-right font-medium" scope="col">
-                B: {data.b.name}
+              <th scope="col" className="px-4 py-2.5 text-right">
+                <SideBadge side="B" /> <span className="ml-1 font-semibold">{data.b.name}</span>
               </th>
             </tr>
           </thead>
           <tbody>
-            {(
-              [
-                ["Stays", "stay"],
-                ["Getting around", "travel"],
-                ["Planned activities", "activities"],
-                ["Total", "total"],
-              ] as const
-            ).map(([label, key]) => (
-              <tr key={key} className={key === "total" ? "border-t border-line font-semibold" : ""}>
-                <th scope="row" className="py-1 text-left font-normal text-ink-soft">
-                  {label}
+            {rows.map((r) => (
+              <tr key={r.label} className={r.total ? "border-t border-line font-semibold" : ""}>
+                <th scope="row" className="px-4 py-2 text-left font-normal text-ink-soft">
+                  {r.label}
                 </th>
-                <td className="py-1 text-right font-mono">{cad(data.budget.a.perPerson[key])}</td>
-                <td className="py-1 text-right font-mono">{cad(data.budget.b.perPerson[key])}</td>
+                <td className="px-4 py-2 text-right font-mono">{r.a}</td>
+                <td className="px-4 py-2 text-right font-mono">
+                  {r.b}
+                  {r.diff ? <span className="ml-2 text-xs font-normal text-ink-soft">{r.diff}</span> : null}
+                </td>
               </tr>
             ))}
+            <tr className="border-t border-line">
+              <th scope="row" className="px-4 py-2 text-left font-normal text-ink-soft">
+                Checks
+              </th>
+              <td className="px-4 py-2 text-right">
+                <ChecksBadge level={data.a.checksLevel} />
+              </td>
+              <td className="px-4 py-2 text-right">
+                <ChecksBadge level={data.b.checksLevel} />
+              </td>
+            </tr>
           </tbody>
         </table>
         {data.budget.a.missing.stayNights + data.budget.a.missing.travelLegs + data.budget.b.missing.stayNights + data.budget.b.missing.travelLegs > 0 ? (
-          <p className="mt-2 text-xs text-ink-faint">Stays or legs without an estimate count as $0; fill them in on each route&apos;s stop cards.</p>
+          <p className="border-t border-line px-4 py-2 text-xs text-ink-faint">
+            Costs in CAD. Stays or legs without an estimate count as $0; fill them in on each route&apos;s stop cards.
+          </p>
         ) : null}
+      </section>
+
+      <Panel title="Stops">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <CityList title={`Only in ${data.a.name}`} cities={data.onlyA} tone="a" />
+          <CityList title="In both" cities={data.shared} tone="shared" />
+          <CityList title={`Only in ${data.b.name}`} cities={data.onlyB} tone="b" />
+        </div>
       </Panel>
-      <Panel title="Nights per country">
+      <Panel
+        title="Nights per country"
+        action={
+          <span className="flex items-center gap-3 text-[11px] text-ink-soft">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-full bg-board" /> A
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-full bg-sky" /> B
+            </span>
+          </span>
+        }
+      >
         <ul className="space-y-3">
           {data.nightsByCountry.map((n) => (
             <li key={n.iso} className="grid grid-cols-[6.5rem_1fr] items-center gap-3 text-sm">
@@ -171,20 +199,56 @@ function Compare({ tripId }: { tripId: string }) {
     router.replace(`/trips/${tripId}/compare?${next.toString()}`);
   };
 
+  const byId = new Map(routes.map((r) => [r.id, r]));
   return (
     <>
-      <BoardHeader eyebrow={`${trip.data?.trip.name ?? "Trip"} · compare`} title="Compare routes" />
-      <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {(["a", "b"] as const).map((side) => (
-            <Select key={side} value={side === "a" ? a : b} onChange={(e) => pick(side, e.target.value)} aria-label={`Route ${side.toUpperCase()}`}>
-              {routes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {side.toUpperCase()}: {r.name}
-                </option>
-              ))}
-            </Select>
-          ))}
+      <BoardHeader eyebrow={`${trip.data?.trip.name ?? "Trip"} · compare`} title="Compare routes" width="max-w-5xl" />
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
+        {/* Each side picks its route; swap flips them. */}
+        <div className="grid items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          {(["a", "b"] as const).map((side, i) => {
+            const id = side === "a" ? a : b;
+            const r = byId.get(id);
+            const card = (
+              <div key={side} className="ticket flex flex-col gap-2 p-4">
+                <div className="flex items-center gap-2">
+                  <SideBadge side={side === "a" ? "A" : "B"} />
+                  <Select value={id} onChange={(e) => pick(side, e.target.value)} aria-label={`Route ${side.toUpperCase()}`} className="h-9 min-w-0 flex-1 font-semibold">
+                    {routes.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                        {x.isCurrent ? " (current)" : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                {r ? (
+                  <>
+                    <p className="line-clamp-2 text-xs text-ink-soft">{r.cities.join(" → ")}</p>
+                    <Link href={routeHref(tripId, r.id)} className="mt-auto text-xs font-medium text-sky hover:underline">
+                      Open {r.name}
+                    </Link>
+                  </>
+                ) : null}
+              </div>
+            );
+            return i === 0 ? (
+              [
+                card,
+                <button
+                  key="swap"
+                  onClick={() => router.replace(`/trips/${tripId}/compare?${new URLSearchParams({ a: b, b: a }).toString()}`)}
+                  className="grid h-9 w-9 place-self-center rounded-full border border-line bg-card text-ink-soft hover:border-ink-faint hover:text-ink"
+                  aria-label="Swap A and B"
+                  title="Swap A and B"
+                >
+                  ⇄
+                </button>,
+              ]
+            ) : (
+              card
+            );
+          })}
         </div>
         {a === b && a ? <p className="text-sm text-ink-soft">Pick two different routes.</p> : null}
         {compare.isFetching && !compare.data ? <Spinner /> : null}
@@ -198,12 +262,10 @@ function Compare({ tripId }: { tripId: string }) {
 export default function ComparePage() {
   const { tripId } = useParams<{ tripId: string }>();
   return (
-    <>
-      <RequireAuth>
-        <Suspense fallback={<Spinner />}>
-          <Compare tripId={tripId} />
-        </Suspense>
-      </RequireAuth>
-    </>
+    <RequireAuth>
+      <Suspense fallback={<Spinner />}>
+        <Compare tripId={tripId} />
+      </Suspense>
+    </RequireAuth>
   );
 }
