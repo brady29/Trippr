@@ -40,6 +40,8 @@ export interface TripRef {
   travellers?: number | null;
   /** The latest the group can be home (trip setup's date range); routes ending later get a check. */
   latestReturn?: string | null;
+  /** The group's budget per person in CAD; routes over it get ways back under. */
+  budgetPerPerson?: number | null;
 }
 
 export interface TripListItem extends TripRef {

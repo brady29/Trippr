@@ -73,6 +73,9 @@ describe("health and errors", () => {
     expect(route.checks.returnDate).toBe("2027-07-12");
     expect(route.checks.checks.some((c) => c.kind === "return-window")).toBe(false);
 
+    expect((await owner.api.patch(`/trips/${res.body.id}`, { budgetPerPerson: 2500 })).status).toBe(200);
+    expect((await owner.api.get<RouteView>(`/routes/${res.body.routeId}`)).body.trip.budgetPerPerson).toBe(2500);
+    expect((await owner.api.patch(`/trips/${res.body.id}`, { budgetPerPerson: -5 })).status).toBe(400);
     expect((await owner.api.patch(`/trips/${res.body.id}`, { latestReturn: "2027-07-10" })).status).toBe(200);
     route = (await owner.api.get<RouteView>(`/routes/${res.body.routeId}`)).body;
     expect(route.checks.checks.find((c) => c.kind === "return-window")).toMatchObject({ level: "error" });

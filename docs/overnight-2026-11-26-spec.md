@@ -236,9 +236,9 @@ Steps 3 to 5 can happen before the bot code is merged. The deploy only maps the 
 | 1. Telegram bot | done | batch 2 (#52) | Off until the token and variables are set; the Inbox panel says so. Tested against a fake Telegram API |
 | P1. Trip strip | done | batch 3 (#53) | Drag or arrow keys between stops; booked dates ask first; weekends, busy holidays, events, pins and pace |
 | P6. Cancellation deadlines | done | batch 3 (#53) | Free cancellation on tickets and hotels; refundable wording; deadline items top Next to book |
-| P2. Line map | built | batch 4 | Map/Line toggle in the route sidebar (remembered); Compare draws both routes with shared stations |
-| P3. Better order | built | batch 4 | Exact up to 8 stops, 2-opt above; orders that move a booking are skipped; preview over the old line, apply with Undo |
-| P4. Budget flow | not started | | |
+| P2. Line map | done | batch 4 (#54) | Map/Line toggle in the route sidebar (remembered); Compare draws both routes with shared stations |
+| P3. Better order | done | batch 4 (#54) | Exact up to 8 stops, 2-opt above; orders that move a booking are skipped; preview over the old line, apply with Undo |
+| P4. Budget flow | built | batch 5 | Sankey (booked solid, estimates hatched, per person or group); owner sets a budget per person; over it, fixes that move no booking |
 | Q1. Accessibility | not started | | |
 | Q2. Performance | not started | | |
 | Q3. Slow networks | not started | | |

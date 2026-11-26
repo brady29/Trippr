@@ -19,6 +19,7 @@ import {
   type NextToBookItem,
   type NightsChange,
   type NightsPlan,
+  withNights,
 } from "@trippr/rules";
 import {
   closestCenter,
@@ -32,6 +33,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -41,6 +43,7 @@ import { ChangeBar, GuardDialog, impactParts, impactSentences, IssueStrip, night
 import { HomeCard } from "@/components/home-card";
 import { BetterOrder, MapOrLine } from "@/components/route-views";
 import { BookedPrompt, NextToBook, useBookedPrompt } from "@/components/next-to-book";
+import { BudgetFlow } from "@/components/budget-flow";
 import { BudgetPanel } from "@/components/budget-panel";
 import { ChecksPanel } from "@/components/checks-panel";
 import { FlightNotices } from "@/components/flight-prices";
@@ -52,7 +55,7 @@ import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
 import { TripStrip } from "@/components/trip-strip";
 import { useToast } from "@/components/toast";
 import { ActionMenu, Button, ErrorNote, Spinner, Tag } from "@/components/ui";
-import { download } from "@/lib/api";
+import { api, download } from "@/lib/api";
 import { useTripFlightPrices } from "@/lib/flights";
 import { ruleHome, ruleStops, useCitySearch, useRoute, useRouteEdit, useRouteLibrary, type RouteEdit } from "@/lib/queries";
 
@@ -60,6 +63,7 @@ function Editor({ view }: { view: RouteView }) {
   const routeId = view.route.id;
   const canEdit = hasRole(view.role, "editor");
   const edit = useRouteEdit(routeId);
+  const qc = useQueryClient();
   const library = useRouteLibrary(routeId);
   const flightPrices = useTripFlightPrices(view.trip.id);
   const toast = useToast();
@@ -462,6 +466,23 @@ function Editor({ view }: { view: RouteView }) {
           <BetterOrder view={view} rules={rules} home={home} canEdit={canEdit} onApply={(ids, label) => reorderTo(ids, label)} />
           <NextToBook items={nextItems} view={view} homeCity={homeCity} canEdit={canEdit} onSearch={prompt.opened} onMark={markBooked} />
           <ChecksPanel view={view} />
+          <BudgetFlow
+            view={view}
+            rules={rules}
+            home={home}
+            canSetTarget={view.role === "owner"}
+            canEdit={canEdit}
+            onTarget={(budgetPerPerson) =>
+              void api(`/trips/${view.trip.id}`, { method: "PATCH", body: { budgetPerPerson } })
+                .then(() => {
+                  void qc.invalidateQueries({ queryKey: ["route", routeId] });
+                  void qc.invalidateQueries({ queryKey: ["trip", view.trip.id] });
+                  toast(budgetPerPerson == null ? "Budget cleared" : `Budget set to $${budgetPerPerson} per person`, "ok");
+                })
+                .catch((e: Error) => toast(e.message, "error"))
+            }
+            onFix={(changes) => setNights(changes, editImpact(start, rules, withNights(rules, changes), home))}
+          />
           <BudgetPanel view={view} />
         </aside>
       </main>
