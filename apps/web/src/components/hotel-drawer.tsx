@@ -5,6 +5,7 @@ import { dayDate, hotelLinks } from "@trippr/rules";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useAreas, useCreateArea, useCreateHotel, useDeleteHotel, useHotels, useRouteWrite, useVoteOn } from "@/lib/explorer";
+import { useDialogFocus } from "@/lib/focus";
 import { keys } from "@/lib/queries";
 import { BookingLinks } from "./booking-links";
 import { ThumbDownIcon, ThumbUpIcon, XIcon } from "./icons";
@@ -215,12 +216,7 @@ export function HotelDrawer({
   const stayFor = (h: Hotel) => h.stays.find((s) => s.stopId === stop.id);
   const travellers = useQueryClient().getQueryData<RouteView>(keys.route(routeId))?.trip.travellers ?? 1;
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    panel.current?.focus();
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useDialogFocus(panel, onClose);
 
   const setStay = (h: Hotel, status: StayStatus) => write.mutate({ kind: "setStay", stopId: stop.id, hotelId: h.id, status });
   const [booking, setBooking] = useState<string | null>(null);

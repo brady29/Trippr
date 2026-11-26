@@ -1,8 +1,9 @@
 "use client";
 
+import { useDialogFocus } from "@/lib/focus";
 import type { StopView } from "@trippr/contracts";
 import { activityLinks, dayDate } from "@trippr/rules";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { usePlanToggle, useRouteLibrary } from "@/lib/queries";
 import { ActivityItem, NewActivityForm } from "./activity";
 import { BookingLinks } from "./booking-links";
@@ -34,12 +35,7 @@ export function ActivityDrawer({
   const panel = useRef<HTMLDivElement>(null);
   const activities = library.data?.find((l) => l.stopId === stop.id)?.activities ?? [];
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    panel.current?.focus();
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useDialogFocus(panel, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={`Activities in ${stop.city.name}`}>

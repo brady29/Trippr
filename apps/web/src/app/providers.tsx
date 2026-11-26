@@ -19,6 +19,11 @@ export function Providers({ children }: { children: ReactNode }) {
             refetchOnWindowFocus: true,
             retry: (count, error) => !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2,
           },
+          mutations: {
+            // A dropped connection on café Wi-Fi shouldn't lose a change: try again, waiting longer each time.
+            retry: (count, error) => error instanceof ApiError && error.code === "network" && count < 4,
+            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15_000),
+          },
         },
       }),
   );

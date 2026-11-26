@@ -41,6 +41,7 @@ import { ActivityDrawer } from "@/components/activity-drawer";
 import { AddStop } from "@/components/add-stop";
 import { ChangeBar, GuardDialog, impactParts, impactSentences, IssueStrip, nightsMessage, today, TradePanel, type Change, type Guard } from "@/components/anchors";
 import { HomeCard } from "@/components/home-card";
+import { RouteSkeleton } from "@/components/offline";
 import { BetterOrder, MapOrLine } from "@/components/route-views";
 import { BookedPrompt, NextToBook, useBookedPrompt } from "@/components/next-to-book";
 import { BudgetFlow } from "@/components/budget-flow";
@@ -54,7 +55,7 @@ import { TravelOptions } from "@/components/travel-options";
 import { HotelDrawer, StaySummary } from "@/components/hotel-drawer";
 import { TripStrip } from "@/components/trip-strip";
 import { useToast } from "@/components/toast";
-import { ActionMenu, Button, ErrorNote, Spinner, Tag } from "@/components/ui";
+import { ActionMenu, Button, ErrorNote, Tag } from "@/components/ui";
 import { api, download } from "@/lib/api";
 import { useTripFlightPrices } from "@/lib/flights";
 import { ruleHome, ruleStops, useCitySearch, useRoute, useRouteEdit, useRouteLibrary, type RouteEdit } from "@/lib/queries";
@@ -164,7 +165,11 @@ function Editor({ view }: { view: RouteView }) {
     setStack((s) => s.slice(0, -1));
     edit.mutate(top.inverse, { onSuccess: () => setNotice(`Undone: ${top.message}`) });
   };
-  const bar: Change | null = notice ? { id: 0, message: notice, undo: stack.length ? undo : undefined } : null;
+  const bar: Change | null = edit.isPaused
+    ? { id: 0, message: "Saving when you're back online. Keep planning; changes wait their turn." }
+    : notice
+      ? { id: 0, message: notice, undo: stack.length ? undo : undefined }
+      : null;
 
   const setNights = (next: NightsChange[], impact: EditImpact) => {
     const message = nightsMessage(view.stops, next, impact, hasBookings);
@@ -513,7 +518,7 @@ function Editor({ view }: { view: RouteView }) {
 
 function RouteScreen({ routeId }: { routeId: string }) {
   const route = useRoute(routeId);
-  if (route.isPending) return <div className="mx-auto max-w-6xl px-4 py-8"><Spinner /></div>;
+  if (route.isPending) return <RouteSkeleton />;
   if (route.error) return <div className="mx-auto max-w-6xl px-4 py-8"><ErrorNote error={route.error} /></div>;
   return <Editor view={route.data} />;
 }

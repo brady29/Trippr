@@ -1,5 +1,6 @@
 "use client";
 
+import { OfflineBanner } from "./offline";
 import type { RouteSummary } from "@trippr/contracts";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -557,7 +558,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       {phone && fold.open ? (
         <button aria-label="Close menu" className="fixed inset-0 z-30 bg-board/50" onClick={() => set(false)} />
       ) : null}
-      <div className={`min-w-0 flex-1 ${phone ? "pl-14" : ""}`}>{children}</div>
+      <div className={`min-w-0 flex-1 ${phone ? "pl-14" : ""}`}>
+        <OfflineBanner />
+        {children}
+      </div>
     </div>
   );
 }

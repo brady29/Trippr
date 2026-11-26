@@ -20,6 +20,7 @@ import {
   type StopLock,
 } from "@trippr/rules";
 import { useEffect, useRef, type ReactNode } from "react";
+import { useDialogFocus } from "@/lib/focus";
 import { LockIcon, UndoIcon, XIcon } from "./icons";
 import { Button, LevelIcon } from "./ui";
 
@@ -257,14 +258,10 @@ export interface Guard {
 /** An in-page confirmation for a change that moves bookings or can't be undone. */
 export function GuardDialog({ guard, onCancel }: { guard: Guard; onCancel: () => void }) {
   const confirm = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    confirm.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  const box = useRef<HTMLDivElement>(null);
+  useDialogFocus(box, onCancel, confirm);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="guard-title" aria-describedby="guard-body">
+    <div ref={box} className="fixed inset-0 z-50 grid place-items-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="guard-title" aria-describedby="guard-body">
       {/* Clicking outside cancels; keyboard and screen reader users have the Cancel button and Escape. */}
       <div className="absolute inset-0 bg-board/50" aria-hidden onClick={onCancel} />
       <div className="relative w-full max-w-md space-y-3 rounded-2xl border border-line bg-card p-5 shadow-2xl">

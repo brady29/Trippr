@@ -213,10 +213,10 @@ function Compare({ tripId }: { tripId: string }) {
             const id = side === "a" ? a : b;
             const r = byId.get(id);
             const card = (
-              <div key={side} className="ticket flex flex-col gap-2 p-4">
+              <div key={side} className="ticket flex min-w-0 flex-col gap-2 p-4">
                 <div className="flex items-center gap-2">
                   <SideBadge side={side === "a" ? "A" : "B"} />
-                  <Select value={id} onChange={(e) => pick(side, e.target.value)} aria-label={`Route ${side.toUpperCase()}`} className="h-9 min-w-0 flex-1 font-semibold">
+                  <Select value={id} onChange={(e) => pick(side, e.target.value)} aria-label={`Route ${side.toUpperCase()}`} className="h-9 w-full min-w-0 flex-1 font-semibold">
                     {routes.map((x) => (
                       <option key={x.id} value={x.id}>
                         {x.name}

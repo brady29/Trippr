@@ -238,8 +238,8 @@ Steps 3 to 5 can happen before the bot code is merged. The deploy only maps the 
 | P6. Cancellation deadlines | done | batch 3 (#53) | Free cancellation on tickets and hotels; refundable wording; deadline items top Next to book |
 | P2. Line map | done | batch 4 (#54) | Map/Line toggle in the route sidebar (remembered); Compare draws both routes with shared stations |
 | P3. Better order | done | batch 4 (#54) | Exact up to 8 stops, 2-opt above; orders that move a booking are skipped; preview over the old line, apply with Undo |
-| P4. Budget flow | built | batch 5 | Sankey (booked solid, estimates hatched, per person or group); owner sets a budget per person; over it, fixes that move no booking |
-| Q1. Accessibility | not started | | |
-| Q2. Performance | not started | | |
-| Q3. Slow networks | not started | | |
-| Q4. Phone layout | not started | | |
+| P4. Budget flow | done | batch 5 (#55) | Sankey (booked solid, estimates hatched, per person or group); owner sets a budget per person; over it, fixes that move no booking |
+| Q1. Accessibility | built | batch 6 | Dialogs and drawers trap focus and give it back; e2e check for unnamed controls on five pages; animations off under reduced motion |
+| Q2. Performance | built | batch 6 | e2e measures a nights change on screen (about 220 ms on the dev server; limit 400 ms) |
+| Q3. Slow networks | built | batch 6 | Saves retry network failures with backoff and wait while offline; offline banner; change bar says a save is waiting; route skeleton |
+| Q4. Phone layout | built | batch 6 | No sideways scroll on five pages at 390 px (phone project); 40 px touch targets on stop cards; Compare cards fixed |
