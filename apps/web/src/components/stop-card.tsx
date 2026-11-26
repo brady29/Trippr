@@ -263,7 +263,7 @@ export function StopCard({
   const stepper = (
     <div className="flex items-center rounded-full border border-line" role="group" aria-label={`Nights in ${stop.city.name}`}>
       <button
-        className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+        className="grid h-10 w-10 place-items-center rounded-full sm:h-8 sm:w-8 text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
         onClick={() => actions.onNights(stop.nights - 1)}
         disabled={!canEdit || stop.nights <= 0}
         aria-label={`One fewer night in ${stop.city.name}`}
@@ -277,7 +277,7 @@ export function StopCard({
         </span>
       </span>
       <button
-        className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+        className="grid h-10 w-10 place-items-center rounded-full sm:h-8 sm:w-8 text-ink-soft hover:bg-paper-2 hover:text-ink disabled:opacity-30"
         onClick={() => actions.onNights(stop.nights + 1)}
         disabled={!canEdit}
         aria-label={`One more night in ${stop.city.name}`}
@@ -371,7 +371,7 @@ export function StopCard({
             <button
               onClick={() => actions.onMove(-1)}
               disabled={index === 0}
-              className="rounded p-1.5 text-ink-faint hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+              className="rounded p-2.5 text-ink-faint sm:p-1.5 hover:bg-paper-2 hover:text-ink disabled:opacity-30"
               aria-label={`Move ${stop.city.name} earlier`}
             >
               <UpIcon />
@@ -379,14 +379,14 @@ export function StopCard({
             <button
               onClick={() => actions.onMove(1)}
               disabled={index === count - 1}
-              className="rounded p-1.5 text-ink-faint hover:bg-paper-2 hover:text-ink disabled:opacity-30"
+              className="rounded p-2.5 text-ink-faint sm:p-1.5 hover:bg-paper-2 hover:text-ink disabled:opacity-30"
               aria-label={`Move ${stop.city.name} later`}
             >
               <DownIcon />
             </button>
             <button
               onClick={actions.onRemove}
-              className="rounded p-1.5 text-ink-faint hover:bg-err/10 hover:text-err"
+              className="rounded p-2.5 text-ink-faint sm:p-1.5 hover:bg-err/10 hover:text-err"
               aria-label={`Remove ${stop.city.name}`}
             >
               <XIcon />
