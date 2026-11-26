@@ -63,6 +63,16 @@ const envSchema = z.object({
   INBOX_EMAIL_ADDRESS: optional(z.string().email()),
   /** Shared secret the inbound email webhook must present. */
   INBOX_WEBHOOK_SECRET: optional(z.string().min(16)),
+  /** The Telegram bot's token from @BotFather. Without it the bot is off. */
+  TELEGRAM_BOT_TOKEN: optional(z.string().min(20)),
+  /** Secret Telegram sends with each webhook call (X-Telegram-Bot-Api-Secret-Token). */
+  TELEGRAM_WEBHOOK_SECRET: optional(z.string().min(16).regex(/^[A-Za-z0-9_-]+$/, "Letters, digits, _ and - only")),
+  /** The bot's username without the @, for the links in the Inbox. */
+  TELEGRAM_BOT_USERNAME: optional(z.string().regex(/^[A-Za-z0-9_]{5,32}$/)),
+  /** When set, the API registers this webhook address with Telegram on startup. */
+  TELEGRAM_WEBHOOK_URL: optional(z.string().url()),
+  /** Telegram's API base; tests point it elsewhere. */
+  TELEGRAM_API_BASE: z.string().url().default("https://api.telegram.org"),
   /** Look up titles and captions of TikTok and YouTube links (off in tests). */
   INBOX_LINK_PREVIEWS: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
 

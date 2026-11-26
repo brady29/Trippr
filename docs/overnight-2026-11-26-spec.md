@@ -57,7 +57,7 @@ Highest value first, so a short night still ships the important parts.
 
 **Linking a chat to a trip.**
 - The Inbox page gets a Telegram panel with a link code and two buttons: "Add to a group" (`https://t.me/<bot>?startgroup=<code>`) and "Message the bot" (`?start=<code>`).
-- `/start <code>` links that chat to the trip. Only editors and owners can make a code. The code can be replaced, which unlinks old chats.
+- `/start <code>` links that chat to the trip. Only editors and owners get a code (one each, per trip). Making a new code stops the old one linking new chats; chats already linked stay until someone unlinks them, from the Inbox or with /unlink.
 - Items from a linked chat are applied as the member who linked it, with the Telegram sender's name shown ("Sent by Sam on Telegram"). If that member is a viewer, items wait for an editor.
 
 **Commands.** `/start <code>`, `/help`, `/trip` (which trip this chat feeds), `/top` (the five ideas the group likes most, with a link to swipe), `/unlink`.
@@ -230,10 +230,10 @@ Steps 3 to 5 can happen before the bot code is merged. The deploy only maps the 
 
 | Item | Status | PR | Notes |
 |---|---|---|---|
-| A. Animated boards | done | batch 1 | Titles and board stats turn like split flaps; static under reduced motion |
+| A. Animated boards | done | batch 1 (#51), fix in batch 2 | Titles and board stats turn like split flaps; static under reduced motion. Batch 2: boards in a background tab land at once instead of sitting blank |
 | 2. Swipe to vote | done | batch 1 | /trips/:id/swipe, keyboard, drag, undo, must do plans the idea |
 | P5. Group taste | done | batch 1 | Consensus chart and taste radar from vote counts only |
-| 1. Telegram bot | not started | | |
+| 1. Telegram bot | built | batch 2 | Off until the token and variables are set; the Inbox panel says so. Tested against a fake Telegram API |
 | P1. Trip strip | not started | | |
 | P6. Cancellation deadlines | not started | | |
 | P2. Line map | not started | | |

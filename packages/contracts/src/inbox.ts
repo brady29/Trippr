@@ -12,7 +12,7 @@ export type InboxKind = (typeof INBOX_KINDS)[number];
 export const INBOX_STATUSES = ["applied", "pending", "dismissed", "failed"] as const;
 export type InboxStatus = (typeof INBOX_STATUSES)[number];
 
-export type InboxSource = "email" | "paste";
+export type InboxSource = "email" | "paste" | "telegram";
 
 /**
  * The place lookup for an item: still running, finished, gave up (a person

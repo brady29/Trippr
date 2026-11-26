@@ -13,6 +13,7 @@ import { migrateGraphExplorer, type ExplorerMigrationResult } from "../src/db/ex
 import { seedDatabase, type SeedResult } from "../src/db/seed";
 import type { FlightPricesOptions } from "../src/services/flights/service";
 import type { QueryEmbedder } from "../src/services/search/embedder";
+import type { TelegramApi } from "../src/services/telegram/api";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 export const SEED_DIR = resolve(ROOT, "seed");
@@ -46,6 +47,8 @@ export async function startHarness(
     flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
     /** The search query embedder; none unless a test passes one (a test run never reads CLOUDFLARE_* from the environment). */
     queryEmbedder?: QueryEmbedder | null;
+    /** A fake Telegram Bot API; the bot is on only when the test also sets TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET. */
+    telegramApi?: TelegramApi;
   } = {},
 ): Promise<Harness> {
   const graph = `trippr_test_${randomBytes(4).toString("hex")}`;
@@ -83,6 +86,7 @@ export async function startHarness(
     ...(options.assistantModel ? { assistantModel: options.assistantModel } : {}),
     ...(options.flightPrices ? { flightPrices: options.flightPrices } : {}),
     ...(options.queryEmbedder !== undefined ? { queryEmbedder: options.queryEmbedder } : {}),
+    ...(options.telegramApi ? { telegramApi: options.telegramApi } : {}),
   });
   return {
     app,

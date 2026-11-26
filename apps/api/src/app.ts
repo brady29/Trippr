@@ -19,6 +19,9 @@ import { travelRoutes } from "./routes/travel";
 import { bookingsRoutes } from "./routes/bookings";
 import { calendarRoutes } from "./routes/calendar";
 import { inboxRoutes } from "./routes/inbox";
+import { telegramRoutes } from "./routes/telegram";
+import { createTelegramApi, type TelegramApi } from "./services/telegram/api";
+import { createTelegramBot } from "./services/telegram/bot";
 import type { AssistantModel } from "./services/assistant/model";
 import type { QueryEmbedder } from "./services/search/embedder";
 import { createInbox, type Inbox } from "./services/inbox/service";
@@ -90,6 +93,8 @@ export interface BuildOptions {
   flightPrices?: Pick<FlightPricesOptions, "provider" | "today">;
   /** Overrides the search query embedder (tests); null means none. Otherwise it comes from the SEARCH_* / CLOUDFLARE_* settings. */
   queryEmbedder?: QueryEmbedder | null;
+  /** Overrides the Telegram Bot API (tests); the bot is on only when TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET are set. */
+  telegramApi?: TelegramApi;
 }
 
 export async function buildApp({
@@ -104,6 +109,7 @@ export async function buildApp({
   assistantModel,
   flightPrices,
   queryEmbedder,
+  telegramApi,
 }: BuildOptions): Promise<FastifyInstance> {
   preloadQueries(db.dialect);
   const app = Fastify({
@@ -180,6 +186,10 @@ export async function buildApp({
   };
 
   ctx.inbox = createInbox(ctx);
+  const telegram =
+    config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_WEBHOOK_SECRET
+      ? createTelegramBot(ctx, telegramApi ?? createTelegramApi(config.TELEGRAM_BOT_TOKEN, config.TELEGRAM_API_BASE))
+      : null;
 
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof AppError) {
@@ -214,6 +224,7 @@ export async function buildApp({
     travelRoutes(scope, ctx);
     bookingsRoutes(scope, ctx);
     inboxRoutes(scope, ctx);
+    telegramRoutes(scope, ctx, telegram);
     explorerRoutes(scope, ctx);
     stayRoutes(scope, ctx);
     calendarRoutes(scope, ctx);

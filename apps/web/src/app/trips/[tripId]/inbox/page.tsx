@@ -1,6 +1,6 @@
 "use client";
 
-import { hasRole, type City, type InboxItem, type InboxResult, type InboxSuggestion, type StopView } from "@trippr/contracts";
+import { hasRole, type City, type InboxItem, type InboxResult, type InboxSuggestion, type StopView, type TelegramStatus } from "@trippr/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -193,7 +193,13 @@ function ItemCard({ item, tripId, stops, canSeePrivate, routeId }: { item: Inbox
         </Link>
       ) : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-faint">
-        <span>{item.source === "email" ? `Emailed by ${item.fromName ?? item.from ?? "someone"}` : `Pasted by ${item.fromName ?? "someone"}`}</span>
+        <span>
+          {item.source === "email"
+            ? `Emailed by ${item.fromName ?? item.from ?? "someone"}`
+            : item.source === "telegram"
+              ? `Sent by ${item.fromName ?? item.from ?? "someone"} on Telegram`
+              : `Pasted by ${item.fromName ?? "someone"}`}
+        </span>
         {item.subject ? <span className="truncate">“{item.subject}”</span> : null}
         <span>{when(item.receivedAt)}</span>
         {item.stopLabel && item.status === "applied" ? <span>→ {item.stopLabel}</span> : null}
@@ -284,6 +290,95 @@ function PasteBox({ tripId }: { tripId: string }) {
         <span className="text-xs text-ink-faint">Tickets and hotels go on the matching stop; ideas go into that city&apos;s activities.</span>
       </div>
     </form>
+  );
+}
+
+/**
+ * The Telegram bot: add it to the group chat (or message it) with this
+ * member's code, and shared reels and links land in the Inbox.
+ */
+function TelegramPanel({ tripId }: { tripId: string }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const ready = useAuth().status === "signedIn";
+  const q = useQuery({ queryKey: ["telegram", tripId], queryFn: () => api<TelegramStatus>(`/trips/${tripId}/telegram`), enabled: ready });
+  const set = (data: TelegramStatus) => qc.setQueryData(["telegram", tripId], data);
+  const newCode = useMutation({
+    mutationFn: () => api<TelegramStatus>(`/trips/${tripId}/telegram/code`, { method: "POST" }),
+    onSuccess: (d) => {
+      set(d);
+      toast("New code made. The old one no longer links chats.", "ok");
+    },
+  });
+  const unlink = useMutation({
+    mutationFn: (chatId: string) => api<TelegramStatus>(`/trips/${tripId}/telegram/chats/${encodeURIComponent(chatId)}`, { method: "DELETE" }),
+    onSuccess: (d) => {
+      set(d);
+      toast("That chat no longer sends to the trip.", "ok");
+    },
+  });
+  const t = q.data;
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 lg:col-span-2" data-testid="telegram-panel">
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+        <svg viewBox="0 0 24 24" className="h-4 w-4 text-sky" aria-hidden fill="currentColor">
+          <path d="M21.5 4.2 2.9 11.4c-1 .4-1 1.8.1 2.1l4.6 1.4 1.8 5.6c.3.9 1.4 1.1 2 .4l2.6-2.6 4.8 3.5c.8.6 1.9.1 2.1-.9l3-14.6c.2-1.1-.8-2-1.9-1.6ZM9.6 14.4l8.3-7.2-6.4 8.8-.4 3.1-1.5-4.7Z" />
+        </svg>
+        Share from Telegram
+      </div>
+      {q.isPending ? <Spinner /> : null}
+      {t && !t.enabled ? (
+        <p className="text-sm text-ink-soft" data-testid="telegram-off">
+          The Trippr bot isn&apos;t set up on this server yet. Once it is, add it to your group chat and share reels and links there; they land here.
+        </p>
+      ) : null}
+      {t?.enabled ? (
+        <>
+          <p className="text-sm text-ink-soft">
+            Add the bot to your group chat, or message it, and share reels, TikToks and links from any app. In a group it only reads messages with a link,
+            a command, or a mention, and it replies with what it added.
+          </p>
+          {t.code ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {t.groupLink ? (
+                <a href={t.groupLink} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center rounded-lg bg-accent px-3 text-sm font-medium text-on-accent hover:bg-accent-hover">
+                  Add to a group
+                </a>
+              ) : null}
+              {t.directLink ? (
+                <a href={t.directLink} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center rounded-lg border border-line px-3 text-sm font-medium hover:border-ink-faint">
+                  Message the bot
+                </a>
+              ) : null}
+              <span className="text-xs text-ink-soft">
+                or send <code className="select-all rounded bg-paper px-1.5 py-0.5 font-mono text-ink" data-testid="telegram-code">/start {t.code}</code>
+                {t.botUsername ? <> to @{t.botUsername}</> : null}
+              </span>
+              <button className="text-xs text-ink-soft hover:underline" onClick={() => newCode.mutate()} disabled={newCode.isPending}>
+                New code
+              </button>
+            </div>
+          ) : null}
+          {t.chats.length ? (
+            <ul className="space-y-1.5 border-t border-line pt-2" aria-label="Linked chats">
+              {t.chats.map((c) => (
+                <li key={c.chatId} className="flex flex-wrap items-center gap-2 text-sm" data-testid="telegram-chat">
+                  <span className="font-medium">{c.title ?? (c.kind === "group" ? "A group" : "A direct chat")}</span>
+                  <span className="text-xs text-ink-faint">
+                    {c.kind === "group" ? "group" : "direct"} · linked by {c.linkedBy ?? "someone"}
+                  </span>
+                  <button className="ml-auto text-xs text-err hover:underline" onClick={() => unlink.mutate(c.chatId)} disabled={unlink.isPending}>
+                    Unlink
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="border-t border-line pt-2 text-xs text-ink-faint">No chats linked yet.</p>
+          )}
+        </>
+      ) : null}
+    </div>
   );
 }
 
@@ -381,6 +476,7 @@ function Inbox({ tripId }: { tripId: string }) {
       <section className="grid gap-4 lg:grid-cols-2" aria-label="Send things to the trip">
         {q.data ? <AddressPanel tripId={tripId} data={q.data} isOwner={trip.data?.role === "owner"} /> : null}
         <PasteBox tripId={tripId} />
+        <TelegramPanel tripId={tripId} />
       </section>
       {q.isPending ? <Spinner /> : null}
       {q.error ? <ErrorNote error={q.error} /> : null}
