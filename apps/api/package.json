@@ -7,7 +7,9 @@
     "./db": "./src/db/index.ts",
     "./config": "./src/config.ts",
     "./seed": "./src/db/seed.ts",
-    "./inbox-eval": "./src/services/inbox/eval-kit.ts"
+    "./inbox-eval": "./src/services/inbox/eval-kit.ts",
+    "./backup": "./src/db/backup.ts",
+    "./backup-store": "./src/db/backup-store.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
@@ -15,6 +17,7 @@
     "start": "node dist/server.js",
     "flights:snapshot": "tsx --env-file-if-exists=../../.env src/flight-snapshots.ts",
     "load-bundle": "tsx --env-file-if-exists=../../.env src/load-bundle.ts",
+    "backup": "tsx --env-file-if-exists=../../.env src/backup.ts",
     "eval-search": "tsx --env-file-if-exists=../../.env src/eval-search.ts",
     "eval-recommend": "tsx src/eval-recommend.ts",
     "fake-embeddings": "tsx src/fake-embeddings.ts",

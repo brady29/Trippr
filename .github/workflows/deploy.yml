@@ -100,6 +100,13 @@ jobs:
           if gcloud run jobs describe trippr-flight-snapshots --region "$REGION" >/dev/null 2>&1; then
             gcloud run jobs update trippr-flight-snapshots --image "$IMAGE" --region "$REGION"
           fi
+      - name: Update the backup job's image
+        # The daily backup (docs/operations.md) runs the same image. Skipped until the job exists.
+        continue-on-error: true
+        run: |
+          if gcloud run jobs describe trippr-backup --region "$REGION" >/dev/null 2>&1; then
+            gcloud run jobs update trippr-backup --image "$IMAGE" --region "$REGION"
+          fi
       - name: Update the data load job's image
         # The load job (docs/data-platform.md) runs the same image with another command. Only an existing job is
         # updated; nothing is created.

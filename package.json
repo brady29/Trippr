@@ -21,6 +21,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
     "db:export": "tsx scripts/export.ts",
+    "db:backup": "pnpm --filter @trippr/api backup",
+    "db:restore": "tsx --env-file-if-exists=.env scripts/restore.ts",
     "flights:snapshot": "pnpm --filter @trippr/api flights:snapshot",
     "db:load-bundle": "pnpm --filter @trippr/api load-bundle",
     "eval:search": "pnpm --filter @trippr/api eval-search",

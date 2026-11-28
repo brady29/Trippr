@@ -1,9 +1,13 @@
-name: Weekly backup
+name: Daily backup
 
-# Exports the whole graph to JSON and copies it to a Cloud Storage bucket.
-# AuraDB also pauses after 72 hours idle; this weekly query is a reminder to
-# resume it. For a FalkorDB VM that is not reachable from GitHub, run
-# `pnpm db:export` from cron on the VM instead (and keep the AOF snapshots).
+# Exports the whole graph and copies it to a Cloud Storage bucket, for a
+# database GitHub can reach (AuraDB, or a FalkorDB with a public address).
+# AuraDB also pauses after 72 hours idle; this daily query keeps it awake.
+#
+# Production's FalkorDB VM is only reachable inside the VPC, so there the
+# backup runs as the trippr-backup Cloud Run Job (node dist/backup.js) on a
+# Cloud Scheduler trigger instead; see docs/operations.md. This workflow
+# stays skipped unless BACKUP_BUCKET is set.
 #
 # Repository variables: GCP_PROJECT_ID, GCP_WORKLOAD_IDENTITY_PROVIDER,
 #   GCP_SERVICE_ACCOUNT, BACKUP_BUCKET, DB_DIALECT
@@ -11,7 +15,7 @@ name: Weekly backup
 
 on:
   schedule:
-    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+    - cron: "17 6 * * *" # every day 06:17 UTC
   workflow_dispatch:
 
 jobs:
@@ -35,10 +39,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm db:export backup.json
+      - run: pnpm db:export backup.json.gz
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
-      - run: gcloud storage cp backup.json "gs://${{ vars.BACKUP_BUCKET }}/trippr-$(date -u +%Y-%m-%d).json"
+      - run: gcloud storage cp backup.json.gz "gs://${{ vars.BACKUP_BUCKET }}/trippr-$(date -u +%Y-%m-%d).json.gz"
